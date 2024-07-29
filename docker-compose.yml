@@ -17,12 +17,13 @@ services:
       - ./volumes/drupal/sites:/var/www/html/sites
     environment:
       DB_HOST: mariadb
-      DRUPAL_USER: $(DRUPAL_USER)
-      DRUPAL_PASSWORD: $(DRUPAL_PASSWORD)
-      MYSQL_DATABASE: $(MYSQL_DATABASE)
-      MYSQL_PASSWORD: $(MYSQL_PASSWORD)
-      MYSQL_USER: $(MYSQL_USER)
-      SITE_NAME: $(SITE_NAME)
+      DB_DRIVER: mysql
+      DRUPAL_USER: ${DRUPAL_USER}
+      DRUPAL_PASSWORD: ${DRUPAL_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      SITE_NAME: ${SITE_NAME}
     depends_on:
       - mariadb
     restart: always
@@ -30,9 +31,9 @@ services:
   mariadb:
     image: mariadb
     environment:
-      MYSQL_ROOT_PASSWORD: $(MYSQL_ROOT_PASSWORD)
-      MYSQL_DATABASE: $(MYSQL_DATABASE)
-      MYSQL_USER: $(MYSQL_USER)
-      MYSQL_PASSWORD: $(MYSQL_PASSWORD)
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
       - ./volumes/mariadb:/var/lib/mysql
