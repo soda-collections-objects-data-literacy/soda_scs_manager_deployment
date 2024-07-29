@@ -5,7 +5,6 @@ FROM drupal:php8.2-apache-bookworm
 RUN apt-get update; \
     apt-get install -y --no-install-recommends \
     git \
-    default-mysql-client \
     unzip \
     vim \
     wget
