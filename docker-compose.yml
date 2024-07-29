@@ -1,0 +1,38 @@
+services:
+
+  drupal:
+    image: soda/drupal
+    build: 
+      context: ./drupal
+    ports:
+      - 3010:80
+    volumes:
+      - ./volumes/drupal/modules:/var/www/html/modules
+      - ./volumes/drupal/profiles:/var/www/html/profiles
+      - ./volumes/drupal/themes:/var/www/html/themes
+      - ./volumes/drupal/libraries:/var/www/html/libraries
+      # this takes advantage of the feature in Docker that a new anonymous
+      # volume (which is what we're creating here) will be initialized with the
+      # existing content of the image at the same location
+      - ./volumes/drupal/sites:/var/www/html/sites
+    environment:
+      DB_HOST: mariadb
+      DRUPAL_USER: $(DRUPAL_USER)
+      DRUPAL_PASSWORD: $(DRUPAL_PASSWORD)
+      MYSQL_DATABASE: $(MYSQL_DATABASE)
+      MYSQL_PASSWORD: $(MYSQL_PASSWORD)
+      MYSQL_USER: $(MYSQL_USER)
+      SITE_NAME: $(SITE_NAME)
+    depends_on:
+      - mariadb
+    restart: always
+
+  mariadb:
+    image: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: $(MYSQL_ROOT_PASSWORD)
+      MYSQL_DATABASE: $(MYSQL_DATABASE)
+      MYSQL_USER: $(MYSQL_USER)
+      MYSQL_PASSWORD: $(MYSQL_PASSWORD)
+    volumes:
+      - ./volumes/mariadb:/var/lib/mysql
