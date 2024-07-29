@@ -10,9 +10,17 @@ done
 # Install the site
 drush si --db-url="mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mariadb:3306/${MYSQL_DATABASE}" --site-name="${SITE_NAME}" --account-name="${DRUPAL_USER}" --account-pass="${DRUPAL_PASSWORD}"
 
-# Enable the module
+# Install modules
+composer require drupal/devel kint-php/kint
 git clone https://github.com/SODa-Collections-Objects-Data-Literacy/scs-manager.git /var/www/html/modules/custom/soda_scs_manager
-drush en soda_scs_manager -y
+
+
+# Enable the module
+drush en soda_scs_manager,devel -y
+
+# Set permissions
+chown -R www-data:www-data /opt/drupal
+chmod -R 775 /opt/drupal
 
 # keep the container running
 /usr/sbin/apache2ctl -D FOREGROUND
