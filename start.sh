@@ -1,6 +1,4 @@
 #!/bin/bash
+export $(cat .env) > /dev/null 2>&1; 
 
-mkdir -p ./volumes/drupal/sites
-docker run --rm drupal tar -cC /var/www/html/sites . | tar -xC ./volumes/drupal/sites
-
-docker compose up -d
+docker stack deploy -c docker-compose.yml scs-manager
