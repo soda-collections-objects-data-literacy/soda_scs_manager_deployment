@@ -1,5 +1,6 @@
 services:
-  scs-manager-drupal:
+  drupal:
+    container_name: scs-manager-drupal
     image: ghcr.io/rnsrk/soda_scs_manager_images:drupal10.3.1-php8.2-apache-bookworm-soda-scs-manager-dev
     volumes:
       - drupal-modules:/var/www/html/modules
@@ -40,7 +41,8 @@ services:
       - traefik.http.routers.scs-manager-ssh.entrypoints=ssh
       - traefik.http.services.scs-manager.loadbalancer.server.port=80
 
-  mariadb:
+  database:
+    container_name: scs-manager-database
     image: mariadb
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
@@ -61,25 +63,28 @@ services:
         - traefik.constraint-label=traefik-public
         - traefik.http.routers.mariadb.rule=Host(`db.${DOMAIN}`)
         - traefik.http.services.mariadb.loadbalancer.server.port=3306
+  
   portainer-agent:
-      image: portainer/agent:latest
-      environment:
-        # REQUIRED: Should be equal to the service name prefixed by "tasks." when
-        # deployed inside an overlay network
-        AGENT_CLUSTER_ADDR: tasks.agent
-        # AGENT_PORT: 9001
-        # LOG_LEVEL: debug
-      volumes:
-        - /var/run/docker.sock:/var/run/docker.sock
-        - /var/lib/docker/volumes:/var/lib/docker/volumes
-      networks:
-        - agent_network
-      deploy:
-        mode: global
-        placement:
-          constraints: [node.platform.os == linux]
+    container_name: scs-manager-portainer-agent
+    image: portainer/agent:latest
+    environment:
+      # REQUIRED: Should be equal to the service name prefixed by "tasks." when
+      # deployed inside an overlay network
+      AGENT_CLUSTER_ADDR: tasks.agent
+      # AGENT_PORT: 9001
+      # LOG_LEVEL: debug
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/volumes:/var/lib/docker/volumes
+    networks:
+      - agent_network
+    deploy:
+      mode: global
+      placement:
+        constraints: [node.platform.os == linux]
 
   portainer-ce:
+    container_name: scs-manager-portainer
     image: portainer/portainer-ce:latest
     command: -H tcp://tasks.agent:9001 --tlsskipverify
     environment:
@@ -105,7 +110,7 @@ services:
       - traefik.http.routers.portainer-ce.tls.certresolver=le
       - "traefik.http.services.portainer-ce.loadbalancer.server.port=9000"
       - "traefik.http.routers.portainer-ce.service=portainer-ce"
-  traefik:
+  reverse-proxy:
     # Use the latest v3.0.x Traefik image available
     image: traefik:v3.0
     ports:
