@@ -2,12 +2,13 @@
 This repository provides a docker compose environment to orchestrate the deployment of a Drupal-based Content Management System alongside essential services like MariaDB for database management, Portainer for container management, and Traefik as a reverse proxy and SSL certificate manager.
 
 ## Version
-SODa SCS Manager Deployment 1.0.0
-Drupal: 11.0.1
-SODa SCS Manager: Dev
-MariaDB: 
-Portainer:
-Traefik:
+- SODa SCS Manager Deployment 1.0.0
+- Drupal: 11.0.1
+- SODa SCS Manager: Dev
+- MariaDB: 11.5.2
+- Portainer Agent:2.20.1
+- Portainer Community Edition: 2.20.3
+- Traefik:3.1.2
 
 ## Overview
 
@@ -24,7 +25,12 @@ The docker-compose.yml file in this repository is structured to deploy the follo
 # Getting Started
 
 Install docker.
-
+Copy `.example-env` to `.env` and set the variables.
+(Use `echo $(htpasswd -nb TRAEFIK_USERNAME TRAEFIK_PASSWORD) | sed -e s/\\$/\\$\\$/g` to generate hashed traefik user password.)
+Init docker swarm with `docker swarm init`.
+Add [GitHub packages registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry).
+May need to add constraints to node with `docker node update --label-add reverse-proxy.reverse-proxy-certificates=true <node-id>`. (Get your `<node-id>` with `docker node inspect self`)
+Start SCS Manager ceployment environment with `./start.sh`.
 
 # License
 
