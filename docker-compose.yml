@@ -1,6 +1,6 @@
 services:
   manager:
-    image: ghcr.io/soda-collections-objects-data-literacy/soda_scs_manager_images:drupal${DRUPAL_VERSION}-php8.3-apache-bookworm-soda-scs-manager-dev
+    image: ghcr.io/soda-collections-objects-data-literacy/scs-manager-image:1.x
     volumes:
       - drupal-modules:/var/www/html/modules
       - drupal-profiles:/var/www/html/profiles
@@ -36,7 +36,7 @@ services:
         # Traefik should only run on nodes with the reverse-proxy.reverse-proxy-certificates label
         - "traefik.constraint-label=reverse-proxy"
         # Define the rule for the Traefik router
-        - "traefik.http.routers.manager.rule=Host(`manager.${DOMAIN}`)"
+        - "traefik.http.routers.manager.rule=Host(`${DOMAIN}`)"
         # Traefik should listen on both HTTP and HTTPS
         - "traefik.http.routers.manager.entrypoints=http,https"
         # Apply the HTTPS redirect middleware
@@ -68,7 +68,26 @@ services:
     deploy:
       mode: global
       labels:
-        - traefik.enable=false
+        # Enable Traefik as a reverse proxy and load balancer
+        # Traefik will be accessible via the manager.${DOMAIN} hostname
+        # and will redirect all requests to HTTPS
+        - "traefik.enable=true"
+        # Traefik should only listen on the reverse-proxy network
+        - "traefik.docker.network=reverse-proxy"
+        # Traefik should only run on nodes with the reverse-proxy.reverse-proxy-certificates label
+        - "traefik.constraint-label=reverse-proxy"
+        # Define the rule for the Traefik router
+        - "traefik.http.routers.database.rule=Host(`db.${DOMAIN}`)"
+        # Traefik should listen on both HTTP and HTTPS
+        - "traefik.http.routers.database.entrypoints=http,https"
+        # Apply the HTTPS redirect middleware
+        - "traefik.http.routers.database.middlewares=https-redirect"
+        # Enable TLS for the Traefik router
+        - "traefik.http.routers.database.tls=true"
+        # Use the Let's Encrypt certificate resolver for the Traefik router
+        - "traefik.http.routers.database.tls.certresolver=le"
+        # Set the port for the Traefik service to 80
+        - "traefik.http.services.database.loadbalancer.server.port=3306"
     
   agent:
     image: portainer/agent:2.21.0
@@ -112,7 +131,7 @@ services:
         # Use the 'http' and 'https' entrypoints
         - traefik.http.routers.portainer.entrypoints=http,https
         # Redirect HTTP to HTTPS
-        - traefik.http.routers.portainer.middlewares=https-redirect
+        - "traefik.http.routers.portainer.middlewares=https-redirect"
         # Enable TLS
         - traefik.http.routers.portainer.tls=true
         # Use the Traefik certificate resolver
