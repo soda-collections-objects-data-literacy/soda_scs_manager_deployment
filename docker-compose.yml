@@ -63,23 +63,23 @@ services:
     networks:
       - reverse-proxy
     restart: unless-stopped
+    ports:
+      - 3306:3306
     deploy:
       mode: global
       labels:
         # Enable Traefik as a reverse proxy and load balancer
-        # Traefik will be accessible via the manager.${DOMAIN} hostname
+        # Traefik will be accessible via the db.${DOMAIN} hostname
         # and will redirect all requests to HTTPS
         - "traefik.enable=true"
         # Traefik should only listen on the reverse-proxy network
         - "traefik.docker.network=reverse-proxy"
         # Traefik should only run on nodes with the reverse-proxy.reverse-proxy-certificates label
         - "traefik.constraint-label=reverse-proxy"
+        # Entry point for the Traefik service
+        #- "traefik.http.routers.database.entrypoints=mysql"
         # Define the rule for the Traefik router
-        - "traefik.http.routers.database.rule=Host(`db.${DOMAIN}`)"
-        # Enable TLS for the Traefik router
-        - "traefik.http.routers.database.tls=true"
-        # Use the Let's Encrypt certificate resolver for the Traefik router
-        - "traefik.http.routers.database.tls.certresolver=le"
+        - "traefik.http.routers.database.rule=HostSNI(`db.${DOMAIN}`)"
         # Set the port for the Traefik service to 3306
         - "traefik.http.services.database.loadbalancer.server.port=3306"
     
@@ -139,6 +139,7 @@ services:
     ports:
       - 80:80
       - 443:443
+     # - 3306:3306
     networks:
       - reverse-proxy
     deploy:
@@ -193,6 +194,8 @@ services:
       - --entrypoints.http.address=:80
       # Listen on port 443 for HTTPS requests
       - --entrypoints.https.address=:443
+      # Listen on port 3306 for MySQL requests
+      #- --entrypoints.mysql.address=:3306
       # Redirect HTTP requests to HTTPS
       - --entryPoints.http.http.redirections.entryPoint.to=https
       - --entryPoints.http.http.redirections.entryPoint.scheme=https
