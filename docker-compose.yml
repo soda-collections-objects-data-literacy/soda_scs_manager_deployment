@@ -60,8 +60,6 @@ services:
     depends_on:
       - reverse-proxy
       - portainer-ce
-    ports:
-      - "3306:3306"
     networks:
       - reverse-proxy
     restart: unless-stopped
@@ -78,15 +76,11 @@ services:
         - "traefik.constraint-label=reverse-proxy"
         # Define the rule for the Traefik router
         - "traefik.http.routers.database.rule=Host(`db.${DOMAIN}`)"
-        # Traefik should listen on both HTTP and HTTPS
-        - "traefik.http.routers.database.entrypoints=http,https"
-        # Apply the HTTPS redirect middleware
-        - "traefik.http.routers.database.middlewares=https-redirect"
         # Enable TLS for the Traefik router
         - "traefik.http.routers.database.tls=true"
         # Use the Let's Encrypt certificate resolver for the Traefik router
         - "traefik.http.routers.database.tls.certresolver=le"
-        # Set the port for the Traefik service to 80
+        # Set the port for the Traefik service to 3306
         - "traefik.http.services.database.loadbalancer.server.port=3306"
     
   agent:
