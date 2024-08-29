@@ -79,10 +79,80 @@ services:
         # Entry point for the Traefik service
         #- "traefik.http.routers.database.entrypoints=mysql"
         # Define the rule for the Traefik router
-        - "traefik.http.routers.database.rule=HostSNI(`db.${DOMAIN}`)"
+        - "traefik.http.routers.database.rule=Host(`db.${DOMAIN}`)"
         # Set the port for the Traefik service to 3306
         - "traefik.http.services.database.loadbalancer.server.port=3306"
-    
+
+  rdf4j:
+    image: eclipse/rdf4j-workbench:5.0.2
+    restart: unless-stopped
+    environment:
+      - JAVA_OPTS=-Xms1g -Xmx4g -Dhttp.nonProxyHosts="" -Dhttp.proxyHost=outproxy -Dhttp.proxyPort=8080 -Dhttps.proxyHost=outproxy -Dhttps.proxyPort=8080
+    volumes:
+      - rdf4j-data:/var/rdf4j
+      - rdf4j-logs:/usr/local/tomcat/logs
+    depends_on:
+      - reverse-proxy
+      - portainer-ce
+    networks:
+      - reverse-proxy
+    deploy:
+      mode: global
+      labels:
+        # Disable Traefik
+        - "traefik.enable=false"
+  
+  outproxy:
+    image: ghcr.io/soda-collections-objects-data-literacy/outproxy-image:1.x
+    restart: always
+    depends_on:
+      - rdf4j
+    networks:
+      - reverse-proxy
+    deploy:
+      mode: global
+      labels:
+        # Disable Traefik
+        - "traefik.enable=false"
+
+  authproxy:
+    image: ghcr.io/soda-collections-objects-data-literacy/authproxy-image:1.x
+    restart: unless-stopped
+    environment:
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
+      - DJANGO_SUPERUSER_NAME=${DJANGO_SUPERUSER_NAME}
+      - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD}
+      - DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL}
+    volumes:
+      - authproxy-data:/data/
+    depends_on:
+      - rdf4j
+    networks:
+      - reverse-proxy
+    deploy:
+      labels:
+        # Enable Traefik as a reverse proxy and load balancer
+        # Traefik will be accessible via the ts.${DOMAIN} hostname
+        # and will redirect all requests to HTTPS
+        - "traefik.enable=true"
+        # Traefik should only listen on the reverse-proxy network
+        - "traefik.docker.network=reverse-proxy"
+        # Traefik should only run on nodes with the reverse-proxy.reverse-proxy-certificates label
+        - "traefik.constraint-label=reverse-proxy"
+        # Define the rule for the Traefik router
+        - "traefik.http.routers.authproxy.rule=Host(`ts.${DOMAIN}`)"
+        # Traefik should listen on both HTTP and HTTPS
+        - "traefik.http.routers.authproxy.entrypoints=http,https"
+        # Apply the HTTPS redirect middleware
+        - "traefik.http.routers.authproxy.middlewares=https-redirect"
+        # Enable TLS for the Traefik router
+        - "traefik.http.routers.authproxy.tls=true"
+        # Use the Let's Encrypt certificate resolver for the Traefik router
+        - "traefik.http.routers.authproxy.tls.certresolver=le"
+        # Set the port for the Traefik service to 8000
+        - "traefik.http.services.authproxy.loadbalancer.server.port=8000"
+
   agent:
     image: portainer/agent:2.21.0
     volumes:
@@ -217,6 +287,7 @@ services:
     restart: unless-stopped
 
 volumes:
+  authproxy-data:
   drupal-libraries:
   drupal-modules:
   drupal-profiles:
@@ -224,9 +295,13 @@ volumes:
   drupal-themes:
   database-data:
   portainer-data:
+  rdf4j-data:
+  rdf4j-logs:
   reverse-proxy-certificates:
 
 networks:
   reverse-proxy:
     driver: overlay
     attachable: true
+
+
