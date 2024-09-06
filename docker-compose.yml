@@ -23,7 +23,6 @@ services:
       - portainer-ce
     networks:
       - reverse-proxy
-    restart: unless-stopped
     deploy:
       mode: global
       labels:
@@ -38,7 +37,7 @@ services:
         # Define the rule for the Traefik router
         - "traefik.http.routers.manager.rule=Host(`${DOMAIN}`)"
         # Traefik should listen on both HTTP and HTTPS
-        - "traefik.http.routers.manager.entrypoints=http,https"
+        - "traefik.http.routers.manager.entrypoints=web,websecure"
         # Apply the HTTPS redirect middleware
         - "traefik.http.routers.manager.middlewares=https-redirect"
         # Enable TLS for the Traefik router
@@ -47,6 +46,11 @@ services:
         - "traefik.http.routers.manager.tls.certresolver=le"
         # Set the port for the Traefik service to 80
         - "traefik.http.services.manager.loadbalancer.server.port=80"
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
 
   database:
     image: mariadb:11.5.2
@@ -57,35 +61,44 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - database-data:/var/lib/mysql
+    ports:
+      - 3306:3306
     depends_on:
       - reverse-proxy
       - portainer-ce
     networks:
       - reverse-proxy
-    restart: unless-stopped
-    ports:
-      - 3306:3306
     deploy:
       mode: global
       labels:
         # Enable Traefik as a reverse proxy and load balancer
         # Traefik will be accessible via the db.${DOMAIN} hostname
         # and will redirect all requests to HTTPS
-        - "traefik.enable=true"
+        - "traefik.enable=false"
         # Traefik should only listen on the reverse-proxy network
         - "traefik.docker.network=reverse-proxy"
         # Traefik should only run on nodes with the reverse-proxy.reverse-proxy-certificates label
         - "traefik.constraint-label=reverse-proxy"
         # Entry point for the Traefik service
-        #- "traefik.http.routers.database.entrypoints=mysql"
+        - "traefik.tcp.routers.database.entrypoints=mysql"
         # Define the rule for the Traefik router
-        - "traefik.http.routers.database.rule=Host(`db.${DOMAIN}`)"
+        - "traefik.tcp.routers.database.rule=HostSNI(`db.${DOMAIN}`)"
+        # Enable TLS
+        - "traefik.tcp.routers.database.tls=true"
+        - "traefik.tcp.routers.database.tls.certresolver=le"
+        # Passthrough TLS without terminating the connection
+        - "traefik.tcp.routers.database.tls.passthrough=true"
         # Set the port for the Traefik service to 3306
-        - "traefik.http.services.database.loadbalancer.server.port=3306"
+        - "traefik.tcp.services.database.loadbalancer.server.port=3306"
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
 
   rdf4j:
     image: eclipse/rdf4j-workbench:5.0.2
-    restart: unless-stopped
+
     environment:
       - JAVA_OPTS=-Xms1g -Xmx4g -Dhttp.nonProxyHosts="" -Dhttp.proxyHost=outproxy -Dhttp.proxyPort=8080 -Dhttps.proxyHost=outproxy -Dhttps.proxyPort=8080
     volumes:
@@ -101,10 +114,14 @@ services:
       labels:
         # Disable Traefik
         - "traefik.enable=false"
-  
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
   outproxy:
     image: ghcr.io/soda-collections-objects-data-literacy/outproxy-image:1.x
-    restart: always
     depends_on:
       - rdf4j
     networks:
@@ -114,10 +131,14 @@ services:
       labels:
         # Disable Traefik
         - "traefik.enable=false"
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
 
   authproxy:
     image: ghcr.io/soda-collections-objects-data-literacy/authproxy-image:1.x
-    restart: unless-stopped
     environment:
       - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
@@ -140,18 +161,26 @@ services:
         - "traefik.docker.network=reverse-proxy"
         # Traefik should only run on nodes with the reverse-proxy.reverse-proxy-certificates label
         - "traefik.constraint-label=reverse-proxy"
+        # redirect middlewares
+        - traefik.http.middlewares.redirect-to-admin.redirectregex.regex=^(https?://ts.$${DOMAIN})/?$$
+        - traefik.http.middlewares.redirect-to-admin.redirectregex.replacement=$${1}/admin
         # Define the rule for the Traefik router
         - "traefik.http.routers.authproxy.rule=Host(`ts.${DOMAIN}`)"
         # Traefik should listen on both HTTP and HTTPS
-        - "traefik.http.routers.authproxy.entrypoints=http,https"
+        - "traefik.http.routers.authproxy.entrypoints=web,websecure"
         # Apply the HTTPS redirect middleware
-        - "traefik.http.routers.authproxy.middlewares=https-redirect"
+        - "traefik.http.routers.authproxy.middlewares=https-redirect,redirect-to-admin"
         # Enable TLS for the Traefik router
         - "traefik.http.routers.authproxy.tls=true"
         # Use the Let's Encrypt certificate resolver for the Traefik router
         - "traefik.http.routers.authproxy.tls.certresolver=le"
         # Set the port for the Traefik service to 8000
         - "traefik.http.services.authproxy.loadbalancer.server.port=8000"
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
 
   agent:
     image: portainer/agent:2.21.0
@@ -166,11 +195,16 @@ services:
         - traefik.enable=false
       placement:
         constraints: [node.platform.os == linux]
-    restart: unless-stopped
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
 
   portainer:
     image: portainer/portainer-ce:2.21.0
-    # I do not know why 9001 (!=9000), but it works. 
+    # I do not know why 9001 (!=9000), but it works.
     command: -H tcp://tasks.agent:9001 --tlsskipverify
     volumes:
       - portainer-data:/data
@@ -193,7 +227,7 @@ services:
         # Route requests to portainer.${DOMAIN}
         - traefik.http.routers.portainer.rule=Host(`portainer.${DOMAIN}`)
         # Use the 'http' and 'https' entrypoints
-        - traefik.http.routers.portainer.entrypoints=http,https
+        - traefik.http.routers.portainer.entrypoints=web,websecure
         # Redirect HTTP to HTTPS
         - "traefik.http.routers.portainer.middlewares=https-redirect"
         # Enable TLS
@@ -202,14 +236,18 @@ services:
         - traefik.http.routers.portainer.tls.certresolver=le
         # Use port 9000 as the server port
         - traefik.http.services.portainer.loadbalancer.server.port=9000
-    restart: unless-stopped
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
 
   reverse-proxy:
     image: traefik:3.0
     ports:
       - 80:80
       - 443:443
-     # - 3306:3306
     networks:
       - reverse-proxy
     deploy:
@@ -237,7 +275,7 @@ services:
         # Define the rule for the Traefik router
         - "traefik.http.routers.reverse-proxy.rule=Host(`traefik.${DOMAIN}`)"
         # Traefik should listen on both HTTP and HTTPS
-        - "traefik.http.routers.reverse-proxy.entrypoints=http,https"
+        - "traefik.http.routers.reverse-proxy.entrypoints=web,websecure"
         # Apply the HTTPS redirect middleware and the HTTP Basic Authentication middleware
         - "traefik.http.routers.reverse-proxy.middlewares=admin-auth,https-redirect"
         # Enable TLS for the Traefik router
@@ -248,6 +286,11 @@ services:
         - "traefik.http.routers.reverse-proxy.service=api@internal"
         # Set the port for the Traefik service to 8080
         - "traefik.http.services.reverse-proxy.loadbalancer.server.port=8080"
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - reverse-proxy-certificates:/certificates
@@ -261,19 +304,19 @@ services:
       # Use the Docker Swarm endpoint
       - --providers.swarm.endpoint=unix:///var/run/docker.sock
       # Listen on port 80 for HTTP requests
-      - --entrypoints.http.address=:80
+      - --entrypoints.web.address=:80
       # Listen on port 443 for HTTPS requests
-      - --entrypoints.https.address=:443
+      - --entrypoints.websecure.address=:443
       # Listen on port 3306 for MySQL requests
-      #- --entrypoints.mysql.address=:3306
+      - --entrypoints.mysql.address=:3306
       # Redirect HTTP requests to HTTPS
-      - --entryPoints.http.http.redirections.entryPoint.to=https
-      - --entryPoints.http.http.redirections.entryPoint.scheme=https
-      - --entryPoints.http.http.redirections.entrypoint.permanent=true
+      - --entryPoints.web.http.redirections.entryPoint.to=websecure
+      - --entryPoints.web.http.redirections.entryPoint.scheme=https
+      - --entryPoints.web.http.redirections.entrypoint.permanent=true
       # Use the specified email address for Let's Encrypt certificate requests
       - --certificatesresolvers.le.acme.email=${TRAEFIK_EMAIL}
       # Use the HTTP challenge for Let's Encrypt certificate requests
-      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=http
+      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
       # Use the specified storage location for Let's Encrypt certificates
       - --certificatesresolvers.le.acme.storage=/certificates/acme.json
       # Use the TLS-ALPN-01 challenge for Let's Encrypt certificate requests
@@ -284,7 +327,6 @@ services:
       - --log
       # Enable the Traefik API
       - --api
-    restart: unless-stopped
 
 volumes:
   authproxy-data:
