@@ -59,6 +59,15 @@ services:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_INNODB_BUFFER_POOL_SIZE: 4G
+      MYSQL_INNODB_LOG_FILE_SIZE: 1G
+      MYSQL_MAX_CONNECTIONS: 1000
+      MYSQL_INNODB_FLUSH_LOG_AT_TRX_COMMIT: 2
+      MYSQL_INNODB_IO_CAPACITY: 200
+      MYSQL_SORT_BUFFER_SIZE: "256M"
+      MYSQL_READ_BUFFER_SIZE: "256M"
+      MYSQL_QUERY_CACHE_SIZE: "256M"
+      MYSQL_QUERY_CACHE_TYPE: "ON"
     volumes:
       - database-data:/var/lib/mysql
     ports:
@@ -100,7 +109,7 @@ services:
     image: eclipse/rdf4j-workbench:5.0.2
 
     environment:
-      - JAVA_OPTS=-Xms1g -Xmx4g -Dhttp.nonProxyHosts="" -Dhttp.proxyHost=outproxy -Dhttp.proxyPort=8080 -Dhttps.proxyHost=outproxy -Dhttps.proxyPort=8080
+      - JAVA_OPTS=-Xms1g -Xmx6g -Dhttp.nonProxyHosts="" -Dhttp.proxyHost=outproxy -Dhttp.proxyPort=8080 -Dhttps.proxyHost=outproxy -Dhttps.proxyPort=8080
     volumes:
       - rdf4j-data:/var/rdf4j
       - rdf4j-logs:/usr/local/tomcat/logs
@@ -183,7 +192,7 @@ services:
         window: 120s
 
   agent:
-    image: portainer/agent:2.21.0
+    image: portainer/agent:2.21.4
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /var/lib/docker/volumes:/var/lib/docker/volumes
@@ -203,7 +212,7 @@ services:
 
 
   portainer:
-    image: portainer/portainer-ce:2.21.0
+    image: portainer/portainer-ce:2.21.4
     # I do not know why 9001 (!=9000), but it works.
     command: -H tcp://tasks.agent:9001 --tlsskipverify
     volumes:
