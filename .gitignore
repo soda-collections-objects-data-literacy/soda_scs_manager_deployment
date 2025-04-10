@@ -1,2 +1,7 @@
 volumes
-.env
+helpers
+.vscode
+scs-manager/modules
+scs-manager/logs
+*.env
+*.env.local

@@ -29,9 +29,6 @@ The docker-compose.yml file in this repository is structured to deploy the follo
 ### Set environment variables
 - Copy `.example-env` to `.env` and set the variables.
 - (Use `echo $(htpasswd -nb TRAEFIK_USERNAME TRAEFIK_PASSWORD) | sed -e s/\\$/\\$\\$/g` to generate hashed traefik user password.)
-### Init docker swarm 
-- Init docker swarm with `docker swarm init`.
-- Add reverse proxy constraints to node with `docker node update --label-add reverse-proxy.reverse-proxy-certificates=true <node-id>`. (Get your `<node-id>` with `docker node inspect self`).
 ### Add GitHub package registry
 - Create a [personal access token (classic)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) with:
     - [x] read:packages
@@ -41,7 +38,7 @@ Start SCS Manager ceployment environment with `./start.sh`.
 ### Create Portainer admin
 Visit `portainer.DOMAIN` and create admin account.
 
-## SCS Manager config 
+## SCS Manager config
 
 ### Portainer
 - Visit `portainer.DOMAIN`.
@@ -55,7 +52,6 @@ Visit `portainer.DOMAIN` and create admin account.
 - Set settings at `/admin/config/soda-scs-manager/settings`.
 #### WissKI settings
 - Use your Authentication token you have created in section [Portainer](#portainer).
-- Retrieve the Swarm Id with `docker info | grep NodeID`.
 - Endpoint is usually `1` with one node.
 - Create route path: `https://portainer.DOMAIN/api/stacks/create/swarm/repository`
 - Read one route path: `https://portainer.DOMAIN/api/stacks/`
