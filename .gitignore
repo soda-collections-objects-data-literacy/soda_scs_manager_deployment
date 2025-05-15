@@ -4,5 +4,7 @@ helpers
 ./scs-manager/modules
 ./scs-manager/drupal
 ./scs-manager/logs
+./scs-manager/
 *.env
 *.env.local
+.cursor
