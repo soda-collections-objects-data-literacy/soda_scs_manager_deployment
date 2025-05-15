@@ -1,0 +1,238 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<rdf:RDF xmlns:bare="http://ontologies.sammlungen.io/ontology/base_record/current/"
+xmlns:owl="http://www.w3.org/2002/07/owl#"
+xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+xmlns:skos="http://www.w3.org/2004/02/skos/core#"
+xml:base="http://ontologies.sammlungen.io/ontology/base_record/current/">
+
+  <owl:Ontology rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/">
+    <owl:imports rdf:resource="http://erlangen-crm.org/current/"/>
+    <owl:imports rdf:resource="http://wiss-ki.eu/ontology/current/"/>
+    <owl:imports rdf:resource="http://default-model.wisski.cloud/ontology/crmdig/"/>
+    <owl:imports rdf:resource="http://default-model.wisski.cloud/ontology/lrmoo/"/>
+    <rdfs:comment xml:lang="en">
+      Ontology for base record.
+    </rdfs:comment>
+    <rdfs:label xml:lang="en">
+      Base Record Ontology
+    </rdfs:label>
+    <owl:versionInfo>
+      1.0.0
+    </owl:versionInfo>
+  </owl:Ontology>
+
+    <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Period-Assignment">
+        <rdfs:label xml:lang="en">Period-Assignment</rdfs:label>
+        <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E13_Attribute_Assignment"/>
+        <rdfs:comment xml:lang="en"> Period-Assignment </rdfs:comment>
+    </owl:Class>
+    <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Date-Assignment">
+        <rdfs:label xml:lang="en">Date-Assignment</rdfs:label>
+        <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E13_Attribute_Assignment"/>
+        <rdfs:comment xml:lang="en"> Date-Assignment </rdfs:comment>
+    </owl:Class>
+    <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Assurance">
+        <rdfs:label xml:lang="en">Assurance</rdfs:label>
+        <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E55_Type"/>
+        <rdfs:comment xml:lang="en"> Assurance </rdfs:comment>
+    </owl:Class>
+        <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Precision">
+        <rdfs:label xml:lang="en">Precision</rdfs:label>
+        <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E55_Type"/>
+        <rdfs:comment xml:lang="en"> Precision </rdfs:comment>
+    </owl:Class>
+    <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Begin">
+        <rdfs:label xml:lang="en">Begin</rdfs:label>
+        <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E5_Event"/>
+        <rdfs:comment xml:lang="en"> Begin </rdfs:comment>
+    </owl:Class>
+    <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/End">
+        <rdfs:label xml:lang="en">End</rdfs:label>
+        <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E5_Event"/>
+        <rdfs:comment xml:lang="en"> End </rdfs:comment>
+  </owl:Class>
+  <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Data_Record">
+    <rdfs:label xml:lang="en">Data Record</rdfs:label>
+    <skos:notation>DataRecord</skos:notation>
+    <skos:prefLabel xml:lang="en">Data Record</skos:prefLabel>
+    <rdfs:subClassOf rdf:resource="http://www.cidoc-crm.org/extensions/crmdig/D9_Data_Object"/>
+  </owl:Class>
+
+  <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Keyword">
+    <rdfs:label xml:lang="en">Keyword</rdfs:label>
+    <skos:notation>Keyword</skos:notation>
+    <skos:prefLabel xml:lang="en">Keyword</skos:prefLabel>
+    <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E55_Type"/>
+    <rdfs:comment xml:lang="en">Scope note:
+This class comprises terms, concepts, or classifications that can be assigned to objects, records, or other entities to facilitate searching, browsing, or categorization.
+    </rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Category">
+    <rdfs:label xml:lang="en">Category</rdfs:label>
+    <skos:notation>Category</skos:notation>
+    <skos:prefLabel xml:lang="en">Category</skos:prefLabel>
+    <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E55_Type"/>
+    <rdfs:comment xml:lang="en">Scope note:
+This class comprises broader classifications or groupings that can be used to organize and structure content, objects, or records into meaningful hierarchies or taxonomies.
+    </rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Cultural_Heritage_Item">
+    <rdfs:label xml:lang="en">Cultural Heritage Item</rdfs:label>
+    <skos:notation>CulturalHeritageItem</skos:notation>
+    <skos:prefLabel xml:lang="en">Cultural Heritage Item</skos:prefLabel>
+    <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E22_Human-Made_Object"/>
+    <rdfs:comment xml:lang="en">Scope note:
+This class comprises all physical objects that are part of cultural heritage collections, exhibitions, or architectural structures. It includes:
+- Items in collections of any collecting purpose
+- Objects in museum contexts
+- Architectural structures (buildings, bridges, cathedrals)
+- Biological or geological objects that have been prepared and selected for exhibition or collection purposes
+
+The class represents objects that have been intentionally chosen and preserved as part of cultural heritage, regardless of their original creation context or physical nature.
+    </rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Media_File">
+    <rdfs:label xml:lang="en">Media File</rdfs:label>
+    <skos:notation>MediaFile</skos:notation>
+    <skos:prefLabel xml:lang="en">Media File</skos:prefLabel>
+    <rdfs:subClassOf rdf:resource="http://www.cidoc-crm.org/extensions/crmdig/D9_Data_Object"/>
+    <rdfs:comment xml:lang="en">Scope note:
+This class comprises digital files containing media content such as images, audio, video, or other multimedia formats. These files are stored in digital form and can be accessed, processed, and disseminated through digital systems. The class includes both original media files and their digital reproductions or derivatives.
+    </rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Item_History_Activity">
+    <rdfs:label xml:lang="en">Item History Activity</rdfs:label>
+    <skos:notation>ItemHistoryActivity</skos:notation>
+    <skos:prefLabel xml:lang="en">Item History Activity</skos:prefLabel>
+    <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E7_Activity"/>
+    <rdfs:comment xml:lang="en">Scope note:
+This class comprises all activities that document the history and life cycle of cultural heritage items. It includes:
+- Transformations and modifications of items
+- Changes of ownership and possession
+- Exhibition history and display events
+- Conservation and restoration activities
+- Movements and transfers between locations
+- Documentation and research activities
+- Acquisition and deaccession events
+
+These activities are carried out by actors (E39_Actor) and result in changes to the physical, legal, or contextual state of the object. Each activity can be associated with specific time periods and locations.
+    </rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Problematic_Term_Type">
+    <rdfs:label xml:lang="en">Problematic Term Type</rdfs:label>
+    <skos:notation>ProblematicTermType</skos:notation>
+    <skos:prefLabel xml:lang="en">Problematic Term Type</skos:prefLabel>
+    <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E55_Type"/>
+    <rdfs:comment xml:lang="en">Scope note:
+    Categorise terms that are problematic for the record, i. e. if they are discriminatory or offensive.
+    </rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Item_Type">
+    <rdfs:label xml:lang="en">Item Type</rdfs:label>
+    <skos:notation>ItemType</skos:notation>
+    <skos:prefLabel xml:lang="en">Item Type</skos:prefLabel>
+    <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E55_Type"/>
+    <rdfs:comment xml:lang="en">Scope note:
+    Categorise items by their type.
+    </rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Inventory_Number">
+    <rdfs:label xml:lang="en">Inventory Number</rdfs:label>
+    <skos:notation>InventoryNumber</skos:notation>
+    <skos:prefLabel xml:lang="en">Inventory Number</skos:prefLabel>
+    <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E42_Identifier"/>
+    <rdfs:comment xml:lang="en">Scope note:
+    Assign an inventory number to an item.
+    </rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Actor_Name">
+    <rdfs:label xml:lang="en">Actor Name</rdfs:label>
+    <skos:notation>ActorName</skos:notation>
+    <skos:prefLabel xml:lang="en">Actor Name</skos:prefLabel>
+    <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E42_Identifier"/>
+    <rdfs:comment xml:lang="en">Scope note:
+    The name of an actor.
+    </rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Alternative_Name">
+    <rdfs:label xml:lang="en">Alternative Name</rdfs:label>
+    <skos:notation>AlternativeName</skos:notation>
+    <skos:prefLabel xml:lang="en">Alternative Name</skos:prefLabel>
+    <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E42_Identifier"/>
+    <rdfs:comment xml:lang="en">Scope note:
+    The alternative name of an actor.
+    </rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Validity_Type">
+    <rdfs:label xml:lang="en">Validity Type</rdfs:label>
+    <skos:notation>ValidityType</skos:notation>
+    <skos:prefLabel xml:lang="en">Validity Type</skos:prefLabel>
+    <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E55_Type"/>
+    <rdfs:comment xml:lang="en">Scope note:
+    Categorise terms if they are valid or invalid for the record.
+    </rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Role">
+    <rdfs:label xml:lang="en">Role</rdfs:label>
+    <skos:notation>Role</skos:notation>
+    <skos:prefLabel xml:lang="en">Role</skos:prefLabel>
+    <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E55_Type"/>
+    <rdfs:comment xml:lang="en">Scope note:
+    The role of an actor.
+    </rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Organisation_Type">
+    <rdfs:label xml:lang="en">Organisation Type</rdfs:label>
+    <skos:notation>OrganisationType</skos:notation>
+    <skos:prefLabel xml:lang="en">Organisation Type</skos:prefLabel>
+    <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E55_Type"/>
+    <rdfs:comment xml:lang="en">Scope note:
+      The type of an organisation.
+    </rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Occupation">
+    <rdfs:label xml:lang="en">Occupation</rdfs:label>
+    <skos:notation>Occupation</skos:notation>
+    <skos:prefLabel xml:lang="en">Occupation</skos:prefLabel>
+    <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E7_Activity"/>
+    <rdfs:comment xml:lang="en">Scope note:
+    The occupation of an actor.
+    </rdfs:comment>
+  </owl:Class>
+
+  <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Title_Assignment">
+      <rdfs:label xml:lang="en">Title Assignment</rdfs:label>
+      <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E13_Attribute_Assignment"/>
+      <rdfs:comment xml:lang="en"> Assign a title and title details to a record.</rdfs:comment>
+  </owl:Class>
+
+    <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Actor_Assignment">
+      <rdfs:label xml:lang="en">Actor Assignment</rdfs:label>
+      <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E13_Attribute_Assignment"/>
+      <rdfs:comment xml:lang="en">Assign an actor (via a specific role) to an entity .</rdfs:comment>
+  </owl:Class>
+
+    <owl:Class rdf:about="http://ontologies.sammlungen.io/ontology/base_record/current/Actor_Type">
+    <rdfs:label xml:lang="en">Actor Type</rdfs:label>
+    <skos:notation>ActorType</skos:notation>
+    <skos:prefLabel xml:lang="en">Actor Type</skos:prefLabel>
+    <rdfs:subClassOf rdf:resource="http://erlangen-crm.org/current/E55_Type"/>
+    <rdfs:comment xml:lang="en">Scope note:
+      The type of an actor.
+    </rdfs:comment>
+  </owl:Class>
+</rdf:RDF>

@@ -1,7 +1,8 @@
 volumes
 helpers
 .vscode
-scs-manager/modules
-scs-manager/logs
+./scs-manager/modules
+./scs-manager/drupal
+./scs-manager/logs
 *.env
 *.env.local

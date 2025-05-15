@@ -3,11 +3,12 @@ services:
   access-proxy:
     image: alpine:latest
     container_name: access-proxy
-    restart: no
+    restart: unless-stopped
     command: >
-      sh -c "adduser -D -u 9000 filemanager && tail -f /dev/null"
+      sh -c "adduser -D -u 9000 filemanager && adduser -D -u 33 -G www-data www-data && tail -f /dev/null"
     volumes:
       - shared-data:/shared
+      - /var/scs-manager/snapshots:/var/scs-manager/snapshots
     networks:
       - reverse-proxy
     labels:
@@ -19,12 +20,21 @@ services:
     build: ./jupyterhub/jupyterhub
     restart: unless-stopped
     env_file:
-      - ./jupyterhub/oauth.env
+      - ./jupyterhub/.secret.env
     environment:
       DOCKER_JUPYTER_IMAGE: spawner_image
-      HUB_IP: 0.0.0.0
       DOCKER_NETWORK: jupyterhub
+      HUB_IP: 0.0.0.0
+      JUPYTERHUB_OPENREFINE_DIR: $JUPYTERHUB_OPENREFINE_DIR
+      JUPYTERHUB_SHARE: $JUPYTERHUB_SHARE
+      KC_ADMIN_GROUPS: $KC_ADMIN_GROUPS
+      KC_USER_GROUPS: $KC_USER_GROUPS
+      KC_AUTHORIZE_URL: ${KC_URL}/realms/${KC_REALM}/protocol/openid-connect/auth
+      KC_TOKEN_URL: ${KC_URL}/realms/${KC_REALM}/protocol/openid-connect/token
+      KC_USERINFO_URL: ${KC_URL}/realms/${KC_REALM}/protocol/openid-connect/userinfo
+      KC_OAUTH_CALLBACK_URL: https://${JUPYTERHUB_DOMAIN}/hub/oauth_callback
     volumes:
+      - jupyterhub-group-map:/root
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - jupyterhub
@@ -44,17 +54,41 @@ services:
     container_name: image_builder
     image: spawner_image
     build:
-      context: ./jupyterhub/spawner_image
-    command: echo
+      context: /var/www/deploy/soda_scs_manager_deployment/jupyterhub/spawner_image
+    pull_policy: always
+    entrypoint: ["true"]
+    deploy:
+      replicas: 0 # Ensures the service isn't started
+
+  # Ontology deamon
+  lontod:
+    image: ghcr.io/tkw1536/lontod:latest
+    container_name: lontod
+    restart: unless-stopped
+    user: root
+    volumes:
+      - ./lontod/data/ontologies:/data/:ro
+    networks:
+      - reverse-proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.lontod.rule=Host(`ontologies.sammlungen.io`)"
+      - "traefik.http.routers.lontod.entrypoints=web,websecure"
+      - "traefik.http.routers.lontod.middlewares=https-redirect"
+      - "traefik.http.routers.lontod.tls=true"
+      - "traefik.http.routers.lontod.tls.certresolver=le"
+      - "traefik.http.services.lontod.loadbalancer.server.port=8080"
 
   # Nextcloud
   nextcloud:
-    image: nextcloud:30.0-fpm
+    image: nextcloud:31.0-fpm
     container_name: nextcloud
-    restart: always
+    restart: unless-stopped
     volumes:
       - nextcloud-data:/var/www/html
       - ./nextcloud/hooks/post-installation:/docker-entrypoint-hooks.d/post-installation
+      # Does not take this config, why?
+      #- ./nextcloud/custom/custom-config.php:/var/www/html/config/custom-config.php
     expose:
       - 80
       - 9000
@@ -66,12 +100,9 @@ services:
       - MYSQL_PASSWORD=${NEXTCLOUD_DB_PASSWORD}
       - NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_USER:-admin}
       - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD:-admin}
-      - NEXTCLOUD_TRUSTED_DOMAINS=${SCS_DOMAIN},nextcloud.${SCS_DOMAIN},office.${SCS_DOMAIN},nextcloud-reverse-proxy
-      - TRUSTED_PROXIES=traefik
       - OVERWRITEPROTOCOL=https
       - OVERWRITEHOST=nextcloud.${SCS_DOMAIN}
       - REDIS_HOST=redis
-      - NEXTCLOUD_DEFAULT_PHONE_REGION=DE
     depends_on:
       - database
       - redis
@@ -112,7 +143,7 @@ services:
   nextcloud-reverse-proxy:
     container_name: nextcloud-reverse-proxy
     image: nginx:1.27
-    restart: always
+    restart: unless-stopped
     volumes:
       - ./nextcloud/reverse-proxy/nginx.conf:/etc/nginx/nginx.conf
       - nextcloud-data:/var/www/html
@@ -124,15 +155,16 @@ services:
       - "traefik.docker.network=reverse-proxy"
       - "traefik.http.routers.nextcloud-reverse-proxy.rule=Host(`nextcloud.${SCS_DOMAIN}`)"
       - "traefik.http.routers.nextcloud-reverse-proxy.entrypoints=web,websecure"
-      - "traefik.http.routers.nextcloud-reverse-proxy.middlewares=https-redirect"
+      - "traefik.http.routers.nextcloud-reverse-proxy.middlewares=https-redirect,nextcloud-redirectregex,nextcloud-webfinger,nextcloud-nodeinfo"
       - "traefik.http.routers.nextcloud-reverse-proxy.tls=true"
       - "traefik.http.routers.nextcloud-reverse-proxy.tls.certresolver=le"
       - "traefik.http.services.nextcloud-reverse-proxy.loadbalancer.server.port=80"
 
+
   redis:
     image: redis:alpine
     container_name: redis
-    restart: always
+    restart: unless-stopped
     networks:
       - nextcloud
 
@@ -158,7 +190,7 @@ services:
       - "traefik.http.routers.opengdb-proxy.tls=true"
       - "traefik.http.routers.opengdb-proxy.tls.certresolver=le"
       - "traefik.http.services.opengdb-proxy.loadbalancer.server.port=80"
-    restart: always
+    restart: unless-stopped
 
   rdf4j:
     image: eclipse/rdf4j-workbench:5.1.0
@@ -175,7 +207,7 @@ services:
       - reverse-proxy
     labels:
       - "traefik.enable=false"
-    restart: always
+    restart: unless-stopped
 
   outproxy:
     image: ghcr.io/fau-cdi/open_gdb_outproxy:latest
@@ -186,7 +218,7 @@ services:
       - reverse-proxy
     labels:
       - "traefik.enable=false"
-    restart: always
+    restart: unless-stopped
 
   authproxy:
     image: ghcr.io/fau-cdi/open_gdb_authproxy:latest
@@ -207,7 +239,7 @@ services:
       - reverse-proxy
     labels:
       - "traefik.enable=false"
-    restart: always
+    restart: unless-stopped
 
   # SCS Manager
   portainer:
@@ -236,14 +268,13 @@ services:
       - "traefik.http.services.edge.loadbalancer.server.port=8000"
       - "traefik.http.routers.edge.service=edge"
       - "traefik.http.routers.edge.middlewares=https-redirect"
-    restart: always
+    restart: unless-stopped
   scs-manager:
     image: ghcr.io/soda-collections-objects-data-literacy/scs-manager-image:latest
     container_name: scs-manager
     volumes:
-      - scs-manager-data:/opt/drupal
-      - ./scs-manager/modules/soda_scs_manager:/opt/drupal/web/modules/custom/soda_scs_manager
-      - ./scs-manager/logs/xdebug:/var/log/xdebug
+      - ./scs-manager/drupal:/opt/drupal
+      - /var/scs-manager/snapshots:/var/scs-manager/snapshots
     environment:
       DB_DRIVER: ${DB_DRIVER}
       DB_HOST: ${DB_HOST}
@@ -271,7 +302,7 @@ services:
       - "traefik.http.routers.manager.tls=true"
       - "traefik.http.routers.manager.tls.certresolver=le"
       - "traefik.http.services.manager.loadbalancer.server.port=80"
-    restart: always
+    restart: unless-stopped
 
   # SQL database
   database:
@@ -293,6 +324,8 @@ services:
       #MYSQL_QUERY_CACHE_TYPE: "ON"
     volumes:
       - database-data:/var/lib/mysql
+      - /var/scs-manager/snapshots:/var/scs-manager/snapshots
+      - ./scripts/database:/var/scs-manager/scripts/database
     ports:
       - 3306:3306
     depends_on:
@@ -309,12 +342,12 @@ services:
       - "traefik.tcp.routers.database.tls.certresolver=le"
       - "traefik.tcp.routers.database.tls.passthrough=true"
       - "traefik.tcp.services.database.loadbalancer.server.port=3306"
-    restart: always
+    restart: unless-stopped
 
   adminer:
     image: adminer
     container_name: adminer
-    restart: always
+    restart: unless-stopped
     depends_on:
       - database
       - traefik
@@ -344,14 +377,31 @@ services:
       - "traefik.docker.network=reverse-proxy"
 
       # Middlewares
+      ## Basic Auth
       - "traefik.http.middlewares.admin-auth.basicauth.users=${TRAEFIK_USERNAME}:${TRAEFIK_HASHED_PASSWORD}"
+      ## Redirect HTTP to HTTPS
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
       - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
       - "traefik.http.middlewares.https-redirect.redirectscheme.port=443"
+      ## Nextcloud Headers
       - "traefik.http.middlewares.nextcloud-headers.headers.stsSeconds=15552000"
       - "traefik.http.middlewares.nextcloud-headers.headers.stsIncludeSubdomains=true"
       - "traefik.http.middlewares.nextcloud-headers.headers.stsPreload=true"
       - "traefik.http.middlewares.nextcloud-headers.headers.forceSTSHeader=true"
+
+      ## Nextcloud redirectregex Middleware für .well-known Endpoints
+      - "traefik.http.middlewares.nextcloud-redirectregex.redirectregex.permanent=true"
+      # Carddav und Caldav
+      - "traefik.http.middlewares.nextcloud-redirectregex.redirectregex.regex=^https?://([^/]+)/\\.well-known/(card|cal)dav"
+      - "traefik.http.middlewares.nextcloud-redirectregex.redirectregex.replacement=https://$${1}/remote.php/dav"
+      # Webfinger
+      - "traefik.http.middlewares.nextcloud-webfinger.redirectregex.permanent=true"
+      - "traefik.http.middlewares.nextcloud-webfinger.redirectregex.regex=^https?://([^/]+)/\\.well-known/webfinger"
+      - "traefik.http.middlewares.nextcloud-webfinger.redirectregex.replacement=https://$${1}/index.php/.well-known/webfinger"
+      # Nodeinfo
+      - "traefik.http.middlewares.nextcloud-nodeinfo.redirectregex.permanent=true"
+      - "traefik.http.middlewares.nextcloud-nodeinfo.redirectregex.regex=^https?://([^/]+)/\\.well-known/nodeinfo"
+      - "traefik.http.middlewares.nextcloud-nodeinfo.redirectregex.replacement=https://$${1}/index.php/.well-known/nodeinfo"
 
       # Routers
       - "traefik.http.routers.reverse-proxy.rule=Host(`traefik.${SCS_DOMAIN}`)"
@@ -364,7 +414,7 @@ services:
       # Services
       - "traefik.http.services.reverse-proxy.loadbalancer.server.port=8080"
 
-    restart: always
+    restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - reverse-proxy-certificates:/certificates
@@ -403,6 +453,8 @@ volumes:
   drawio-data:
   opt-drupal:
   database-data:
+  jupyterhub-group-map:
+    name: jupyterhub-group-map
   nextcloud-data:
   onlyoffice-data:
   onlyoffice-log:
@@ -411,7 +463,6 @@ volumes:
   rdf4j-logs:
   reverse-proxy-certificates:
   shared-data:
-  scs-manager-data:
 
 networks:
   nextcloud:
