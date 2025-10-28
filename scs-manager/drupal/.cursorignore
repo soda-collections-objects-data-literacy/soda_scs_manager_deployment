@@ -1,0 +1,11 @@
+# Cursor ignore file - exclude large directories from indexing
+vendor/
+web/core/
+web/sites/
+node_modules/
+.git/
+tests/
+recipes/
+*.log
+*.cache
+*.tmp

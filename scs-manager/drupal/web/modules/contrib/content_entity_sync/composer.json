@@ -1,0 +1,27 @@
+{
+  "name": "drupal/content_entity_sync",
+  "description": "Provides drush commands to synchronize content entities.",
+  "type": "drupal-module",
+  "license": "GPL-2.0-or-later",
+  "minimum-stability": "dev",
+  "homepage": "https://drupal.org/project/content_entity_sync",
+  "authors": [
+    {
+      "name": "Fent Jani (bpstr)",
+      "homepage": "https://www.drupal.org/u/bpstr",
+      "role": "Maintainer"
+    }
+  ],
+  "support": {
+    "issues": "https://www.drupal.org/project/issues/content_entity_sync?version=8.x",
+    "source": "https://git.drupalcode.org/project/content_entity_sync",
+    "docs": "https://www.drupal.org/docs/8/modules/content_entity_sync",
+    "forum": "https://drupal.stackexchange.com/questions/tagged/content_entity_sync"
+  },
+  "require": {
+    "drush/drush": "^12 || ^13",
+    "drupal/core": "^10 || ^11"
+  },
+  "require-dev": { },
+  "suggest": { }
+}

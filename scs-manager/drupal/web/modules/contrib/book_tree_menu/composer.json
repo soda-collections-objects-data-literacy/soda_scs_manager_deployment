@@ -1,0 +1,9 @@
+{
+    "name": "drupal/book_tree_menu",
+    "description": "Alternative book navigation.",
+    "type": "drupal-module",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "drupal/book": "^2.0"
+    }
+}

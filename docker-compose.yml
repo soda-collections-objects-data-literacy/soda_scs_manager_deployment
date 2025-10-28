@@ -1,3 +1,5 @@
+#todo use label mappings
+
 services:
   # Filemanagement
   access-proxy:
@@ -5,7 +7,7 @@ services:
     container_name: access-proxy
     restart: unless-stopped
     command: >
-      sh -c "adduser -D -u 9000 filemanager && adduser -D -u 33 -G www-data www-data && tail -f /dev/null"
+      sh -c "id filemanager >/dev/null 2>&1 || adduser -D -u 9000 filemanager && id www-data >/dev/null 2>&1 || adduser -D -u 33 -G www-data www-data && tail -f /dev/null"
     volumes:
       - shared-data:/shared
       - /var/scs-manager/snapshots:/var/scs-manager/snapshots
@@ -269,6 +271,7 @@ services:
       - "traefik.http.routers.edge.service=edge"
       - "traefik.http.routers.edge.middlewares=https-redirect"
     restart: unless-stopped
+
   scs-manager:
     image: ghcr.io/soda-collections-objects-data-literacy/scs-manager-image:latest
     container_name: scs-manager
@@ -356,7 +359,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
-      - "traefik.http.routers.adminer.rule=Host(`db-adminer.${SCS_DOMAIN}`)"
+      - "traefik.http.routers.adminer.rule=Host(`adminer.${SCS_DOMAIN}`)"
       - "traefik.http.routers.adminer.entrypoints=web,websecure"
       - "traefik.http.routers.adminer.middlewares=https-redirect"
       - "traefik.http.routers.adminer.tls=true"
@@ -411,9 +414,6 @@ services:
       - "traefik.http.routers.reverse-proxy.tls.certresolver=le"
       - "traefik.http.routers.reverse-proxy.service=api@internal"
 
-      # Services
-      - "traefik.http.services.reverse-proxy.loadbalancer.server.port=8080"
-
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
@@ -447,6 +447,8 @@ services:
       - --log
       # Enable the Traefik API
       - --api
+      # Enable the Traefik API dashboard
+      - --api.dashboard=true
 
 volumes:
   authproxy-data:
@@ -463,6 +465,7 @@ volumes:
   rdf4j-logs:
   reverse-proxy-certificates:
   shared-data:
+    #name: shared-data # because of docker compose its soda_scs_manager_deployment_shared-data
 
 networks:
   nextcloud:

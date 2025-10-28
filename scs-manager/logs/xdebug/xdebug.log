@@ -1,0 +1,111 @@
+[9] Log opened at 2025-04-02 12:28:30.408099
+[9] [Config] WARN: Not setting up control socket with default value due to unavailable 'tsc' clock
+[9] [Step Debug] INFO: Connecting to configured address/port: host.docker.internal:9003.
+[9] [Step Debug] INFO: Connected to debugging client: host.docker.internal:9003 (through xdebug.client_host/xdebug.client_port).
+[9] [Step Debug] -> <init xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" fileuri="file:///usr/local/bin/composer" language="PHP" xdebug:language_version="8.3.19" protocol_version="1.0" appid="9"><engine version="3.4.2"><![CDATA[Xdebug]]></engine><author><![CDATA[Derick Rethans]]></author><url><![CDATA[https://xdebug.org]]></url><copyright><![CDATA[Copyright (c) 2002-2025 by Derick Rethans]]></copyright></init>
+
+[9] [Step Debug] <- feature_set -i 1 -n resolved_breakpoints -v 1
+[9] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="feature_set" transaction_id="1" feature="resolved_breakpoints" success="1"></response>
+
+[9] [Step Debug] <- feature_set -i 2 -n notify_ok -v 1
+[9] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="feature_set" transaction_id="2" feature="notify_ok" success="1"></response>
+
+[9] [Step Debug] <- feature_set -i 3 -n extended_properties -v 1
+[9] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="feature_set" transaction_id="3" feature="extended_properties" success="1"></response>
+
+[9] [Step Debug] <- feature_set -i 4 -n breakpoint_include_return_value -v 1
+[9] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="feature_set" transaction_id="4" feature="breakpoint_include_return_value" success="1"></response>
+
+[9] [Step Debug] <- feature_set -i 5 -n max_children -v 100
+[9] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="feature_set" transaction_id="5" feature="max_children" success="1"></response>
+
+[9] [Step Debug] <- breakpoint_set -i 6 -t line -f file:///var/www/deploy/soda_scs_manager_deployment/scs-manager/modules/soda_scs_manager/src/Form/SodaScsStackCreateForm.php -n 133
+[9] [Step Debug] WARN: Breakpoint file name does not exist: /var/www/deploy/soda_scs_manager_deployment/scs-manager/modules/soda_scs_manager/src/Form/SodaScsStackCreateForm.php (No such file or directory).
+[9] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="breakpoint_set" transaction_id="6" id="90001" resolved="unresolved"></response>
+
+[9] [Step Debug] <- run -i 7
+[9] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="run" transaction_id="7" status="stopping" reason="ok"></response>
+
+[9] [Step Debug] <- stop -i 8
+[9] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="stop" transaction_id="8" status="stopped" reason="ok"></response>
+
+[9] Log closed at 2025-04-02 12:28:30.979098
+
+[42] Log opened at 2025-04-02 12:28:31.030227
+[42] [Config] WARN: Not setting up control socket with default value due to unavailable 'tsc' clock
+[42] [Step Debug] INFO: Connecting to configured address/port: host.docker.internal:9003.
+[42] [Step Debug] INFO: Connected to debugging client: host.docker.internal:9003 (through xdebug.client_host/xdebug.client_port).
+[42] [Step Debug] -> <init xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" fileuri="file:///usr/local/bin/composer" language="PHP" xdebug:language_version="8.3.19" protocol_version="1.0" appid="42"><engine version="3.4.2"><![CDATA[Xdebug]]></engine><author><![CDATA[Derick Rethans]]></author><url><![CDATA[https://xdebug.org]]></url><copyright><![CDATA[Copyright (c) 2002-2025 by Derick Rethans]]></copyright></init>
+
+[42] [Step Debug] <- feature_set -i 1 -n resolved_breakpoints -v 1
+[42] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="feature_set" transaction_id="1" feature="resolved_breakpoints" success="1"></response>
+
+[42] [Step Debug] <- feature_set -i 2 -n notify_ok -v 1
+[42] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="feature_set" transaction_id="2" feature="notify_ok" success="1"></response>
+
+[42] [Step Debug] <- feature_set -i 3 -n extended_properties -v 1
+[42] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="feature_set" transaction_id="3" feature="extended_properties" success="1"></response>
+
+[42] [Step Debug] <- feature_set -i 4 -n breakpoint_include_return_value -v 1
+[42] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="feature_set" transaction_id="4" feature="breakpoint_include_return_value" success="1"></response>
+
+[42] [Step Debug] <- feature_set -i 5 -n max_children -v 100
+[42] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="feature_set" transaction_id="5" feature="max_children" success="1"></response>
+
+[42] [Step Debug] <- breakpoint_set -i 6 -t line -f file:///var/www/deploy/soda_scs_manager_deployment/scs-manager/modules/soda_scs_manager/src/Form/SodaScsStackCreateForm.php -n 133
+[42] [Step Debug] WARN: Breakpoint file name does not exist: /var/www/deploy/soda_scs_manager_deployment/scs-manager/modules/soda_scs_manager/src/Form/SodaScsStackCreateForm.php (No such file or directory).
+[42] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="breakpoint_set" transaction_id="6" id="420001" resolved="unresolved"></response>
+
+[42] [Step Debug] <- run -i 7
+[42] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="run" transaction_id="7" status="stopping" reason="ok"></response>
+
+[42] [Step Debug] <- stop -i 8
+[42] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="stop" transaction_id="8" status="stopped" reason="ok"></response>
+
+[42] Log closed at 2025-04-02 12:28:31.450781
+
+[58] Log opened at 2025-04-02 12:28:31.502878
+[58] [Config] WARN: Not setting up control socket with default value due to unavailable 'tsc' clock
+[58] [Step Debug] INFO: Connecting to configured address/port: host.docker.internal:9003.
+[58] [Step Debug] INFO: Connected to debugging client: host.docker.internal:9003 (through xdebug.client_host/xdebug.client_port).
+[58] [Step Debug] -> <init xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" fileuri="file:///usr/local/bin/composer" language="PHP" xdebug:language_version="8.3.19" protocol_version="1.0" appid="58"><engine version="3.4.2"><![CDATA[Xdebug]]></engine><author><![CDATA[Derick Rethans]]></author><url><![CDATA[https://xdebug.org]]></url><copyright><![CDATA[Copyright (c) 2002-2025 by Derick Rethans]]></copyright></init>
+
+[58] [Step Debug] <- feature_set -i 1 -n resolved_breakpoints -v 1
+[58] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="feature_set" transaction_id="1" feature="resolved_breakpoints" success="1"></response>
+
+[58] [Step Debug] <- feature_set -i 2 -n notify_ok -v 1
+[58] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="feature_set" transaction_id="2" feature="notify_ok" success="1"></response>
+
+[58] [Step Debug] <- feature_set -i 3 -n extended_properties -v 1
+[58] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="feature_set" transaction_id="3" feature="extended_properties" success="1"></response>
+
+[58] [Step Debug] <- feature_set -i 4 -n breakpoint_include_return_value -v 1
+[58] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="feature_set" transaction_id="4" feature="breakpoint_include_return_value" success="1"></response>
+
+[58] [Step Debug] <- feature_set -i 5 -n max_children -v 100
+[58] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="feature_set" transaction_id="5" feature="max_children" success="1"></response>
+
+[58] [Step Debug] <- breakpoint_set -i 6 -t line -f file:///var/www/deploy/soda_scs_manager_deployment/scs-manager/modules/soda_scs_manager/src/Form/SodaScsStackCreateForm.php -n 133
+[58] [Step Debug] WARN: Breakpoint file name does not exist: /var/www/deploy/soda_scs_manager_deployment/scs-manager/modules/soda_scs_manager/src/Form/SodaScsStackCreateForm.php (No such file or directory).
+[58] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="breakpoint_set" transaction_id="6" id="580001" resolved="unresolved"></response>
+
+[58] [Step Debug] <- run -i 7
+[58] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="run" transaction_id="7" status="stopping" reason="ok"></response>
+
+[58] [Step Debug] <- stop -i 8
+[58] [Step Debug] -> <response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="https://xdebug.org/dbgp/xdebug" command="stop" transaction_id="8" status="stopped" reason="ok"></response>
+
+[58] Log closed at 2025-04-02 12:28:40.738438
+
+[1022] Log opened at 2025-04-03 11:48:56.404575
+[1022] [Config] WARN: Not setting up control socket with default value due to unavailable 'tsc' clock
+[1022] [Step Debug] INFO: Connecting to configured address/port: host.docker.internal:9003.
+[1022] [Step Debug] WARN: Creating socket for 'host.docker.internal:9003', poll success, but error: Operation now in progress (29).
+[1022] [Step Debug] ERR: Could not connect to debugging client. Tried: host.docker.internal:9003 (through xdebug.client_host/xdebug.client_port).
+[1045] Log opened at 2025-04-03 11:49:10.418318
+[1045] [Config] WARN: Not setting up control socket with default value due to unavailable 'tsc' clock
+[1045] [Step Debug] INFO: Connecting to configured address/port: host.docker.internal:9003.
+[1045] [Step Debug] WARN: Creating socket for 'host.docker.internal:9003', poll success, but error: Operation now in progress (29).
+[1045] [Step Debug] ERR: Could not connect to debugging client. Tried: host.docker.internal:9003 (through xdebug.client_host/xdebug.client_port).
+[1045] Log closed at 2025-04-03 11:49:18.766806
+

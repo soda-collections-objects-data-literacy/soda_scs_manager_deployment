@@ -1,0 +1,13 @@
+name: 'Book Tree Menu'
+description: 'Alternative book navigation'
+package: Custom
+type: module
+# version: 3.0.1
+core_version_requirement: ^10 || ^11
+dependencies:
+  - drupal:book
+
+# Information added by Drupal.org packaging script on 2025-05-15
+version: '3.0.1'
+project: 'book_tree_menu'
+datestamp: 1747329629

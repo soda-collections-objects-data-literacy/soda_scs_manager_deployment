@@ -1,10 +1,14 @@
 volumes
 helpers
 .vscode
-./scs-manager/modules
-./scs-manager/drupal
-./scs-manager/logs
 ./scs-manager/
+!./scs-manager/drupal/web/sites
+!./scs-manager/drupal/composer.json
 *.env
 *.env.local
 .cursor
+openrefine
+configure_man
+lontod/data/ontologies
+ontology_resolver
+
