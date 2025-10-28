@@ -3,6 +3,7 @@ helpers
 .vscode
 ./scs-manager/
 !./scs-manager/drupal/web/sites
+./scs-manager/drupal/web/sites/default/settings.php
 !./scs-manager/drupal/composer.json
 *.env
 *.env.local
