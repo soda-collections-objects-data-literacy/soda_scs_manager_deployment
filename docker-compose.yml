@@ -311,20 +311,56 @@ services:
   database:
     image: mariadb:11.5.2
     container_name: database
+    command: >
+      --transaction-isolation=READ-COMMITTED
+      --innodb-buffer-pool-size=8G
+      --innodb-buffer-pool-instances=16
+      --innodb-log-file-size=1G
+      --innodb-log-buffer-size=128M
+      --innodb-flush-log-at-trx-commit=2
+      --innodb-flush-method=O_DIRECT
+      --innodb-file-per-table=1
+      --innodb-read-io-threads=8
+      --innodb-write-io-threads=8
+      --innodb-io-capacity=4000
+      --innodb-io-capacity-max=8000
+      --innodb-purge-threads=8
+      --innodb-page-cleaners=8
+      --innodb-adaptive-hash-index=1
+      --innodb-change-buffering=all
+      --max-connections=1000
+      --max-user-connections=900
+      --table-open-cache=16000
+      --table-definition-cache=8000
+      --thread-cache-size=200
+      --tmp-table-size=256M
+      --max-heap-table-size=256M
+      --join-buffer-size=16M
+      --sort-buffer-size=16M
+      --read-buffer-size=4M
+      --read-rnd-buffer-size=8M
+      --binlog-cache-size=4M
+      --max-binlog-size=512M
+      --expire-logs-days=7
+      --slow-query-log=1
+      --slow-query-log-file=/var/log/mysql/slow-query.log
+      --long-query-time=2
+      --log-queries-not-using-indexes=1
+      --log-slow-admin-statements=1
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --max-allowed-packet=128M
+      --wait-timeout=600
+      --interactive-timeout=600
+      --net-read-timeout=60
+      --net-write-timeout=60
+      --back-log=500
+      --thread-stack=512K
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
-      #MYSQL_INNODB_BUFFER_POOL_SIZE: 4G
-      #MYSQL_INNODB_LOG_FILE_SIZE: 1G
-      MYSQL_MAX_CONNECTIONS: 1000
-      #MYSQL_INNODB_FLUSH_LOG_AT_TRX_COMMIT: 2
-      #MYSQL_INNODB_IO_CAPACITY: 200
-      #MYSQL_SORT_BUFFER_SIZE: "256M"
-      #MYSQL_READ_BUFFER_SIZE: "256M"
-      #MYSQL_QUERY_CACHE_SIZE: "256M"
-      #MYSQL_QUERY_CACHE_TYPE: "ON"
     volumes:
       - database-data:/var/lib/mysql
       - /var/scs-manager/snapshots:/var/scs-manager/snapshots
