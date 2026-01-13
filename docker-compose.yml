@@ -62,25 +62,6 @@ services:
     deploy:
       replicas: 0 # Ensures the service isn't started
 
-  # Ontology deamon
-  lontod:
-    image: ghcr.io/tkw1536/lontod:latest
-    container_name: lontod
-    restart: unless-stopped
-    user: root
-    volumes:
-      - ./lontod/data/ontologies:/data/:ro
-    networks:
-      - reverse-proxy
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.lontod.rule=Host(`ontologies.sammlungen.io`)"
-      - "traefik.http.routers.lontod.entrypoints=web,websecure"
-      - "traefik.http.routers.lontod.middlewares=https-redirect"
-      - "traefik.http.routers.lontod.tls=true"
-      - "traefik.http.routers.lontod.tls.certresolver=le"
-      - "traefik.http.services.lontod.loadbalancer.server.port=8080"
-
   # Nextcloud
   nextcloud:
     image: nextcloud:31.0-fpm
@@ -245,7 +226,7 @@ services:
 
   # SCS Manager
   portainer:
-    image: portainer/portainer-ce:2.21.4
+    image: portainer/portainer-ce:2.33.5
     container_name: portainer
     command: -H unix:///var/run/docker.sock
     volumes:
@@ -404,7 +385,7 @@ services:
 
   # Traefik
   traefik:
-    image: traefik:3.0
+    image: traefik:3.6
     container_name: traefik
     ports:
       - 80:80
