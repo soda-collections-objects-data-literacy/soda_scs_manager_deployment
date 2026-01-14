@@ -10,7 +10,7 @@ services:
       sh -c "id filemanager >/dev/null 2>&1 || adduser -D -u 9000 filemanager && id www-data >/dev/null 2>&1 || adduser -D -u 33 -G www-data www-data && tail -f /dev/null"
     volumes:
       - shared-data:/shared
-      - /var/scs-manager/snapshots:/var/scs-manager/snapshots
+      - /var/backups/scs-manager/snapshots:/var/scs-manager/snapshots
     networks:
       - reverse-proxy
     labels:
@@ -254,11 +254,11 @@ services:
     restart: unless-stopped
 
   scs-manager:
-    image: ghcr.io/soda-collections-objects-data-literacy/scs-manager-image:latest
+    image: ghcr.io/soda-collections-objects-data-literacy/scs-manager-image-${SCS_MANAGER_MODE-production}:${SCS_MANAGER_VERSION-latest}
     container_name: scs-manager
     volumes:
-      - ./scs-manager/drupal:/opt/drupal
-      - /var/scs-manager/snapshots:/var/scs-manager/snapshots
+      - scs-manager-sites-folder:/opt/drupal/web/sites
+      - /var/backups/scs-manager/snapshots:/var/scs-manager/snapshots
     environment:
       DB_DRIVER: ${DB_DRIVER}
       DB_HOST: ${DB_HOST}
@@ -481,6 +481,7 @@ volumes:
   rdf4j-data:
   rdf4j-logs:
   reverse-proxy-certificates:
+  scs-manager-sites-folder:
   shared-data:
     #name: shared-data # because of docker compose its soda_scs_manager_deployment_shared-data
 
