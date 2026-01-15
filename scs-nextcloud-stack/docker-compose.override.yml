@@ -1,0 +1,69 @@
+# Docker Compose Override for SCS Nextcloud Stack Integration
+# This file overrides the base docker-compose.yml to integrate with the main SCS deployment
+# It adds Traefik integration, proper networking, and consistent naming
+
+services:
+  # Nextcloud FPM
+  nextcloud:
+    container_name: scs-nextcloud
+    environment:
+      # Override database host to use parent stack's database
+      - MYSQL_HOST=database
+    networks:
+      - default
+      - reverse-proxy
+    labels:
+      - "traefik.enable=false"
+
+  # OnlyOffice Document Server
+  onlyoffice-document-server:
+    container_name: scs-onlyoffice-document-server
+    networks:
+      - default
+      - reverse-proxy
+    labels:
+      - "traefik.enable=false"
+
+  # Nginx Reverse Proxy for Nextcloud with Traefik
+  nextcloud-reverse-proxy:
+    container_name: scs-nextcloud-reverse-proxy
+    networks:
+      - default
+      - reverse-proxy
+    ports: []  # Remove port binding, use Traefik instead
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy"
+      - "traefik.http.routers.nextcloud-reverse-proxy.rule=Host(`nextcloud.${SCS_DOMAIN}`)"
+      - "traefik.http.routers.nextcloud-reverse-proxy.entrypoints=web,websecure"
+      - "traefik.http.routers.nextcloud-reverse-proxy.middlewares=https-redirect,nextcloud-redirectregex,nextcloud-webfinger,nextcloud-nodeinfo"
+      - "traefik.http.routers.nextcloud-reverse-proxy.tls=true"
+      - "traefik.http.routers.nextcloud-reverse-proxy.tls.certresolver=le"
+      - "traefik.http.services.nextcloud-reverse-proxy.loadbalancer.server.port=80"
+
+  # OnlyOffice Reverse Proxy with Traefik
+  onlyoffice-reverse-proxy:
+    container_name: scs-onlyoffice-reverse-proxy
+    networks:
+      - default
+      - reverse-proxy
+    ports: []  # Remove port binding, use Traefik instead
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy"
+      - "traefik.http.routers.onlyoffice-reverse-proxy.rule=Host(`office.${SCS_DOMAIN}`)"
+      - "traefik.http.routers.onlyoffice-reverse-proxy.entrypoints=web,websecure"
+      - "traefik.http.routers.onlyoffice-reverse-proxy.middlewares=https-redirect"
+      - "traefik.http.routers.onlyoffice-reverse-proxy.tls=true"
+      - "traefik.http.routers.onlyoffice-reverse-proxy.tls.certresolver=le"
+      - "traefik.http.services.onlyoffice-reverse-proxy.loadbalancer.server.port=80"
+
+  # Redis for Nextcloud caching
+  redis:
+    container_name: scs-nextcloud-redis
+
+# Networks
+networks:
+  reverse-proxy:
+    name: reverse-proxy
+    external: true

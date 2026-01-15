@@ -62,3 +62,150 @@ Visit `portainer.DOMAIN` and create admin account.
 # License
 
 This project is licensed under the GPL v3 License - see the LICENSE file for details.
+
+
+
+
+## Quick Start Guide
+
+1. Clone the repository:
+```bash
+git clone git@github.com:soda-collections-objects-data-literacy/soda_scs_manager_deployment.git
+cd soda_scs_manager_deployment
+```
+
+2. Create and configure `.env` file:
+```bash
+cp .example-env .env
+nano .env  # Set your passwords and domain
+```
+
+3. Setup JupyterHub:
+```bash
+cd jupyterhub
+git clone git@github.com:soda-collections-objects-data-literacy/jupyterhub.git .
+cp .env.example .env
+cp .secret.env.sample .secret.env
+nano .env         # Configure JupyterHub settings
+nano .secret.env  # Configure OAuth secrets
+cd ..
+```
+
+4. Setup WebProtégé:
+```bash
+cd webprotege
+git clone git@github.com:protegeproject/webprotege.git .
+cd ..
+```
+
+5. Setup Nextcloud stack:
+```bash
+cd scs-nextcloud-stack
+cp .env.example .env
+nano .env  # Configure Nextcloud settings
+cd ..
+```
+
+6. Create Docker networks:
+```bash
+docker network create reverse-proxy
+```
+
+7. Start main services (database, Traefik, SCS Manager, etc.):
+```bash
+docker compose up -d database traefik  # Start these first
+sleep 10
+docker compose up -d                   # Start remaining services
+```
+
+8. Create Keycloak database:
+```bash
+bash scripts/keycloak/pre-install.sh
+```
+
+9. Start Keycloak stack:
+```bash
+cd keycloak
+docker compose up -d
+cd ..
+```
+
+10. Start JupyterHub stack:
+```bash
+cd jupyterhub
+docker compose up -d
+cd ..
+```
+
+11. Create Nextcloud databases:
+```bash
+bash scripts/nextcloud/create-databases.bash
+```
+
+12. Start Nextcloud stack:
+```bash
+cd scs-nextcloud-stack
+docker compose up -d
+cd ..
+```
+
+13. Start OpenGDB stack:
+```bash
+cd open_gdb
+cp .env.example .env
+nano .env  # Configure OpenGDB settings
+docker compose up -d
+cd ..
+```
+
+14. Configure OnlyOffice integration:
+```bash
+bash scripts/nextcloud/only-office.bash
+```
+
+15. Setup admin accounts:
+    - Keycloak: Visit `https://auth.${SCS_DOMAIN}` (uses KC_BOOTSTRAP_ADMIN_USERNAME/PASSWORD from .env)
+    - Nextcloud: Visit `https://nextcloud.${SCS_DOMAIN}` and create admin
+    - Portainer: Visit `https://portainer.${SCS_DOMAIN}` and create admin
+    - OpenGDB: Visit `https://ts.${SCS_DOMAIN}/admin` (uses Django admin credentials from .env)
+    - JupyterHub: Visit `https://jupyterhub.${SCS_DOMAIN}` (uses Keycloak OAuth)
+
+## Service Stacks
+
+### Main Stack (`./docker-compose.yml`)
+- SCS Manager (Drupal)
+- MariaDB Database
+- Portainer
+- Traefik
+- Adminer
+
+### Keycloak Stack (`./keycloak/docker-compose.yml`)
+- Keycloak identity and access management server
+- OAuth/OIDC provider for JupyterHub and other services
+- Uses parent stack's MariaDB database
+- Integrated with Traefik for reverse proxy
+
+See `keycloak/README.md` for detailed Keycloak stack documentation.
+
+### JupyterHub Stack (`./jupyterhub/docker-compose.yml`)
+- JupyterHub server with OAuth
+- Spawner image builder
+- Per-user Jupyter notebooks
+
+See `jupyterhub/INTEGRATION.md` for detailed JupyterHub stack documentation.
+
+### Nextcloud Stack (`./scs-nextcloud-stack/docker-compose.yml`)
+- Nextcloud FPM
+- OnlyOffice Document Server
+- Nginx reverse proxies
+- Redis cache
+
+See `scs-nextcloud-stack/README.md` for detailed Nextcloud stack documentation.
+
+### OpenGDB Stack (`./open_gdb/docker-compose.yml`)
+- RDF4J Triplestore
+- AuthProxy (Django-based authentication)
+- OutProxy (Outgoing request filtering)
+- Nginx reverse proxy
+
+See `open_gdb/README.md` for detailed OpenGDB stack documentation.

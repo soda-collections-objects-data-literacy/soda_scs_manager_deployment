@@ -2,14 +2,25 @@
 
 set -x
 
+# Load environment variables.
+if [ -f .env ]; then
+    source .env
+fi
+
+# Check if required environment variables are set.
+if [ -z "${DB_ROOT_PASSWORD}" ]; then
+    echo "Error: MARIADB_ROOT_PASSWORD environment variable is not set."
+    exit 1
+fi
+
+if [ -z "${NEXTCLOUD_DB_PASSWORD}" ]; then
+    echo "Error: NEXTCLOUD_DB_PASSWORD environment variable is not set."
+    exit 1
+fi
+
 # nextcloud
-docker exec -it database mariadb -u root -p5P6geD2tDWcorU4t2gk8 -e "CREATE DATABASE nextcloud;"
-docker exec -it database mariadb -u root -p5P6geD2tDWcorU4t2gk8 -e "CREATE USER 'nextcloud'@'%' IDENTIFIED BY 'H5DJz0HMXF9HI83IO4nGn3d9';"
-docker exec -it database mariadb -u root -p5P6geD2tDWcorU4t2gk8 -e "GRANT ALL PRIVILEGES ON nextcloud.* TO 'nextcloud'@'%';"
+docker exec -it database mariadb -u root -p"${DB_ROOT_PASSWORD}" -e "CREATE DATABASE nextcloud;"
+docker exec -it database mariadb -u root -p"${DB_ROOT_PASSWORD}" -e "CREATE USER 'nextcloud'@'%' IDENTIFIED BY '${NEXTCLOUD_DB_PASSWORD}';"
+docker exec -it database mariadb -u root -p"${DB_ROOT_PASSWORD}" -e "GRANT ALL PRIVILEGES ON nextcloud.* TO 'nextcloud'@'%';"
 
-# onlyoffice
-#docker exec -it database mariadb -u root -p5P6geD2tDWcorU4t2gk8 -e "CREATE DATABASE onlyoffice;"
-#docker exec -it database mariadb -u root -p5P6geD2tDWcorU4t2gk8 -e "CREATE USER 'onlyoffice'@'%' IDENTIFIED BY 'R0l1ejKey7ot6lubjbIfhT4C';"
-#docker exec -it database mariadb -u root -p5P6geD2tDWcorU4t2gk8 -e "GRANT ALL PRIVILEGES ON onlyoffice.* TO 'onlyoffice'@'%';"
-
-docker exec -it database mariadb -u root -p5P6geD2tDWcorU4t2gk8 -e "FLUSH PRIVILEGES;"
+docker exec -it database mariadb -u root -p"${DB_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;"

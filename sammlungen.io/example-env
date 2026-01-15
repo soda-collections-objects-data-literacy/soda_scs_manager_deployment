@@ -1,0 +1,30 @@
+# Generic
+MODE=production
+
+# Traefik / Domain Configuration
+SAMMLUNGEN_IO_SUBDOMAIN=soda
+SCS_DOMAIN=dev-scs.sammlungen.io
+
+# Database (for sammlungen.io service)
+DB_DRIVER=mysql
+DB_HOST=database
+DB_NAME=sammlungenio
+DB_PASSWORD=sammlungenio
+DB_PORT=3306
+DB_USER=sammlungenio
+
+# Parent Database Configuration (for pre-install script)
+DB_ROOT_PASSWORD=change_this_root_password
+SAMMLUNGEN_IO_DB_NAME=sammlungenio
+SAMMLUNGEN_IO_DB_PASSWORD=sammlungenio
+SAMMLUNGEN_IO_DB_USER=sammlungenio
+
+# Drupal
+DRUPAL_PASSWORD=change_this_admin_password
+DRUPAL_SITE_NAME=Sammlungen.io
+DRUPAL_USER=admin
+
+# Image Versions
+DATABASE_IMAGE_VERSION=11.5.2
+REDIS_IMAGE_VERSION=8-alpine
+VARNISH_IMAGE_VERSION=1.0.0
