@@ -10,19 +10,19 @@ services:
       - 80
       - 9000
     environment:
-      - SCS_DOMAIN=${SCS_DOMAIN:-localhost}
-      - ONLYOFFICE_JWT_SECRET=${ONLYOFFICE_JWT_SECRET}
-      - MYSQL_HOST=${MYSQL_HOST:-nextcloud-db}
+      - NEXTCLOUD_SLD=${NEXTCLOUD_SLD:-localhost}
+      - ONLYOFFICE_JWT_SECRET=${NEXTCLOUD_ONLYOFFICE_JWT_SECRET:-changeme}
+      - MYSQL_HOST=${NEXTCLOUD_DB_HOST:-database}
       - MYSQL_DATABASE=${NEXTCLOUD_DB_NAME:-nextcloud}
       - MYSQL_USER=${NEXTCLOUD_DB_USER:-nextcloud}
-      - MYSQL_PASSWORD=${NEXTCLOUD_DB_PASSWORD}
+      - MYSQL_PASSWORD=${NEXTCLOUD_DB_PASSWORD:-nextcloudpassword}
       - NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_USER:-admin}
       - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD:-admin}
-      - NEXTCLOUD_TRUSTED_DOMAINS=localhost nextcloud.${SCS_DOMAIN} ${SCS_DOMAIN} office.${SCS_DOMAIN} nextcloud-reverse-proxy
+      - NEXTCLOUD_TRUSTED_DOMAINS=localhost ${NEXTCLOUD_NEXTCLOUD_TLD:-nextcloud}.${NEXTCLOUD_SLD:-localhost} ${NEXTCLOUD_SLD:-localhost} NEXTCLOUD_ONLY_OFFICE_TLD.${NEXTCLOUD_SLD} nextcloud-reverse-proxy
       - OVERWRITEPROTOCOL=https
-      - OVERWRITEHOST=nextcloud.${SCS_DOMAIN}
-      - REDIS_HOST=redis
-      - REDIS_HOST_PORT=6379
+      - OVERWRITEHOST=${NEXTCLOUD_NEXTCLOUD_TLD:-nextcloud}.${NEXTCLOUD_SLD:-localhost} ${NEXTCLOUD_SLD:-localhost}
+      - REDIS_HOST=${NEXTCLOUD_REDIS_HOST:-redis}
+      - REDIS_HOST_PORT=${NEXTCLOUD_REDIS_HOST_PORT:-6379}
     depends_on:
       - redis
     networks:
@@ -34,7 +34,7 @@ services:
     restart: unless-stopped
     environment:
       - JWT_ENABLED=true
-      - JWT_SECRET=${ONLYOFFICE_JWT_SECRET}
+      - JWT_SECRET=${NEXTCLOUD_ONLYOFFICE_JWT_SECRET:-changeme}
       - JWT_HEADER=Authorization
       - JWT_IN_BODY=true
     networks:
@@ -61,7 +61,7 @@ services:
     networks:
       - nextcloud
     ports:
-      - "${NEXTCLOUD_PORT:-8080}:80"
+      - "${NEXTCLOUD_NEXTCLOUD_PORT:-8080}:80"
 
   # OnlyOffice Reverse Proxy
   onlyoffice-reverse-proxy:
@@ -74,7 +74,7 @@ services:
     networks:
       - nextcloud
     ports:
-      - "${ONLYOFFICE_PORT:-8081}:80"
+      - "${NEXTCLOUD_ONLYOFFICE_PORT:-8081}:80"
 
   # Redis for Nextcloud caching
   redis:

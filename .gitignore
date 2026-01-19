@@ -1,7 +1,6 @@
 volumes
 helpers
 .vscode
-scs-manager/
 *.env
 *.env.local
 .cursor

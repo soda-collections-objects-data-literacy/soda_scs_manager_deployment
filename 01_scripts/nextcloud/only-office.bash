@@ -13,15 +13,30 @@ if [ -z "${ONLYOFFICE_JWT_SECRET}" ]; then
     exit 1
 fi
 
-if [ -z "${SCS_DOMAIN}" ]; then
-    echo "Error: SCS_DOMAIN environment variable is not set."
+if [ -z "${SCS_HOSTNAME}" ]; then
+    echo "Error: SCS_HOSTNAME environment variable is not set."
+    exit 1
+fi
+
+if [ -z "${ONLYOFFICE_SERVICE_NAME}" ]; then
+    echo "Error: ONLYOFFICE_SERVICE_NAME environment variable is not set."
+    exit 1
+fi
+
+if [ -z "${NEXTCLOUD_SERVICE_NAME}" ]; then
+    echo "Error: NEXTCLOUD_SERVICE_NAME environment variable is not set."
+    exit 1
+fi
+
+if [ -z "${SCS_SUBDOMAIN}" ]; then
+    echo "Error: SCS_SUBDOMAIN environment variable is not set."
     exit 1
 fi
 
 docker exec -u www-data nextcloud php occ --no-warnings app:install onlyoffice
-docker exec -u www-data nextcloud php occ --no-warnings config:system:set onlyoffice DocumentServerUrl --value="https://office.${SCS_DOMAIN}/"
+docker exec -u www-data nextcloud php occ --no-warnings config:system:set onlyoffice DocumentServerUrl --value="https://${ONLYOFFICE_SERVICE_NAME}.${SCS_SUBDOMAIN}.${SCS_HOSTNAME}/"
 docker exec -u www-data nextcloud php occ --no-warnings config:system:set onlyoffice DocumentServerInternalUrl --value="http://onlyoffice-document-server/"
-docker exec -u www-data nextcloud php occ --no-warnings config:system:set onlyoffice StorageUrl --value="https://nextcloud.${SCS_DOMAIN}/"
+docker exec -u www-data nextcloud php occ --no-warnings config:system:set onlyoffice StorageUrl --value="https://${NEXTCLOUD_SERVICE_NAME}.${SCS_SUBDOMAIN}.${SCS_HOSTNAME}/"
 docker exec -u www-data nextcloud php occ --no-warnings config:system:set onlyoffice jwt_secret --value="${ONLYOFFICE_JWT_SECRET}"
 docker exec -u www-data nextcloud php occ --no-warnings config:system:set onlyoffice jwt_header --value="Authorization"
 docker exec -u www-data nextcloud php occ --no-warnings config:system:set allow_local_remote_servers --value=true --type=boolean

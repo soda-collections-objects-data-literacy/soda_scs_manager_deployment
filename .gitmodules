@@ -1,0 +1,23 @@
+[submodule "jupyterhub"]
+	path = jupyterhub
+	url = git@github.com:soda-collections-objects-data-literacy/jupyterhub.git
+
+[submodule "keycloak"]
+	path = keycloak
+	url = git@github.com:soda-collections-objects-data-literacy/keycloak.git
+
+[submodule "open_gdb"]
+	path = open_gdb
+	url = git@github.com:FAU-CDI/open_gdb.git
+
+[submodule "scs-manager-stack"]
+	path = scs-manager-stack
+	url = git@github.com:soda-collections-objects-data-literacy/scs-manager-stack.git
+
+[submodule "webprotege"]
+	path = webprotege
+	url = git@github.com:protegeproject/webprotege.git
+
+[submodule "scs-project-page-stack"]
+	path = scs-project-page-stack
+	url = git@github.com:soda-collections-objects-data-literacy/scs-project-page-stack.git

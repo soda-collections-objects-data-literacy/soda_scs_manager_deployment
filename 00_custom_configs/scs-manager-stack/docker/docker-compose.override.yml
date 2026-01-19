@@ -1,0 +1,64 @@
+# Docker Compose Override for SCS Manager Stack Integration
+# This file overrides the base docker-compose.yml to integrate with the main SCS deployment
+# It adds Traefik integration, proper networking, and uses parent stack's database
+
+services:
+  # Drupal with NGINX
+  drupal:
+    container_name: scs-manager
+    environment:
+      # Override to use parent stack's database
+      DB_HOST: database
+    volumes:
+      - scs-manager--drupal-sites:/opt/drupal/web/sites
+      - /var/backups/scs-manager/snapshots:/var/scs-manager/snapshots
+    networks:
+      - default
+      - reverse-proxy
+    ports: []  # Remove port binding, use Varnish with Traefik
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    labels:
+      - "traefik.enable=false"  # Varnish handles the routing
+
+  # Don't start local database - use parent stack's database instead
+  database:
+    deploy:
+      replicas: 0
+
+  # Redis
+  redis:
+    container_name: scs-manager-redis
+    networks:
+      - default
+    labels:
+      - "traefik.enable=false"
+
+  # Varnish with Traefik Integration
+  varnish:
+    container_name: scs-manager-varnish
+    environment:
+      # Override to use correct container name
+      - VARNISH_BACKEND_HOST=scs-manager
+    networks:
+      - default
+      - reverse-proxy
+    ports: []  # Remove port binding, use Traefik instead
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy"
+      - "traefik.http.routers.scs-manager.rule=Host(`${SCS_DOMAIN}`)"
+      - "traefik.http.routers.scs-manager.entrypoints=web,websecure"
+      - "traefik.http.routers.scs-manager.middlewares=https-redirect"
+      - "traefik.http.routers.scs-manager.tls=true"
+      - "traefik.http.routers.scs-manager.tls.certresolver=le"
+      - "traefik.http.services.scs-manager.loadbalancer.server.port=80"
+
+# Networks
+networks:
+  reverse-proxy:
+    name: reverse-proxy
+    external: true
+  default:
+    name: scs-manager
+    driver: bridge

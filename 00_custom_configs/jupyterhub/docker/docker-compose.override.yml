@@ -1,0 +1,56 @@
+# Docker Compose Override for SCS JupyterHub Stack Integration
+# This file overrides the base docker-compose.yml to integrate with the main SCS deployment
+# It adds Traefik integration, proper networking, and consistent naming
+
+services:
+  # JupyterHub Service
+  jupyterhub:
+    container_name: scs-jupyterhub
+    build:
+      context: jupyterhub
+    environment:
+      # Override with parent environment variables
+      DOCKER_JUPYTER_IMAGE: spawner_image
+      DOCKER_NETWORK: jupyterhub
+      HUB_IP: 0.0.0.0
+      JUPYTERHUB_OPENREFINE_DIR: ${JUPYTERHUB_OPENREFINE_DIR}
+      JUPYTERHUB_SHARE: ${JUPYTERHUB_SHARE}
+      KC_ADMIN_GROUPS: ${KC_ADMIN_GROUPS}
+      KC_USER_GROUPS: ${KC_USER_GROUPS}
+      KC_AUTHORIZE_URL: ${KC_URL}/realms/${KC_REALM}/protocol/openid-connect/auth
+      KC_TOKEN_URL: ${KC_URL}/realms/${KC_REALM}/protocol/openid-connect/token
+      KC_USERINFO_URL: ${KC_URL}/realms/${KC_REALM}/protocol/openid-connect/userinfo
+      KC_OAUTH_CALLBACK_URL: https://${JUPYTERHUB_DOMAIN}/hub/oauth_callback
+    networks:
+      - default
+      - reverse-proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy"
+      - "traefik.http.routers.jupyterhub.rule=Host(`jupyterhub.${SCS_DOMAIN}`)"
+      - "traefik.http.routers.jupyterhub.entrypoints=web,websecure"
+      - "traefik.http.routers.jupyterhub.middlewares=https-redirect"
+      - "traefik.http.routers.jupyterhub.tls=true"
+      - "traefik.http.routers.jupyterhub.tls.certresolver=le"
+      - "traefik.http.services.jupyterhub.loadbalancer.server.port=8000"
+
+  # Spawner Image Builder
+  image_builder:
+    container_name: scs-jupyterhub-image-builder
+    build:
+      context: spawner_image
+
+# Use external volume created by main stack
+volumes:
+  jupyterhub-group-map:
+    name: jupyterhub-group-map
+    external: true
+
+# Networks
+networks:
+  reverse-proxy:
+    name: reverse-proxy
+    external: true
+  default:
+    name: jupyterhub
+    external: true

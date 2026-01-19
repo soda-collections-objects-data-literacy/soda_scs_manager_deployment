@@ -1,0 +1,40 @@
+services:
+  # Disable local database - use parent database instead.
+  database:
+    deploy:
+      replicas: 0
+
+  # Drupal - connect to parent database via reverse-proxy network.
+  drupal:
+    depends_on: []
+    ports: []
+    environment:
+      DB_HOST: database
+    networks:
+      - reverse-proxy
+    external_links:
+      - database
+
+  # Redis - add to reverse-proxy network.
+  redis:
+    networks:
+      - reverse-proxy
+
+  # Varnish - expose via Traefik instead of direct port.
+  varnish:
+    ports: !reset []
+    networks:
+      - reverse-proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy"
+      - "traefik.http.routers.sammlungen-io.rule=Host(`${SAMMLUNGEN_IO_SUBDOMAIN}.${SCS_DOMAIN}`)"
+      - "traefik.http.routers.sammlungen-io.entrypoints=web,websecure"
+      - "traefik.http.routers.sammlungen-io.middlewares=https-redirect"
+      - "traefik.http.routers.sammlungen-io.tls=true"
+      - "traefik.http.routers.sammlungen-io.tls.certresolver=le"
+      - "traefik.http.services.sammlungen-io.loadbalancer.server.port=80"
+
+networks:
+  reverse-proxy:
+    external: true

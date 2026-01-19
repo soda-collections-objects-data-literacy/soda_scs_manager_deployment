@@ -31,14 +31,14 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
-      - "traefik.http.routers.portainer.rule=Host(`portainer.${SCS_DOMAIN}`)"
+      - "traefik.http.routers.portainer.rule=Host(`${SCS_PORTAINER_TLD}.${SCS_SLD}`)"
       - "traefik.http.routers.portainer.entrypoints=web,websecure"
       - "traefik.http.routers.portainer.middlewares=https-redirect"
       - "traefik.http.routers.portainer.tls=true"
       - "traefik.http.routers.portainer.tls.certresolver=le"
       - "traefik.http.services.portainer.loadbalancer.server.port=9000"
       - "traefik.http.routers.portainer.service=portainer"
-      - "traefik.http.routers.edge.rule=Host(`edge.${SCS_DOMAIN}`)"
+      - "traefik.http.routers.edge.rule=Host(`${SCS_PORTAINER_EDGE_TLD}.${SCS_SLD}`)"
       - "traefik.http.routers.edge.entrypoints=web,websecure"
       - "traefik.http.services.edge.loadbalancer.server.port=8000"
       - "traefik.http.routers.edge.service=edge"
@@ -95,10 +95,10 @@ services:
       --back-log=500
       --thread-stack=512K
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${SCS_DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${SCS_DB_NAME}
+      MYSQL_USER: ${SCS_DB_USER}
+      MYSQL_PASSWORD: ${SCS_DB_PASSWORD}
     volumes:
       - database-data:/var/lib/mysql
       - /var/scs-manager/snapshots:/var/scs-manager/snapshots
@@ -114,7 +114,7 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
       - "traefik.tcp.routers.database.entrypoints=mysql"
-      - "traefik.tcp.routers.database.rule=HostSNI(`db.${SCS_DOMAIN}`)"
+      - "traefik.tcp.routers.database.rule=HostSNI(`${SCS_DB_TLD:-db}.${SCS_SLD:-localhost}`)"
       - "traefik.tcp.routers.database.tls=true"
       - "traefik.tcp.routers.database.tls.certresolver=le"
       - "traefik.tcp.routers.database.tls.passthrough=true"
@@ -133,7 +133,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
-      - "traefik.http.routers.adminer.rule=Host(`adminer.${SCS_DOMAIN}`)"
+      - "traefik.http.routers.adminer.rule=Host(`${SCS_ADMINER_TLD:-adminer}.${SCS_SLD:-localhost}`)"
       - "traefik.http.routers.adminer.entrypoints=web,websecure"
       - "traefik.http.routers.adminer.middlewares=https-redirect"
       - "traefik.http.routers.adminer.tls=true"
@@ -155,7 +155,7 @@ services:
 
       # Middlewares
       ## Basic Auth
-      - "traefik.http.middlewares.admin-auth.basicauth.users=${TRAEFIK_USERNAME}:${TRAEFIK_HASHED_PASSWORD}"
+      - "traefik.http.middlewares.admin-auth.basicauth.users=${SCS_TRAEFIK_USERNAME:-admin}:${SCS_TRAEFIK_HASHED_PASSWORD:-changeme}"
       ## Redirect HTTP to HTTPS
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
       - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
@@ -181,7 +181,7 @@ services:
       - "traefik.http.middlewares.nextcloud-nodeinfo.redirectregex.replacement=https://$${1}/index.php/.well-known/nodeinfo"
 
       # Routers
-      - "traefik.http.routers.reverse-proxy.rule=Host(`traefik.${SCS_DOMAIN}`)"
+      - "traefik.http.routers.reverse-proxy.rule=Host(`${SCS_TRAEFIK_TLD:-traefik}.${SCS_SLD:-localhost}`)"
       - "traefik.http.routers.reverse-proxy.entrypoints=web,websecure"
       - "traefik.http.routers.reverse-proxy.middlewares=admin-auth,https-redirect"
       - "traefik.http.routers.reverse-proxy.tls=true"
@@ -208,7 +208,7 @@ services:
       - --entrypoints.web.http.redirections.entryPoint.scheme=https
       - --entrypoints.web.http.redirections.entrypoint.permanent=true
       # Use the specified email address for Let's Encrypt certificate requests
-      - --certificatesresolvers.le.acme.email=${TRAEFIK_EMAIL}
+      - --certificatesresolvers.le.acme.email=${SCS_TRAEFIK_EMAIL:-admin@example.com}
       # Use the HTTP challenge for Let's Encrypt certificate requests
       - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
       # Use the specified storage location for Let's Encrypt certificates
@@ -225,24 +225,12 @@ services:
       - --api.dashboard=true
 
 volumes:
-  drawio-data:
-  opt-drupal:
   database-data:
-  jupyterhub-group-map:
-    name: jupyterhub-group-map
   portainer-data:
   reverse-proxy-certificates:
-  scs-manager-sites-folder:
   shared-data:
-    #name: shared-data # because of docker compose its soda_scs_manager_deployment_shared-data
 
 networks:
-  nextcloud:
-    name: nextcloud
-    driver: bridge
   reverse-proxy:
     name: reverse-proxy
     external: true
-  jupyterhub:
-    name: jupyterhub
-    driver: bridge

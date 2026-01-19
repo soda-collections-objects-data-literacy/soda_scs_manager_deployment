@@ -29,6 +29,9 @@ The docker-compose.yml file in this repository is structured to deploy the follo
 ### Set environment variables
 - Copy `.example-env` to `.env` and set the variables.
 - (Use `echo $(htpasswd -nb TRAEFIK_USERNAME TRAEFIK_PASSWORD) | sed -e s/\\$/\\$\\$/g` to generate hashed traefik user password.)
+### Single command compose
+- The root `.env` includes a `COMPOSE_FILE` list so you can run one command from the repo root.
+- Start everything with `docker compose up -d` after creating required networks.
 ### Add GitHub package registry
 - Create a [personal access token (classic)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) with:
     - [x] read:packages
@@ -111,11 +114,9 @@ cd ..
 docker network create reverse-proxy
 ```
 
-7. Start main services (database, Traefik, SCS Manager, etc.):
+7. Start all services from repo root:
 ```bash
-docker compose up -d database traefik  # Start these first
-sleep 10
-docker compose up -d                   # Start remaining services
+docker compose up -d
 ```
 
 8. Create Keycloak database:
@@ -209,3 +210,11 @@ See `scs-nextcloud-stack/README.md` for detailed Nextcloud stack documentation.
 - Nginx reverse proxy
 
 See `open_gdb/README.md` for detailed OpenGDB stack documentation.
+
+
+
+## Keycloak
+Comes with several client connections.
+### Secrets
+Client secrets need to add after installation for:
+DIDMOS
