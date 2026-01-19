@@ -81,6 +81,7 @@ declare -A OVERRIDE_MAPPINGS=(
     ["00_custom_configs/scs-project-page/docker/docker-compose.override.yml"]="scs-project-page-stack/docker-compose.override.yml"
     ["00_custom_configs/jupyterhub/docker/docker-compose.override.yml"]="jupyterhub/docker-compose.override.yml"
     ["00_custom_configs/keycloak/docker/docker-compose.override.yml"]="keycloak/docker-compose.override.yml"
+    ["00_custom_configs/open_gdb/docker/docker-compose.override.yml"]="open_gdb/docker-compose.override.yml"
 )
 
 # Copy override files.
@@ -120,12 +121,14 @@ echo ""
 echo "Step 4: Starting database service..."
 echo "----------------------------------------"
 
-# Check if database container is already running
-if docker compose ps database 2>/dev/null | grep -q "Up"; then
+# Check if database container is already running (use main compose file)
+if COMPOSE_FILE=docker-compose.yml docker compose ps database 2>/dev/null | grep -q "Up"; then
     echo "✓ Database service is already running"
 else
     echo "Starting database service..."
-    docker compose up -d database
+    # Use only the main docker-compose.yml to start just the database service
+    # This avoids loading all submodule compose files which may have missing env vars
+    COMPOSE_FILE=docker-compose.yml docker compose up -d database
 
     if [ $? -ne 0 ]; then
         echo "Error: Failed to start database service."
@@ -149,8 +152,8 @@ else
     db_ready=false
 
     while [ $attempt -lt $max_attempts ]; do
-        # Check if container is running
-        if ! docker compose ps database 2>/dev/null | grep -q "Up"; then
+        # Check if container is running (use main compose file)
+        if ! COMPOSE_FILE=docker-compose.yml docker compose ps database 2>/dev/null | grep -q "Up"; then
             attempt=$((attempt + 1))
             echo "  Waiting for database container to start... (attempt $attempt/$max_attempts)"
             sleep 2
@@ -158,9 +161,10 @@ else
         fi
 
         # Try to connect to database and verify root user exists
-        if docker compose exec -T database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "SELECT 1;" >/dev/null 2>&1; then
+        # Use only main docker-compose.yml for exec commands too
+        if COMPOSE_FILE=docker-compose.yml docker compose exec -T database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "SELECT 1;" >/dev/null 2>&1; then
             # Verify root user can connect (this confirms root user is created and database is healthy)
-            if docker compose exec -T database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "SHOW DATABASES;" >/dev/null 2>&1; then
+            if COMPOSE_FILE=docker-compose.yml docker compose exec -T database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "SHOW DATABASES;" >/dev/null 2>&1; then
                 echo "✓ Database is ready and root user is accessible"
                 db_ready=true
                 break
