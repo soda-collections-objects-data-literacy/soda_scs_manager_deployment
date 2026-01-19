@@ -8,7 +8,7 @@ services:
     container_name: scs-nextcloud
     environment:
       # Override database host to use parent stack's database
-      - MYSQL_HOST=${NEXTCLOUD_DB_HOST:-database}
+      - MYSQL_HOST=database
     networks:
       - default
       - reverse-proxy
@@ -34,7 +34,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
-      - "traefik.http.routers.nextcloud-reverse-proxy.rule=Host(`${NEXTCLOUD_NEXTCLOUD_TLD:-nextcloud}.${NEXTCLOUD_SLD:-localhost}`)"
+      - "traefik.http.routers.nextcloud-reverse-proxy.rule=Host(`${NEXTCLOUD_NEXTCLOUD_DOMAIN}`)"
       - "traefik.http.routers.nextcloud-reverse-proxy.entrypoints=web,websecure"
       - "traefik.http.routers.nextcloud-reverse-proxy.middlewares=https-redirect,nextcloud-redirectregex,nextcloud-webfinger,nextcloud-nodeinfo"
       - "traefik.http.routers.nextcloud-reverse-proxy.tls=true"
@@ -51,7 +51,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
-      - "traefik.http.routers.onlyoffice-reverse-proxy.rule=Host(`${NEXTCLOUD_ONLY_OFFICE_TLD:-office}.${NEXTCLOUD_SLD:-localhost}`)"
+      - "traefik.http.routers.onlyoffice-reverse-proxy.rule=Host(`${NEXTCLOUD_ONLYOFFICE_DOMAIN}`)"
       - "traefik.http.routers.onlyoffice-reverse-proxy.entrypoints=web,websecure"
       - "traefik.http.routers.onlyoffice-reverse-proxy.middlewares=https-redirect"
       - "traefik.http.routers.onlyoffice-reverse-proxy.tls=true"

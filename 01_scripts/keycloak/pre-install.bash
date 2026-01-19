@@ -52,9 +52,14 @@ echo "Keycloak database and user created successfully."
 
 echo "Creating OpenID Connect client realm file..."
 
+# Get the script directory and repo root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+cd "$REPO_ROOT"
+
 # Create OpenID Connect client config file.
 # Only substitute environment variables that are actually used in the template.
 # Keycloak internal variables (${role_*}, ${client_*}, ${authBaseUrl}, etc.) are handled by Keycloak itself.
-envsubst '${KC_REALM} ${JUPYTERHUB_DOMAIN} ${NEXTCLOUD_NEXTCLOUD_DOMAIN} ${SCS_MANAGER_DOMAIN} ${JUPYTERHUB_CLIENT_SECRET} ${NEXTCLOUD_CLIENT_SECRET} ${SCS_MANAGER_CLIENT_SECRET} ${KC_DIDMOS_CLIENT_SECRET} ${KC_DIDMOS_CLIENT_ID}' < ../../00_custom_configs/keycloak/templates/realm/scs-realm.json.tpl > ../../keycloak/keycloak/import/scs-realm.json
+envsubst '${KC_REALM} ${JUPYTERHUB_DOMAIN} ${NEXTCLOUD_NEXTCLOUD_DOMAIN} ${SCS_MANAGER_DOMAIN} ${JUPYTERHUB_CLIENT_SECRET} ${NEXTCLOUD_CLIENT_SECRET} ${SCS_MANAGER_CLIENT_SECRET} ${KC_DIDMOS_CLIENT_SECRET} ${KC_DIDMOS_CLIENT_ID}' < 00_custom_configs/keycloak/templates/realm/scs-realm.json.tpl > keycloak/keycloak/import/scs-realm.json
 
 echo "OpenID Connect client config file created successfully."
