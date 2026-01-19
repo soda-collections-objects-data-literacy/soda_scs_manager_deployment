@@ -2,6 +2,11 @@
 
 set -x
 
+# Load environment variables.
+if [ -f .env ]; then
+    source .env
+fi
+
 # Dump the database.
 mariadb-dump -uroot -p${MARIADB_ROOT_PASSWORD} $1 > $2
 # Tar the dump.

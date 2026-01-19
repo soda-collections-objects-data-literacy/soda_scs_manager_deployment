@@ -36,8 +36,25 @@ The docker-compose.yml file in this repository is structured to deploy the follo
 - Create a [personal access token (classic)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) with:
     - [x] read:packages
 - [Login to GitHub packages registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-with-a-personal-access-token-classic).
+### Initial Setup
+Run the starter script to copy override files and execute pre-install scripts:
+```bash
+./start.sh
+```
+This script will:
+- Copy docker-compose override files from `00_custom_configs/` to their respective stack directories
+- Execute all pre-install scripts from `01_scripts/` (creates databases, generates config files, etc.)
+- Ensure all scripts are executed from the repo root to handle relative paths correctly
+
 ### Build environment
-Start SCS Manager ceployment environment with `./start.sh`.
+After initial setup, start SCS Manager deployment environment with:
+```bash
+./01_scripts/global/start.sh
+```
+Or manually:
+```bash
+docker compose up -d
+```
 ### Create Portainer admin
 Visit `portainer.DOMAIN` and create admin account.
 
@@ -114,55 +131,24 @@ cd ..
 docker network create reverse-proxy
 ```
 
-7. Start all services from repo root:
+7. Run the starter script to set up the environment:
+```bash
+./start.sh
+```
+This will:
+- Copy all docker-compose override files from `00_custom_configs/` to their respective stack directories
+- Execute all pre-install scripts (creates databases, generates configuration files, etc.)
+
+8. Start all services from repo root:
 ```bash
 docker compose up -d
 ```
-
-8. Create Keycloak database:
+Or use the convenience script:
 ```bash
-bash scripts/keycloak/pre-install.sh
+./01_scripts/global/start.sh
 ```
 
-9. Start Keycloak stack:
-```bash
-cd keycloak
-docker compose up -d
-cd ..
-```
-
-10. Start JupyterHub stack:
-```bash
-cd jupyterhub
-docker compose up -d
-cd ..
-```
-
-11. Create Nextcloud databases:
-```bash
-bash scripts/nextcloud/create-databases.bash
-```
-
-12. Start Nextcloud stack:
-```bash
-cd scs-nextcloud-stack
-docker compose up -d
-cd ..
-```
-
-13. Start OpenGDB stack:
-```bash
-cd open_gdb
-cp .env.example .env
-nano .env  # Configure OpenGDB settings
-docker compose up -d
-cd ..
-```
-
-14. Configure OnlyOffice integration:
-```bash
-bash scripts/nextcloud/only-office.bash
-```
+**Note:** The OnlyOffice integration is now automatically configured via post-install hooks, so manual configuration is no longer needed.
 
 15. Setup admin accounts:
     - Keycloak: Visit `https://auth.${SCS_DOMAIN}` (uses KC_BOOTSTRAP_ADMIN_USERNAME/PASSWORD from .env)

@@ -3,10 +3,8 @@
 set -e
 
 # Load environment variables.
-if [ -f ../../.env ]; then
-    set -a
-    source ../../.env
-    set +a
+if [ -f .env ]; then
+    source .env
 fi
 
 # Check if required environment variables are set.

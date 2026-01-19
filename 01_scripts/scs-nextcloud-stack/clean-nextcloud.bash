@@ -2,8 +2,14 @@
 
 set -x
 
-# Load environment variables.
-if [ -f .env ]; then
+# Check if --skip-env parameter is provided (when called from parent script).
+SKIP_LOCAL_ENV=false
+if [[ "$1" == "--skip-env" ]] || [[ "$1" == "--no-local-env" ]]; then
+    SKIP_LOCAL_ENV=true
+fi
+
+# Load environment variables from local .env if not skipped.
+if [ "$SKIP_LOCAL_ENV" = false ] && [ -f .env ]; then
     source .env
 fi
 
