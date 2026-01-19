@@ -4,30 +4,30 @@
 
 services:
   # Drupal with NGINX
-  drupal:
-    container_name: scs-manager
+  scs-manager--drupal:
+    container_name: scs-manager--drupal
     environment:
       # Override to use parent stack's database
-      DB_HOST: database
+      DB_HOST: scs--database
     volumes:
       - scs-manager--drupal-sites:/opt/drupal/web/sites
       - /var/backups/scs-manager/snapshots:/var/scs-manager/snapshots
     networks:
       - default
       - reverse-proxy
-    ports: []  # Remove port binding, use Varnish with Traefik
+    ports: !reset []  # Remove port binding, use Varnish with Traefik
     extra_hosts:
       - "host.docker.internal:host-gateway"
     labels:
       - "traefik.enable=false"  # Varnish handles the routing
 
   # Don't start local database - use parent stack's database instead
-  database:
+  scs-manager--database:
     deploy:
       replicas: 0
 
   # Redis
-  redis:
+  scs-manager--redis:
     container_name: scs-manager-redis
     networks:
       - default
@@ -35,24 +35,25 @@ services:
       - "traefik.enable=false"
 
   # Varnish with Traefik Integration
-  varnish:
-    container_name: scs-manager-varnish
+  scs-manager--varnish:
+    container_name: scs-manager--varnish
     environment:
       # Override to use correct container name
-      - VARNISH_BACKEND_HOST=scs-manager
+      - VARNISH_BACKEND_HOST=scs-manager--drupal
     networks:
       - default
       - reverse-proxy
-    ports: []  # Remove port binding, use Traefik instead
+    ports: !reset []  # Remove port binding, use Traefik instead
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
-      - "traefik.http.routers.scs-manager.rule=Host(`${SCS_MANAGER_DOMAIN}`)"
-      - "traefik.http.routers.scs-manager.entrypoints=web,websecure"
-      - "traefik.http.routers.scs-manager.middlewares=https-redirect"
-      - "traefik.http.routers.scs-manager.tls=true"
-      - "traefik.http.routers.scs-manager.tls.certresolver=le"
-      - "traefik.http.services.scs-manager.loadbalancer.server.port=80"
+      - "traefik.http.routers.scs-manager--varnish.rule=Host(`${SCS_MANAGER_DOMAIN}`)"
+      - "traefik.http.routers.scs-manager--varnish.entrypoints=web,websecure"
+      - "traefik.http.routers.scs-manager--varnish.middlewares=https-redirect"
+      - "traefik.http.routers.scs-manager--varnish.tls=true"
+      - "traefik.http.routers.scs-manager--varnish.tls.certresolver=le"
+      - "traefik.http.routers.scs-manager--varnish.service=scs-manager--varnish"
+      - "traefik.http.services.scs-manager--varnish.loadbalancer.server.port=80"
 
 # Networks
 networks:

@@ -31,18 +31,18 @@ http {
         proxy_set_header Connection $http_connection;
 
         location / {
-            proxy_pass http://authproxy:8000;
-            proxy_redirect http://authproxy:8000/ $scheme://$host/;
+            proxy_pass http://scs--authproxy:8000;
+            proxy_redirect http://scs--authproxy:8000/ $scheme://$host/;
         }
 
        # location /rdf4j-workbench {
-       #     proxy_pass http://rdf4j:8080/rdf4j-workbench;
-       #     proxy_redirect http://rdf4j:8080/rdf4j-workbench/ $scheme://$host/;
+       #     proxy_pass http://scs--rdf4j:8080/rdf4j-workbench;
+       #     proxy_redirect http://scs--rdf4j:8080/rdf4j-workbench/ $scheme://$host/;
        # }
 
        # location /rdf4j-server {
-       #     proxy_pass http://rdf4j:8080/rdf4j-server;
-       #     proxy_redirect http://rdf4j:8080/rdf4j-server/ $scheme://$host/;
+       #     proxy_pass http://scs--rdf4j:8080/rdf4j-server;
+       #     proxy_redirect http://scs--rdf4j:8080/rdf4j-server/ $scheme://$host/;
        # }
     }
 }

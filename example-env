@@ -1,5 +1,5 @@
 # Compose files for single-command startup.
-COMPOSE_FILE=docker-compose.yml:scs-manager-stack/docker-compose.yml:scs-nextcloud-stack/docker-compose.yml:scs-nextcloud-stack/docker-compose.override.yml:scs-project-page-stack/docker-compose.yml:jupyterhub/docker-compose.yml:jupyterhub/docker-compose.override.yml:keycloak/docker-compose.yml:open_gdb/docker-compose.yml:open_gdb/docker-compose.override.yml:00_custom_configs/scs-manager-stack/docker/docker-compose.override.yml:00_custom_configs/scs-nextcloud-stack/docker/docker-compose.override.yml:00_custom_configs/scs-project-page/docker/docker-compose.override.yml:00_custom_configs/jupyterhub/docker/docker-compose.override.yml:00_custom_configs/keycloak/docker/docker-compose.override.yml
+COMPOSE_FILE=docker-compose.yml:scs-manager-stack/docker-compose.yml:scs-nextcloud-stack/docker-compose.yml:scs-nextcloud-stack/docker-compose.override.yml:jupyterhub/docker-compose.yml:jupyterhub/docker-compose.override.yml:keycloak/docker-compose.yml:open_gdb/docker-compose.yml:open_gdb/docker-compose.override.yml:00_custom_configs/scs-manager-stack/docker/docker-compose.override.yml:00_custom_configs/scs-nextcloud-stack/docker/docker-compose.override.yml:00_custom_configs/scs-project-page/docker/docker-compose.override.yml:00_custom_configs/jupyterhub/docker/docker-compose.override.yml:00_custom_configs/keycloak/docker/docker-compose.override.yml:00_custom_configs/database/docker-compose.override.yml
 
 # General
 MODE=production
@@ -10,6 +10,7 @@ SCS_SUBDOMAIN=scs
 SCS_DB_PORT=3306
 SCS_DB_ROOT_PASSWORD=rootpassword
 SCS_DB_SERVICE_NAME=db
+SCS_DB_DOMAIN=db.scs.localhost
 
 # Open GDB.
 DJANGO_ALLOWED_HOSTS=localhost
@@ -35,7 +36,7 @@ KC_ADMIN_GROUPS=
 KC_BOOTSTRAP_ADMIN_PASSWORD=changeme
 KC_BOOTSTRAP_ADMIN_USERNAME=admin
 KC_DB_DRIVER=mariadb
-KC_DB_HOST=database
+KC_DB_HOST=scs--database
 KC_DB_NAME=keycloak
 KC_DB_PASSWORD=changeme
 KC_DB_PORT=5432
@@ -54,7 +55,7 @@ KC_DIDMOS_CLIENT_ID=didmos
 # Nextcloud.
 NEXTCLOUD_ADMIN_PASSWORD=nextcloudpass
 NEXTCLOUD_ADMIN_USER=admin
-NEXTCLOUD_DB_HOST=database
+NEXTCLOUD_DB_HOST=scs--database
 NEXTCLOUD_DB_NAME=nextcloud
 NEXTCLOUD_DB_PASSWORD=nextcloudpass
 NEXTCLOUD_DB_USER=nextcloud
@@ -74,13 +75,15 @@ SCS_PORTAINER_DOMAIN=deployments.scs.localhost
 SCS_PORTAINER_EDGE_DOMAIN=edge.scs.localhost
 SCS_PORTAINER_EDGE_SERVICE_NAME=edge
 SCS_PORTAINER_SERVICE_NAME=deployments
+SCS_PORTAINER_USER=admin
+SCS_PORTAINER_PASSWORD=changeme
 
 # SCS Manager.
 
 SCS_MANAGER_CLIENT_SECRET=changeme
 SCS_MANAGER_DOMAIN=manager.scs.localhost
 SCS_MANAGER_DB_DRIVER=mysql
-SCS_MANAGER_DB_HOST=database
+SCS_MANAGER_DB_HOST=scs-database
 SCS_MANAGER_DB_IMAGE_VERSION=11.5
 SCS_MANAGER_DB_NAME=scs_manager
 SCS_MANAGER_DB_PASSWORD=scsmanagerpass
@@ -104,21 +107,20 @@ SCS_ADMINER_SERVICE_NAME=db
 
 # SCS Project Page.
 PROJECT_WEBSITE_DB_DRIVER=mysql
-PROJECT_WEBSITE_DB_HOST=database
+PROJECT_WEBSITE_DB_HOST=scs-database
 PROJECT_WEBSITE_DB_IMAGE_VERSION=11.5
 PROJECT_WEBSITE_DB_NAME=projectpage
 PROJECT_WEBSITE_DB_PASSWORD=projectpagepass
 PROJECT_WEBSITE_DB_PORT=3306
 PROJECT_WEBSITE_DB_ROOT_PASSWORD=projectpagerootpass
 PROJECT_WEBSITE_DB_USER=projectpage
-PROJECT_WEBSITE_DOMAIN=localhost
+PROJECT_WEBSITE_DOMAIN=project-website.scs.localhost
 PROJECT_WEBSITE_IMAGE=drupal
 PROJECT_WEBSITE_MODE=production
 PROJECT_WEBSITE_PORT=8080
 PROJECT_WEBSITE_REDIS_IMAGE_VERSION=8-alpine
 PROJECT_WEBSITE_SITE_NAME="SCS Project Page"
 PROJECT_WEBSITE_SERVICE_NAME=
-PROJECT_WEBSITE_HOSTNAME=localhost
 PROJECT_WEBSITE_VARNISH_IMAGE_VERSION=1.0.0
 PROJECT_WEBSITE_VARNISH_PORT=80
 

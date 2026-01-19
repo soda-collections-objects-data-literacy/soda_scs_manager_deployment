@@ -11,7 +11,7 @@ services:
     ports: !reset []
     environment:
       # Override to use parent stack's database
-      KC_DB_URL: jdbc:${KC_DB_DRIVER:-mariadb}://database:3306/${KC_DB_NAME:-keycloak}
+      KC_DB_URL: jdbc:${KC_DB_DRIVER:-mariadb}://scs--database:3306/${KC_DB_NAME:-keycloak}
       # Override hostname for SCS domain (must include protocol for proper HTTPS redirects)
       KC_HOSTNAME: https://${KC_DOMAIN}
       # Enable HTTP mode since Traefik handles TLS termination
@@ -23,16 +23,16 @@ services:
       - default
       - reverse-proxy
     external_links:
-      - database:database
+      - scs-database:scs--database
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
-      - "traefik.http.routers.keycloak.rule=Host(`${KC_DOMAIN}`)"
-      - "traefik.http.routers.keycloak.entrypoints=web,websecure"
-      - "traefik.http.routers.keycloak.middlewares=https-redirect"
-      - "traefik.http.routers.keycloak.tls=true"
-      - "traefik.http.routers.keycloak.tls.certresolver=le"
-      - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
+      - "traefik.http.routers.keycloak--keycloak.rule=Host(`${KC_DOMAIN}`)"
+      - "traefik.http.routers.keycloak--keycloak.entrypoints=web,websecure"
+      - "traefik.http.routers.keycloak--keycloak.middlewares=https-redirect"
+      - "traefik.http.routers.keycloak--keycloak.tls=true"
+      - "traefik.http.routers.keycloak--keycloak.tls.certresolver=le"
+      - "traefik.http.services.keycloak--keycloak.loadbalancer.server.port=8080"
 
 # Networks
 networks:
@@ -42,3 +42,4 @@ networks:
   default:
     name: keycloak
     driver: bridge
+    external: false

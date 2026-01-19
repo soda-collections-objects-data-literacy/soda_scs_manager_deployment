@@ -2,14 +2,14 @@
 
 services:
   # Filemanagement
-  access-proxy:
+  scs--access-proxy:
     image: alpine:latest
-    container_name: access-proxy
+    container_name: scs--access-proxy
     restart: unless-stopped
     command: >
       sh -c "id filemanager >/dev/null 2>&1 || adduser -D -u 9000 filemanager && id www-data >/dev/null 2>&1 || adduser -D -u 33 -G www-data www-data && tail -f /dev/null"
     volumes:
-      - shared-data:/shared
+      - scs--shared-data:/shared
       - /var/backups/scs-manager/snapshots:/var/scs-manager/snapshots
     networks:
       - reverse-proxy
@@ -17,38 +17,38 @@ services:
       - "traefik.enable=false"
 
   # SCS Manager
-  portainer:
-    image: portainer/portainer-ce:2.33.5
-    container_name: portainer
+  scs--portainer:
+    image: portainer/portainer-ce:2.33.6
+    container_name: scs--portainer
     command: -H unix:///var/run/docker.sock
     volumes:
-      - portainer-data:/data
+      - scs--portainer-data:/data
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
-      - traefik
+      - scs--reverse-proxy
     networks:
       - reverse-proxy
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
-      - "traefik.http.routers.portainer.rule=Host(`${SCS_PORTAINER_DOMAIN}`)"
-      - "traefik.http.routers.portainer.entrypoints=web,websecure"
-      - "traefik.http.routers.portainer.middlewares=https-redirect"
-      - "traefik.http.routers.portainer.tls=true"
-      - "traefik.http.routers.portainer.tls.certresolver=le"
-      - "traefik.http.services.portainer.loadbalancer.server.port=9000"
-      - "traefik.http.routers.portainer.service=portainer"
-      - "traefik.http.routers.edge.rule=Host(`${SCS_PORTAINER_EDGE_DOMAIN}`)"
-      - "traefik.http.routers.edge.entrypoints=web,websecure"
-      - "traefik.http.services.edge.loadbalancer.server.port=8000"
-      - "traefik.http.routers.edge.service=edge"
-      - "traefik.http.routers.edge.middlewares=https-redirect"
+      - "traefik.http.routers.scs--portainer.rule=Host(`${SCS_PORTAINER_DOMAIN}`)"
+      - "traefik.http.routers.scs--portainer.entrypoints=web,websecure"
+      - "traefik.http.routers.scs--portainer.middlewares=https-redirect"
+      - "traefik.http.routers.scs--portainer.tls=true"
+      - "traefik.http.routers.scs--portainer.tls.certresolver=le"
+      - "traefik.http.services.scs--portainer.loadbalancer.server.port=9000"
+      - "traefik.http.routers.scs--portainer.service=scs--portainer"
+      - "traefik.http.routers.scs--portainer-edge.rule=Host(`${SCS_PORTAINER_EDGE_DOMAIN}`)"
+      - "traefik.http.routers.scs--portainer-edge.entrypoints=web,websecure"
+      - "traefik.http.services.scs--portainer-edge.loadbalancer.server.port=8000"
+      - "traefik.http.routers.scs--portainer-edge.service=scs--portainer"
+      - "traefik.http.routers.scs--portainer-edge.middlewares=https-redirect"
     restart: unless-stopped
 
   # SQL database
-  database:
+  scs--database:
     image: mariadb:11.5.2
-    container_name: database
+    container_name: scs--database
     command: >
       --transaction-isolation=READ-COMMITTED
       --innodb-buffer-pool-size=8G
@@ -97,50 +97,52 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${SCS_DB_ROOT_PASSWORD}
     volumes:
-      - database-data:/var/lib/mysql
-      - /var/scs-manager/snapshots:/var/scs-manager/snapshots
+      - scs--database-data:/var/lib/mysql
+      - /var/backups/scs-manager/snapshots:/var/scs-manager/snapshots
       - ./scripts/database:/var/scs-manager/scripts/database
     ports:
       - 3306:3306
     depends_on:
-      - traefik
-      - portainer
+      - scs--reverse-proxy
+      - scs--portainer
     networks:
       - reverse-proxy
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
-      - "traefik.tcp.routers.database.entrypoints=mysql"
-      - "traefik.tcp.routers.database.rule=HostSNI(`${SCS_DB_TLD:-db}.${SCS_SLD:-localhost}`)"
-      - "traefik.tcp.routers.database.tls=true"
-      - "traefik.tcp.routers.database.tls.certresolver=le"
-      - "traefik.tcp.routers.database.tls.passthrough=true"
-      - "traefik.tcp.services.database.loadbalancer.server.port=3306"
+      - "traefik.tcp.routers.scs--database.entrypoints=mysql"
+      - "traefik.tcp.routers.scs--database.rule=HostSNI(``)"
+      - "traefik.tcp.routers.scs--database.tls=true"
+      - "traefik.tcp.routers.scs--database.tls.certresolver=le"
+      - "traefik.tcp.routers.scs--database.tls.passthrough=true"
+      - "traefik.tcp.services.scs--database.loadbalancer.server.port=3306"
     restart: unless-stopped
+    deploy:
+      replicas: 1
 
-  adminer:
+  scs--adminer:
     image: adminer
-    container_name: adminer
+    container_name: scs--adminer
     restart: unless-stopped
     depends_on:
-      - database
-      - traefik
+      - scs--database
+      - scs--reverse-proxy
     networks:
       - reverse-proxy
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
-      - "traefik.http.routers.adminer.rule=Host(`${SCS_ADMINER_DOMAIN:-adminer.localhost}`)"
-      - "traefik.http.routers.adminer.entrypoints=web,websecure"
-      - "traefik.http.routers.adminer.middlewares=https-redirect"
-      - "traefik.http.routers.adminer.tls=true"
-      - "traefik.http.routers.adminer.tls.certresolver=le"
-      - "traefik.http.services.adminer.loadbalancer.server.port=8080"
+      - "traefik.http.routers.scs--adminer.rule=Host(`${SCS_ADMINER_DOMAIN:-adminer.localhost}`)"
+      - "traefik.http.routers.scs--adminer.entrypoints=web,websecure"
+      - "traefik.http.routers.scs--adminer.middlewares=https-redirect"
+      - "traefik.http.routers.scs--adminer.tls=true"
+      - "traefik.http.routers.scs--adminer.tls.certresolver=le"
+      - "traefik.http.services.scs--adminer.loadbalancer.server.port=8080"
 
   # Traefik
-  traefik:
+  scs--reverse-proxy:
     image: traefik:3.6
-    container_name: traefik
+    container_name: scs--reverse-proxy
     ports:
       - 80:80
       - 443:443
@@ -178,17 +180,17 @@ services:
       - "traefik.http.middlewares.nextcloud-nodeinfo.redirectregex.replacement=https://$${1}/index.php/.well-known/nodeinfo"
 
       # Routers
-      - "traefik.http.routers.reverse-proxy.rule=Host(`${SCS_TRAEFIK_DOMAIN:-traefik.localhost}`)"
-      - "traefik.http.routers.reverse-proxy.entrypoints=web,websecure"
-      - "traefik.http.routers.reverse-proxy.middlewares=admin-auth,https-redirect"
-      - "traefik.http.routers.reverse-proxy.tls=true"
-      - "traefik.http.routers.reverse-proxy.tls.certresolver=le"
-      - "traefik.http.routers.reverse-proxy.service=api@internal"
+      - "traefik.http.routers.scs--reverse-proxy.rule=Host(`${SCS_TRAEFIK_DOMAIN:-traefik.localhost}`)"
+      - "traefik.http.routers.scs--reverse-proxy.entrypoints=web,websecure"
+      - "traefik.http.routers.scs--reverse-proxy.middlewares=admin-auth,https-redirect"
+      - "traefik.http.routers.scs--reverse-proxy.tls=true"
+      - "traefik.http.routers.scs--reverse-proxy.tls.certresolver=le"
+      - "traefik.http.routers.scs--reverse-proxy.service=api@internal"
 
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - reverse-proxy-certificates:/certificates
+      - scs--reverse-proxy-certificates:/certificates
     command:
       # Enable Docker provider
       - --providers.docker
@@ -222,10 +224,14 @@ services:
       - --api.dashboard=true
 
 volumes:
-  database-data:
-  portainer-data:
-  reverse-proxy-certificates:
-  shared-data:
+  scs--database-data:
+    name: scs--database-data
+  scs--portainer-data:
+    name: scs--portainer-data
+  scs--reverse-proxy-certificates:
+    name: scs--reverse-proxy-certificates
+  scs--shared-data:
+    name: scs--shared-data
 
 networks:
   reverse-proxy:

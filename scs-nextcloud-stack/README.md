@@ -5,9 +5,9 @@ This Docker Compose stack provides a complete Nextcloud installation with OnlyOf
 ## Services
 
 - **nextcloud**: Nextcloud FPM server (31.0)
-- **nextcloud-reverse-proxy**: Nginx reverse proxy for Nextcloud
-- **onlyoffice-document-server**: OnlyOffice Document Server (8.3)
-- **onlyoffice-reverse-proxy**: Nginx reverse proxy for OnlyOffice
+- **nextcloud-nextcloud-reverse-proxy**: Nginx reverse proxy for Nextcloud
+- **nextcloud-onlyoffice-document-server**: OnlyOffice Document Server (8.3)
+- **nextcloud-onlyoffice-reverse-proxy**: Nginx reverse proxy for OnlyOffice
 - **redis**: Redis cache for Nextcloud
 
 ## Prerequisites
@@ -22,7 +22,7 @@ This Docker Compose stack provides a complete Nextcloud installation with OnlyOf
    docker volume create soda_scs_manager_deployment_onlyoffice-log
    ```
 
-3. Database (MariaDB) must be running and accessible at hostname `database`
+3. Database (MariaDB) must be running and accessible at hostname `scs--database`
 
 ## Setup
 
@@ -70,7 +70,7 @@ docker compose exec --user www-data nextcloud php occ status
 ### Create Nextcloud databases:
 From the parent directory, run:
 ```bash
-../scripts/nextcloud/create-databases.bash
+../scripts/nextcloud/create--databases.bash
 ```
 
 ### Configure OnlyOffice integration:
@@ -131,8 +131,8 @@ docker compose ps
 ### View container logs:
 ```bash
 docker compose logs nextcloud
-docker compose logs nextcloud-reverse-proxy
-docker compose logs onlyoffice-document-server
+docker compose logs nextcloud-nextcloud-reverse-proxy
+docker compose logs nextcloud-onlyoffice-document-server
 ```
 
 ### Restart services:

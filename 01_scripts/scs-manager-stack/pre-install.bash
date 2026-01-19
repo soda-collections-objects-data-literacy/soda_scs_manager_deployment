@@ -8,10 +8,10 @@ if [ -f .env ]; then
 fi
 
 # Create Database.
-docker exec scs-manager-database mariadb -h database -u root -p${SCS_DB_ROOT_PASSWORD} -e "CREATE DATABASE IF NOT EXISTS ${SCS_MANAGER_DB_NAME};"
-docker exec scs-manager-database mariadb -h database -u root -p${SCS_DB_ROOT_PASSWORD} -e "CREATE USER IF NOT EXISTS '${SCS_MANAGER_DB_USER}'@'%' IDENTIFIED BY '${SCS_MANAGER_DB_PASSWORD}';"
-docker exec scs-manager-database mariadb -h database -u root -p${SCS_DB_ROOT_PASSWORD} -e "GRANT ALL PRIVILEGES ON ${SCS_MANAGER_DB_NAME}.* TO '${SCS_MANAGER_DB_USER}'@'%';"
-docker exec scs-manager-database mariadb -h database -u root -p${SCS_DB_ROOT_PASSWORD} -e "FLUSH PRIVILEGES;"
+docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS ${SCS_MANAGER_DB_NAME};"
+docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "CREATE USER IF NOT EXISTS '${SCS_MANAGER_DB_USER}'@'%' IDENTIFIED BY '${SCS_MANAGER_DB_PASSWORD}';"
+docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "GRANT ALL PRIVILEGES ON ${SCS_MANAGER_DB_NAME}.* TO '${SCS_MANAGER_DB_USER}'@'%';"
+docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;"
 
 
 

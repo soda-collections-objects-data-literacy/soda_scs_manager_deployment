@@ -2,7 +2,7 @@
 NEXTCLOUD_SECOND_LEVEL_DOMAIN=localhost
 
 # Database
-NEXTCLOUD_DB_HOST=database
+NEXTCLOUD_DB_HOST=scs--database
 NEXTCLOUD_DB_ROOT_PASSWORD=change_this_root_password
 
 # Nextcloud Database

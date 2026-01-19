@@ -1,0 +1,9 @@
+# Override to ensure main database service is always enabled
+# This file must come after submodule override files in COMPOSE_FILE
+# This ensures the main database (container_name: scs--database) is not disabled by submodule overrides.
+services:
+  scs--database:
+    container_name: scs--database
+    image: mariadb:11.5.2
+    deploy:
+      replicas: 1

@@ -4,11 +4,11 @@
 
 services:
   # Nextcloud FPM
-  nextcloud:
-    container_name: scs-nextcloud
+  nextcloud--nextcloud:
+    container_name: nextcloud--nextcloud
     environment:
       # Override database host to use parent stack's database
-      - MYSQL_HOST=database
+      - MYSQL_HOST=scs--database
     networks:
       - default
       - reverse-proxy
@@ -16,8 +16,8 @@ services:
       - "traefik.enable=false"
 
   # OnlyOffice Document Server
-  onlyoffice-document-server:
-    container_name: scs-onlyoffice-document-server
+  nextcloud--onlyoffice-document-server:
+    container_name: nextcloud--onlyoffice-document-server
     networks:
       - default
       - reverse-proxy
@@ -25,42 +25,46 @@ services:
       - "traefik.enable=false"
 
   # Nginx Reverse Proxy for Nextcloud with Traefik
-  nextcloud-reverse-proxy:
-    container_name: scs-nextcloud-reverse-proxy
+  nextcloud--nextcloud-reverse-proxy:
+    container_name: nextcloud--nextcloud-reverse-proxy
+    volumes:
+      - ./scs-nextcloud-stack/reverse-proxy/nginx.conf:/etc/nginx/nginx.conf
     networks:
       - default
       - reverse-proxy
-    ports: []  # Remove port binding, use Traefik instead
+    ports: !reset []  # Remove port binding, use Traefik instead
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
-      - "traefik.http.routers.nextcloud-reverse-proxy.rule=Host(`${NEXTCLOUD_NEXTCLOUD_DOMAIN}`)"
-      - "traefik.http.routers.nextcloud-reverse-proxy.entrypoints=web,websecure"
-      - "traefik.http.routers.nextcloud-reverse-proxy.middlewares=https-redirect,nextcloud-redirectregex,nextcloud-webfinger,nextcloud-nodeinfo"
-      - "traefik.http.routers.nextcloud-reverse-proxy.tls=true"
-      - "traefik.http.routers.nextcloud-reverse-proxy.tls.certresolver=le"
-      - "traefik.http.services.nextcloud-reverse-proxy.loadbalancer.server.port=80"
+      - "traefik.http.routers.nextcloud--nextcloud-reverse-proxy.rule=Host(`${NEXTCLOUD_NEXTCLOUD_DOMAIN}`)"
+      - "traefik.http.routers.nextcloud--nextcloud-reverse-proxy.entrypoints=web,websecure"
+      - "traefik.http.routers.nextcloud--nextcloud-reverse-proxy.middlewares=https-redirect,nextcloud-redirectregex,nextcloud-webfinger,nextcloud-nodeinfo"
+      - "traefik.http.routers.nextcloud--nextcloud-reverse-proxy.tls=true"
+      - "traefik.http.routers.nextcloud--nextcloud-reverse-proxy.tls.certresolver=le"
+      - "traefik.http.services.nextcloud--nextcloud-reverse-proxy.loadbalancer.server.port=80"
 
   # OnlyOffice Reverse Proxy with Traefik
-  onlyoffice-reverse-proxy:
-    container_name: scs-onlyoffice-reverse-proxy
+  nextcloud--onlyoffice-reverse-proxy:
+    container_name: nextcloud--onlyoffice-reverse-proxy
+    volumes:
+      - ./scs-nextcloud-stack/onlyoffice-proxy/nginx.conf:/etc/nginx/nginx.conf
     networks:
       - default
       - reverse-proxy
-    ports: []  # Remove port binding, use Traefik instead
+    ports: !reset []  # Remove port binding, use Traefik instead
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
-      - "traefik.http.routers.onlyoffice-reverse-proxy.rule=Host(`${NEXTCLOUD_ONLYOFFICE_DOMAIN}`)"
-      - "traefik.http.routers.onlyoffice-reverse-proxy.entrypoints=web,websecure"
-      - "traefik.http.routers.onlyoffice-reverse-proxy.middlewares=https-redirect"
-      - "traefik.http.routers.onlyoffice-reverse-proxy.tls=true"
-      - "traefik.http.routers.onlyoffice-reverse-proxy.tls.certresolver=le"
-      - "traefik.http.services.onlyoffice-reverse-proxy.loadbalancer.server.port=80"
+      - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.rule=Host(`${NEXTCLOUD_ONLYOFFICE_DOMAIN}`)"
+      - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.entrypoints=web,websecure"
+      - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.middlewares=https-redirect"
+      - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.tls=true"
+      - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.tls.certresolver=le"
+      - "traefik.http.services.nextcloud--onlyoffice-reverse-proxy.loadbalancer.server.port=80"
 
   # Redis for Nextcloud caching
-  redis:
-    container_name: scs-nextcloud-redis
+  nextcloud--redis:
+    container_name: nextcloud--redis
 
 # Networks
 networks:

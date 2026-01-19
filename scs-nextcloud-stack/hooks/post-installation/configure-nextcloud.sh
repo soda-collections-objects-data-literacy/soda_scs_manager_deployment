@@ -37,7 +37,7 @@ php /var/www/html/occ config:system:set trusted_domains 0 --value="localhost"
 php /var/www/html/occ config:system:set trusted_domains 1 --value="${NEXTCLOUD_NEXTCLOUD_DOMAIN}"
 php /var/www/html/occ config:system:set trusted_domains 2 --value="${SCS_MANAGER_DOMAIN}"
 php /var/www/html/occ config:system:set trusted_domains 3 --value="${NEXTCLOUD_ONLYOFFICE_DOMAIN}"
-php /var/www/html/occ config:system:set trusted_domains 4 --value="nextcloud-reverse-proxy"
+php /var/www/html/occ config:system:set trusted_domains 4 --value="nextcloud-nextcloud-reverse-proxy"
 
 # Konfiguriere Trusted-Proxies.
 php /var/www/html/occ config:system:delete trusted_proxies

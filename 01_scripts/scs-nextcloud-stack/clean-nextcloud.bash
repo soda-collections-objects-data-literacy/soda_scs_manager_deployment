@@ -19,13 +19,13 @@ if [ -z "${SCS_DB_ROOT_PASSWORD}" ]; then
     exit 1
 fi
 
-docker compose down nextcloud onlyoffice-document-server nextcloud-reverse-proxy
+docker compose down nextcloud-nextcloud nextcloud-onlyoffice-document-server nextcloud-nextcloud-reverse-proxy
 # Wait for 15 seconds to ensure all containers are properly stopped.
 echo "Waiting for 15 seconds to ensure all containers are properly stopped..."
 sleep 10
 docker volume remove soda_scs_manager_deployment_nextcloud-data soda_scs_manager_deployment_onlyoffice-data soda_scs_manager_deployment_onlyoffice-log
-docker exec database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "DROP DATABASE IF EXISTS nextcloud;"
-docker exec database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "DROP DATABASE IF EXISTS onlyoffice;"
-docker exec database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "DROP USER IF EXISTS 'nextcloud'@'%';"
-docker exec database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "DROP USER IF EXISTS 'onlyoffice'@'%';"
-docker exec database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;"
+docker exec scs-database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "DROP DATABASE IF EXISTS nextcloud;"
+docker exec scs-database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "DROP DATABASE IF EXISTS onlyoffice;"
+docker exec scs-database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "DROP USER IF EXISTS 'nextcloud'@'%';"
+docker exec scs-database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "DROP USER IF EXISTS 'onlyoffice'@'%';"
+docker exec scs-database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;"

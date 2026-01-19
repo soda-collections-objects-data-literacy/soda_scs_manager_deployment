@@ -4,8 +4,8 @@
 
 services:
   # JupyterHub Service
-  jupyterhub:
-    container_name: scs-jupyterhub
+  jupyterhub--jupyterhub:
+    container_name: jupyterhub--jupyterhub
     build:
       context: jupyterhub/jupyterhub
     environment:
@@ -27,24 +27,18 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
-      - "traefik.http.routers.jupyterhub.rule=Host(`${JUPYTERHUB_DOMAIN}`)"
-      - "traefik.http.routers.jupyterhub.entrypoints=web,websecure"
-      - "traefik.http.routers.jupyterhub.middlewares=https-redirect"
-      - "traefik.http.routers.jupyterhub.tls=true"
-      - "traefik.http.routers.jupyterhub.tls.certresolver=le"
-      - "traefik.http.services.jupyterhub.loadbalancer.server.port=8000"
+      - "traefik.http.routers.jupyterhub--jupyterhub.rule=Host(`${JUPYTERHUB_DOMAIN}`)"
+      - "traefik.http.routers.jupyterhub--jupyterhub.entrypoints=web,websecure"
+      - "traefik.http.routers.jupyterhub--jupyterhub.middlewares=https-redirect"
+      - "traefik.http.routers.jupyterhub--jupyterhub.tls=true"
+      - "traefik.http.routers.jupyterhub--jupyterhub.tls.certresolver=le"
+      - "traefik.http.services.jupyterhub--jupyterhub.loadbalancer.server.port=8000"
 
   # Spawner Image Builder
-  image_builder:
-    container_name: scs-jupyterhub-image-builder
+  jupyterhub--image-builder:
+    container_name: jupyterhub--image-builder
     build:
       context: jupyterhub/spawner_image
-
-# Use external volume created by main stack
-volumes:
-  jupyterhub-group-map:
-    name: jupyterhub-group-map
-    external: true
 
 # Networks
 networks:
@@ -53,4 +47,4 @@ networks:
     external: true
   default:
     name: jupyterhub
-    external: true
+    driver: bridge
