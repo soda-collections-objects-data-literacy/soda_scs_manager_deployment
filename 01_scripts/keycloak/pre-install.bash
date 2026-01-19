@@ -60,6 +60,8 @@ cd "$REPO_ROOT"
 # Create OpenID Connect client config file.
 # Only substitute environment variables that are actually used in the template.
 # Keycloak internal variables (${role_*}, ${client_*}, ${authBaseUrl}, etc.) are handled by Keycloak itself.
+# Ensure output directory exists
+mkdir -p keycloak/keycloak/import
 envsubst '${KC_REALM} ${JUPYTERHUB_DOMAIN} ${NEXTCLOUD_NEXTCLOUD_DOMAIN} ${SCS_MANAGER_DOMAIN} ${JUPYTERHUB_CLIENT_SECRET} ${NEXTCLOUD_CLIENT_SECRET} ${SCS_MANAGER_CLIENT_SECRET} ${KC_DIDMOS_CLIENT_SECRET} ${KC_DIDMOS_CLIENT_ID}' < 00_custom_configs/keycloak/templates/realm/scs-realm.json.tpl > keycloak/keycloak/import/scs-realm.json
 
 echo "OpenID Connect client config file created successfully."
