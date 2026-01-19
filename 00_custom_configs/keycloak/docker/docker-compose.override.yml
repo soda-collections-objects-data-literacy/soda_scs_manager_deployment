@@ -5,6 +5,8 @@
 services:
   keycloak:
     container_name: scs-keycloak
+    build:
+      context: keycloak/keycloak
     # Reset ports - no direct port binding, use Traefik instead
     ports: !reset []
     environment:

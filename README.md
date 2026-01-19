@@ -31,10 +31,279 @@ The docker-compose.yml file in this repository is structured to deploy the follo
   sudo usermod -aG docker $USER
   # Log out and log back in for the changes to take effect
   ```
-### Add GitHub package registry
-- Create a [personal access token (classic)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) with:
-    - [x] read:packages
-- [Login to GitHub packages registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-with-a-personal-access-token-classic).
+### Authenticate with GitHub
+
+This deployment requires authentication with GitHub for two purposes:
+1. **Docker:** Pulling private container images from GitHub Container Registry (ghcr.io)
+2. **Git:** Cloning repositories and updating submodules
+
+#### Docker Login to GitHub Container Registry (ghcr.io)
+
+**Purpose:** Required to pull private Docker images from `ghcr.io` (e.g., `ghcr.io/fau-cdi/open_gdb_authproxy`).
+
+**Step 1: Create a GitHub Personal Access Token (PAT)**
+
+1. Navigate to GitHub token settings:
+   - Direct link: [GitHub Settings > Developer settings > Personal access tokens > Tokens (classic)](https://github.com/settings/tokens)
+   - Or manually: GitHub → Your profile (top right) → Settings → Developer settings → Personal access tokens → Tokens (classic)
+
+2. Generate a new token:
+   - Click "Generate new token (classic)"
+   - Give it a descriptive name (e.g., "Docker ghcr.io access")
+   - Set expiration (recommended: 90 days or custom)
+   - **Select scopes:**
+     - [x] `read:packages` (required for pulling container images)
+     - Optionally: `write:packages` (if you need to push images)
+
+3. Generate and copy the token:
+   - Click "Generate token" at the bottom
+   - **Important:** Copy the token immediately - you won't be able to see it again!
+   - Store it securely (password manager recommended)
+
+**Step 2: Login to ghcr.io (Interactive Method)**
+
+1. Run the Docker login command:
+   ```bash
+   docker login ghcr.io
+   ```
+
+2. When prompted, enter:
+   - **Username:** Your GitHub username (e.g., `yourusername`)
+   - **Password:** Paste your GitHub Personal Access Token (PAT) from Step 1
+
+3. Verify successful login:
+   ```bash
+   docker login ghcr.io
+   # Should show: "Login Succeeded"
+   ```
+
+**Step 3: Alternative - Non-Interactive Login (for Scripts)**
+
+If you need to automate login (e.g., in CI/CD or scripts):
+
+1. Set your GitHub token as an environment variable:
+   ```bash
+   export GITHUB_TOKEN="your_pat_token_here"
+   ```
+
+2. Login using the token:
+   ```bash
+   echo $GITHUB_TOKEN | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
+   ```
+
+3. Verify:
+   ```bash
+   docker pull ghcr.io/fau-cdi/open_gdb_authproxy:latest
+   # Should pull successfully without authentication errors
+   ```
+
+**Troubleshooting Docker Login:**
+- **Error: "unauthorized: authentication required"**
+  - Verify your PAT has `read:packages` scope
+  - Check that you're using your GitHub username (not email) as the username
+  - Ensure the token hasn't expired
+- **Error: "permission denied while trying to connect to the Docker daemon socket"**
+  - Ensure your user is in the docker group (see Prerequisites above)
+  - Restart your IDE/terminal session after adding user to docker group
+
+#### Git Authentication with GitHub
+
+**Purpose:** Required to clone repositories, pull updates, and update Git submodules.
+
+**Option 1: SSH Authentication (Recommended for Development)**
+
+SSH keys provide secure, passwordless authentication and are the preferred method for development environments.
+
+**Step 1: Check for Existing SSH Keys**
+
+1. List existing SSH public keys:
+   ```bash
+   ls -la ~/.ssh/id_*.pub
+   ```
+
+2. If you see files like `id_ed25519.pub` or `id_rsa.pub`, you already have SSH keys. Skip to Step 3.
+   - If you want to use an existing key, proceed to Step 3
+   - If you want to create a new key, proceed to Step 2
+
+**Step 2: Generate a New SSH Key**
+
+1. Generate an Ed25519 SSH key (recommended, more secure than RSA):
+   ```bash
+   ssh-keygen -t ed25519 -C "your_email@example.com"
+   ```
+   - Replace `your_email@example.com` with your actual email address
+   - When prompted for file location, press Enter to use default (`~/.ssh/id_ed25519`)
+   - When prompted for passphrase:
+     - Option A: Enter a passphrase for extra security (recommended)
+     - Option B: Press Enter twice for no passphrase (less secure, but convenient)
+
+2. Start the SSH agent:
+   ```bash
+   eval "$(ssh-agent -s)"
+   ```
+
+3. Add your SSH key to the agent:
+   ```bash
+   ssh-add ~/.ssh/id_ed25519
+   ```
+   - If you set a passphrase, you'll be prompted to enter it
+
+**Step 3: Add SSH Key to GitHub**
+
+1. Display your public key:
+   ```bash
+   cat ~/.ssh/id_ed25519.pub
+   ```
+   - Copy the entire output (starts with `ssh-ed25519` and ends with your email)
+
+2. Add the key to GitHub:
+   - Navigate to [GitHub Settings > SSH and GPG keys](https://github.com/settings/keys)
+   - Click "New SSH key" button
+   - Fill in:
+     - **Title:** Descriptive name (e.g., "My Laptop - Development")
+     - **Key type:** Authentication Key (default)
+     - **Key:** Paste your public key from Step 3.1
+   - Click "Add SSH key"
+   - Confirm with your GitHub password if prompted
+
+**Step 4: Test SSH Connection**
+
+1. Test the connection:
+   ```bash
+   ssh -T git@github.com
+   ```
+
+2. Expected output:
+   - First time: You'll see a message about authenticity of host - type `yes` and press Enter
+   - Success: `Hi username! You've successfully authenticated, but GitHub does not provide shell access.`
+   - If you see this, SSH authentication is working correctly
+
+**Step 5: Configure Git to Use SSH**
+
+1. Verify your repository uses SSH URL:
+   ```bash
+   git remote -v
+   ```
+   - Should show URLs starting with `git@github.com:` (not `https://github.com/`)
+
+2. If your repository uses HTTPS, change it to SSH:
+   ```bash
+   git remote set-url origin git@github.com:username/repository-name.git
+   ```
+   - Replace `username/repository-name` with your actual repository path
+
+**Option 2: HTTPS with Personal Access Token**
+
+Use HTTPS authentication if SSH is not available or preferred.
+
+**Step 1: Create a GitHub Personal Access Token (PAT)**
+
+1. Navigate to [GitHub Settings > Developer settings > Personal access tokens > Tokens (classic)](https://github.com/settings/tokens)
+
+2. Generate a new token:
+   - Click "Generate new token (classic)"
+   - Name: "Git HTTPS Authentication"
+   - Expiration: Set as needed
+   - **Select scopes:**
+     - [x] `repo` (full control of private repositories)
+       - This includes: `repo:status`, `repo_deployment`, `public_repo`, `repo:invite`, `security_events`
+     - [x] `read:packages` (if you also need Docker registry access)
+
+3. Generate and copy the token (store it securely)
+
+**Step 2: Configure Git Credential Helper**
+
+1. Configure Git to store credentials:
+   ```bash
+   git config --global credential.helper store
+   ```
+   - This stores credentials in `~/.git-credentials` (plain text - keep secure!)
+
+2. Alternative: Use cache (credentials expire after 15 minutes):
+   ```bash
+   git config --global credential.helper cache
+   ```
+
+3. Set cache timeout (optional, for cache helper):
+   ```bash
+   git config --global credential.helper 'cache --timeout=3600'
+   ```
+   - Sets timeout to 1 hour (3600 seconds)
+
+**Step 3: Configure Git User Information**
+
+1. Set your name and email (required for commits):
+   ```bash
+   git config --global user.name "Your Full Name"
+   git config --global user.email "your_email@example.com"
+   ```
+
+2. Verify configuration:
+   ```bash
+   git config --global --list | grep user
+   ```
+
+**Step 4: Test HTTPS Authentication**
+
+1. Clone a repository or pull updates:
+   ```bash
+   git pull
+   # or
+   git clone https://github.com/username/repository.git
+   ```
+
+2. When prompted for credentials:
+   - **Username:** Your GitHub username
+   - **Password:** Paste your GitHub Personal Access Token (PAT) from Step 1
+   - **Note:** Do NOT use your GitHub account password - use the PAT!
+
+3. Verify credentials are stored (if using store helper):
+   ```bash
+   cat ~/.git-credentials
+   ```
+   - Should show: `https://username:token@github.com`
+
+**Troubleshooting Git Authentication:**
+
+- **SSH Issues:**
+  - **"Permission denied (publickey)"**
+    - Verify SSH key is added to GitHub: `cat ~/.ssh/id_ed25519.pub` matches what's on GitHub
+    - Test connection: `ssh -T git@github.com`
+    - Check SSH agent: `ssh-add -l` (should list your key)
+  - **"Host key verification failed"**
+    - Remove old GitHub host key: `ssh-keygen -R github.com`
+    - Reconnect and accept new host key
+
+- **HTTPS Issues:**
+  - **"Authentication failed"**
+    - Verify you're using PAT (not password) as the password
+    - Check PAT hasn't expired and has `repo` scope
+    - Clear stored credentials: `rm ~/.git-credentials` and try again
+  - **"Repository not found"**
+    - Verify PAT has `repo` scope
+    - Check repository URL is correct
+    - Ensure you have access to the repository
+
+**Verification Checklist:**
+
+After completing authentication, verify everything works:
+
+1. **Docker:**
+   ```bash
+   docker pull ghcr.io/fau-cdi/open_gdb_authproxy:latest
+   ```
+
+2. **Git SSH:**
+   ```bash
+   ssh -T git@github.com
+   git pull
+   ```
+
+3. **Git HTTPS:**
+   ```bash
+   git pull
+   # Should work without prompting for credentials
+   ```
 ### Set environment variables
 - Copy `.example-env` to `.env` and set the variables.
 - (Use `echo $(htpasswd -nb TRAEFIK_USERNAME TRAEFIK_PASSWORD) | sed -e s/\\$/\\$\\$/g` to generate hashed traefik user password.)

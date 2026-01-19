@@ -7,7 +7,7 @@ services:
   jupyterhub:
     container_name: scs-jupyterhub
     build:
-      context: jupyterhub
+      context: jupyterhub/jupyterhub
     environment:
       # Override with parent environment variables
       DOCKER_JUPYTER_IMAGE: spawner_image
@@ -38,7 +38,7 @@ services:
   image_builder:
     container_name: scs-jupyterhub-image-builder
     build:
-      context: spawner_image
+      context: jupyterhub/spawner_image
 
 # Use external volume created by main stack
 volumes:
