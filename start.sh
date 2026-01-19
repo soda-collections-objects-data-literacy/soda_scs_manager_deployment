@@ -162,9 +162,9 @@ else
 
         # Try to connect to database and verify root user exists
         # Use only main docker-compose.yml for exec commands too
-        if COMPOSE_FILE=docker-compose.yml docker compose exec -T database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "SELECT 1;" >/dev/null 2>&1; then
+        if COMPOSE_FILE=docker-compose.yml docker compose exec database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "SELECT 1;" >/dev/null 2>&1; then
             # Verify root user can connect (this confirms root user is created and database is healthy)
-            if COMPOSE_FILE=docker-compose.yml docker compose exec -T database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "SHOW DATABASES;" >/dev/null 2>&1; then
+            if COMPOSE_FILE=docker-compose.yml docker compose exec database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "SHOW DATABASES;" >/dev/null 2>&1; then
                 echo "✓ Database is ready and root user is accessible"
                 db_ready=true
                 break

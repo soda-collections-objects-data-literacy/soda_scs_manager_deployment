@@ -27,6 +27,7 @@ JUPYTERHUB_OPENREFINE_DIR=$PWD/openrefine
 JUPYTERHUB_SERVICE_NAME=jupyterhub
 JUPYTERHUB_SHARE=jupyter_shared_data
 JUPYTERHUB_CLIENT_SECRET=changeme
+JUPYTERHUB_CLIENT_ID=code.scs.localhost
 
 
 # Keycloak.
