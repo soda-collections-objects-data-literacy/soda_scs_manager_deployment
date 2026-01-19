@@ -61,9 +61,14 @@ services:
       - VARNISH_BACKEND_HOST=scs-project-page--drupal
       - VARNISH_BACKEND_PORT=80
       - VARNISH_SIZE=256M
+    volumes:
+      - /var/deploy/soda_scs_manager_deployment/scs-project-page-stack/varnish/default.vcl:/etc/varnish/default.vcl:ro
+    entrypoint: ["/usr/sbin/varnishd"]
+    command: ["-F", "-f", "/etc/varnish/default.vcl", "-a", ":80", "-s", "malloc,256M"]
     tmpfs:
       - /var/lib/varnish/varnishd:exec,uid=999,gid=999
-    ports: !reset []
+    ports:
+      - "3099:80"
     deploy:
       resources:
         limits:
@@ -87,12 +92,14 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
+      # Main domain route
       - "traefik.http.routers.scs-project-page--varnish.rule=Host(`${PROJECT_WEBSITE_DOMAIN}`)"
       - "traefik.http.routers.scs-project-page--varnish.entrypoints=web,websecure"
       - "traefik.http.routers.scs-project-page--varnish.middlewares=https-redirect"
       - "traefik.http.routers.scs-project-page--varnish.tls=true"
       - "traefik.http.routers.scs-project-page--varnish.tls.certresolver=le"
       - "traefik.http.routers.scs-project-page--varnish.service=scs-project-page--varnish"
+      # Service definition
       - "traefik.http.services.scs-project-page--varnish.loadbalancer.server.port=80"
 
 volumes:

@@ -40,6 +40,12 @@ services:
     environment:
       # Override to use correct container name
       - VARNISH_BACKEND_HOST=scs-manager--drupal
+      - VARNISH_BACKEND_PORT=80
+      - VARNISH_SIZE=256M
+    volumes:
+      - /var/deploy/soda_scs_manager_deployment/scs-manager-stack/varnish/default.vcl:/etc/varnish/default.vcl:ro
+    entrypoint: ["/usr/sbin/varnishd"]
+    command: ["-F", "-f", "/etc/varnish/default.vcl", "-a", ":80", "-s", "malloc,256M"]
     networks:
       - default
       - reverse-proxy

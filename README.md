@@ -652,10 +652,10 @@ The `start.sh` script executes the following pre-install scripts automatically. 
 
 ### Pre-Install Script Failures
 If a pre-install script fails:
-1. **Check if database container is running:** `docker compose ps scs-database` or `docker ps | grep scs-database`
+1. **Check if database container is running:** `docker compose ps scs--database` or `docker ps | grep scs--database`
    - The `start.sh` script should have started it automatically
-   - If not running, start it manually: `docker compose up -d scs-database`
-   - Check database logs: `docker compose logs scs-database`
+   - If not running, start it manually: `docker compose up -d scs--database`
+   - Check database logs: `docker compose logs scs--database`
 2. Check the error message for missing environment variables
 3. Verify `.env` file contains all required variables (especially `SCS_DB_ROOT_PASSWORD`)
 4. Ensure your user is a member of the docker group: `groups | grep docker`
@@ -671,7 +671,7 @@ If override files are skipped:
 ### Database Connection Issues
 - Ensure MariaDB container is running: `docker compose ps scs--database`
 - Verify database credentials in `.env` match what's expected
-- Check database logs: `docker compose logs scs-database`
+- Check database logs: `docker compose logs scs--database`
 
 ### Submodule Issues
 If submodules are not initialized:

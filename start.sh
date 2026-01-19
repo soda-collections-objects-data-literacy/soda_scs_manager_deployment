@@ -3,8 +3,6 @@
 # SODa SCS Manager Deployment Starter Script
 # This script ensures prerequisites, copies configs, starts database, and executes pre-install scripts.
 
-set -e
-
 # Get the script directory (repo root).
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
@@ -122,13 +120,13 @@ echo "Step 4: Starting database service..."
 echo "----------------------------------------"
 
 # Check if database container is already running (use main compose file)
-if COMPOSE_FILE=docker-compose.yml docker compose ps scs-database 2>/dev/null | grep -q "Up"; then
+if COMPOSE_FILE=docker-compose.yml docker compose ps scs--databasee 2>/dev/null | grep -q "Up"; then
     echo "✓ Database service is already running"
 else
     echo "Starting database service..."
     # Use only the main docker-compose.yml to start just the database service
     # This avoids loading all submodule compose files which may have missing env vars
-    COMPOSE_FILE=docker-compose.yml docker compose up -d scs-database
+    COMPOSE_FILE=docker-compose.yml docker compose up -d scs--database
 
     if [ $? -ne 0 ]; then
         echo "Error: Failed to start database service."
@@ -153,7 +151,7 @@ else
 
     while [ $attempt -lt $max_attempts ]; do
         # Check if container is running (use main compose file)
-        if ! COMPOSE_FILE=docker-compose.yml docker compose ps scs-database 2>/dev/null | grep -q "Up"; then
+        if ! COMPOSE_FILE=docker-compose.yml docker compose ps scs--database 2>/dev/null | grep -q "Up"; then
             attempt=$((attempt + 1))
             echo "  Waiting for database container to start... (attempt $attempt/$max_attempts)"
             sleep 2
@@ -162,9 +160,9 @@ else
 
         # Try to connect to database and verify root user exists
         # Use only main docker-compose.yml for exec commands too
-        if COMPOSE_FILE=docker-compose.yml docker compose exec scs-database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "SELECT 1;" >/dev/null 2>&1; then
+        if COMPOSE_FILE=docker-compose.yml docker compose exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "SELECT 1;" >/dev/null 2>&1; then
             # Verify root user can connect (this confirms root user is created and database is healthy)
-            if COMPOSE_FILE=docker-compose.yml docker compose exec scs-database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "SHOW DATABASES;" >/dev/null 2>&1; then
+            if COMPOSE_FILE=docker-compose.yml docker compose exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "SHOW DATABASES;" >/dev/null 2>&1; then
                 echo "✓ Database is ready and root user is accessible"
                 db_ready=true
                 break
@@ -177,7 +175,7 @@ else
 
     if [ "$db_ready" = false ]; then
         echo "Warning: Database may not be fully ready. Pre-install scripts may fail."
-        echo "You can check database logs with: docker compose logs scs-database"
+        echo "You can check database logs with: docker compose logs scs--database"
         echo "Continuing anyway..."
     fi
 fi

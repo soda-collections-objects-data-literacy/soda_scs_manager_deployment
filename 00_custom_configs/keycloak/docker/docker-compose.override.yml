@@ -3,8 +3,8 @@
 # It adds Traefik integration, proper networking, and uses parent stack's database
 
 services:
-  keycloak:
-    container_name: scs-keycloak
+  keycloak--keycloak:
+    container_name: keycloak--keycloak
     build:
       context: keycloak/keycloak
     # Reset ports - no direct port binding, use Traefik instead
@@ -23,7 +23,7 @@ services:
       - default
       - reverse-proxy
     external_links:
-      - scs-database:scs--database
+      - scs--database:scs--database
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
@@ -42,4 +42,3 @@ networks:
   default:
     name: keycloak
     driver: bridge
-    external: false
