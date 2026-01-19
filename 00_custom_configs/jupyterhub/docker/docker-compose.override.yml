@@ -27,7 +27,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
-      - "traefik.http.routers.jupyterhub.rule=Host(`jupyterhub.${SCS_DOMAIN}`)"
+      - "traefik.http.routers.jupyterhub.rule=Host(`${JUPYTERHUB_DOMAIN}`)"
       - "traefik.http.routers.jupyterhub.entrypoints=web,websecure"
       - "traefik.http.routers.jupyterhub.middlewares=https-redirect"
       - "traefik.http.routers.jupyterhub.tls=true"

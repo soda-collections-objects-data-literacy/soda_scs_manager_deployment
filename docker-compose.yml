@@ -31,14 +31,14 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
-      - "traefik.http.routers.portainer.rule=Host(`${SCS_PORTAINER_TLD}.${SCS_SLD}`)"
+      - "traefik.http.routers.portainer.rule=Host(`${SCS_PORTAINER_DOMAIN}`)"
       - "traefik.http.routers.portainer.entrypoints=web,websecure"
       - "traefik.http.routers.portainer.middlewares=https-redirect"
       - "traefik.http.routers.portainer.tls=true"
       - "traefik.http.routers.portainer.tls.certresolver=le"
       - "traefik.http.services.portainer.loadbalancer.server.port=9000"
       - "traefik.http.routers.portainer.service=portainer"
-      - "traefik.http.routers.edge.rule=Host(`${SCS_PORTAINER_EDGE_TLD}.${SCS_SLD}`)"
+      - "traefik.http.routers.edge.rule=Host(`${SCS_PORTAINER_EDGE_DOMAIN}`)"
       - "traefik.http.routers.edge.entrypoints=web,websecure"
       - "traefik.http.services.edge.loadbalancer.server.port=8000"
       - "traefik.http.routers.edge.service=edge"
@@ -96,9 +96,6 @@ services:
       --thread-stack=512K
     environment:
       MYSQL_ROOT_PASSWORD: ${SCS_DB_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${SCS_DB_NAME}
-      MYSQL_USER: ${SCS_DB_USER}
-      MYSQL_PASSWORD: ${SCS_DB_PASSWORD}
     volumes:
       - database-data:/var/lib/mysql
       - /var/scs-manager/snapshots:/var/scs-manager/snapshots
@@ -133,7 +130,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
-      - "traefik.http.routers.adminer.rule=Host(`${SCS_ADMINER_TLD:-adminer}.${SCS_SLD:-localhost}`)"
+      - "traefik.http.routers.adminer.rule=Host(`${SCS_ADMINER_DOMAIN:-adminer.localhost}`)"
       - "traefik.http.routers.adminer.entrypoints=web,websecure"
       - "traefik.http.routers.adminer.middlewares=https-redirect"
       - "traefik.http.routers.adminer.tls=true"
@@ -181,7 +178,7 @@ services:
       - "traefik.http.middlewares.nextcloud-nodeinfo.redirectregex.replacement=https://$${1}/index.php/.well-known/nodeinfo"
 
       # Routers
-      - "traefik.http.routers.reverse-proxy.rule=Host(`${SCS_TRAEFIK_TLD:-traefik}.${SCS_SLD:-localhost}`)"
+      - "traefik.http.routers.reverse-proxy.rule=Host(`${SCS_TRAEFIK_DOMAIN:-traefik.localhost}`)"
       - "traefik.http.routers.reverse-proxy.entrypoints=web,websecure"
       - "traefik.http.routers.reverse-proxy.middlewares=admin-auth,https-redirect"
       - "traefik.http.routers.reverse-proxy.tls=true"

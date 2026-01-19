@@ -47,7 +47,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
-      - "traefik.http.routers.scs-manager.rule=Host(`${SCS_DOMAIN}`)"
+      - "traefik.http.routers.scs-manager.rule=Host(`${SCS_MANAGER_DOMAIN}`)"
       - "traefik.http.routers.scs-manager.entrypoints=web,websecure"
       - "traefik.http.routers.scs-manager.middlewares=https-redirect"
       - "traefik.http.routers.scs-manager.tls=true"

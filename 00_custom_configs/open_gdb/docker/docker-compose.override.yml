@@ -1,0 +1,60 @@
+# Docker Compose Override for SCS OpenGDB Stack Integration
+# This file overrides the base docker-compose.yml to integrate with the main SCS deployment
+# It adds Traefik integration, proper networking, and consistent naming
+
+services:
+  # RDF4J Triplestore
+  rdf4j:
+    container_name: scs-rdf4j
+    image: eclipse/rdf4j-workbench:5.1.0
+    environment:
+      - JAVA_OPTS=-Xms1g -Xmx6g -Dhttp.nonProxyHosts="" -Dhttp.proxyHost=outproxy -Dhttp.proxyPort=8080 -Dhttps.proxyHost=outproxy -Dhttps.proxyPort=8080
+    networks:
+      - default
+      - reverse-proxy
+    labels:
+      - "traefik.enable=false"
+
+  # Nginx Reverse Proxy with Traefik Integration
+  nginx:
+    container_name: scs-opengdb-proxy
+    networks:
+      - default
+      - reverse-proxy
+    ports: []  # Remove port binding, use Traefik instead
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy"
+      - "traefik.http.routers.opengdb-proxy.rule=Host(`${OPEN_GDB_DOMAIN}`)"
+      - "traefik.http.routers.opengdb-proxy.entrypoints=web,websecure"
+      - "traefik.http.routers.opengdb-proxy.middlewares=https-redirect"
+      - "traefik.http.routers.opengdb-proxy.tls=true"
+      - "traefik.http.routers.opengdb-proxy.tls.certresolver=le"
+      - "traefik.http.services.opengdb-proxy.loadbalancer.server.port=80"
+
+  # Outproxy for external HTTP requests
+  outproxy:
+    container_name: scs-outproxy
+    networks:
+      - default
+      - reverse-proxy
+    labels:
+      - "traefik.enable=false"
+
+  # Authentication Proxy
+  authproxy:
+    container_name: scs-authproxy
+    networks:
+      - default
+      - reverse-proxy
+    labels:
+      - "traefik.enable=false"
+
+# Networks
+networks:
+  reverse-proxy:
+    name: reverse-proxy
+    external: true
+  default:
+    name: open_gdb
+    driver: bridge

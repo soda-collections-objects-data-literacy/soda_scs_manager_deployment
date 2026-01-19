@@ -1,8 +1,20 @@
 #!/bin/bash
 
-# Check if SCS_DOMAIN is set.
-if [ -z "${SCS_DOMAIN}" ]; then
-    echo "Error: SCS_DOMAIN environment variable is not set."
+# Check if NEXTCLOUD_NEXTCLOUD_DOMAIN is set.
+if [ -z "${NEXTCLOUD_NEXTCLOUD_DOMAIN}" ]; then
+    echo "Error: NEXTCLOUD_NEXTCLOUD_DOMAIN environment variable is not set."
+    exit 1
+fi
+
+# Check if NEXTCLOUD_ONLYOFFICE_DOMAIN is set.
+if [ -z "${NEXTCLOUD_ONLYOFFICE_DOMAIN}" ]; then
+    echo "Error: NEXTCLOUD_ONLYOFFICE_DOMAIN environment variable is not set."
+    exit 1
+fi
+
+# Check if SCS_MANAGER_DOMAIN is set.
+if [ -z "${SCS_MANAGER_DOMAIN}" ]; then
+    echo "Error: SCS_MANAGER_DOMAIN environment variable is not set."
     exit 1
 fi
 
@@ -15,16 +27,16 @@ done
 echo "Führe Nextcloud-Konfiguration durch..."
 
 # Setze Overwrite-Einstellungen.
-php /var/www/html/occ config:system:set overwritehost --value="nextcloud.${SCS_DOMAIN}"
+php /var/www/html/occ config:system:set overwritehost --value="${NEXTCLOUD_NEXTCLOUD_DOMAIN}"
 php /var/www/html/occ config:system:set overwriteprotocol --value="https"
-php /var/www/html/occ config:system:set overwrite.cli.url --value="https://nextcloud.${SCS_DOMAIN}"
+php /var/www/html/occ config:system:set overwrite.cli.url --value="https://${NEXTCLOUD_NEXTCLOUD_DOMAIN}"
 
 # Konfiguriere Trusted-Domains.
 php /var/www/html/occ config:system:delete trusted_domains
 php /var/www/html/occ config:system:set trusted_domains 0 --value="localhost"
-php /var/www/html/occ config:system:set trusted_domains 1 --value="nextcloud.${SCS_DOMAIN}"
-php /var/www/html/occ config:system:set trusted_domains 2 --value="${SCS_DOMAIN}"
-php /var/www/html/occ config:system:set trusted_domains 3 --value="office.${SCS_DOMAIN}"
+php /var/www/html/occ config:system:set trusted_domains 1 --value="${NEXTCLOUD_NEXTCLOUD_DOMAIN}"
+php /var/www/html/occ config:system:set trusted_domains 2 --value="${SCS_MANAGER_DOMAIN}"
+php /var/www/html/occ config:system:set trusted_domains 3 --value="${NEXTCLOUD_ONLYOFFICE_DOMAIN}"
 php /var/www/html/occ config:system:set trusted_domains 4 --value="nextcloud-reverse-proxy"
 
 # Konfiguriere Trusted-Proxies.

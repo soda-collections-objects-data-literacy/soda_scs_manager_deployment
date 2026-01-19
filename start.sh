@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # SODa SCS Manager Deployment Starter Script
-# This script copies override files to their correct locations and executes pre-install scripts.
+# This script ensures prerequisites, copies configs, starts database, and executes pre-install scripts.
 
 set -e
 
@@ -14,18 +14,64 @@ echo "SODa SCS Manager Deployment Setup"
 echo "=========================================="
 echo ""
 
-# Load environment variables if .env exists.
-if [ -f .env ]; then
-    echo "Loading environment variables from .env..."
-    set -a
-    source .env
-    set +a
-else
-    echo "Warning: .env file not found. Some operations may fail."
-fi
+# Step 0: Check prerequisites
+echo "Step 0: Checking prerequisites..."
+echo "----------------------------------------"
 
+# Check if .env file exists
+if [ ! -f .env ]; then
+    echo "Error: .env file not found!"
+    echo "Please copy example-env to .env and configure it:"
+    echo "  cp example-env .env"
+    echo "  nano .env"
+    exit 1
+fi
+echo "✓ .env file found"
+
+# Load environment variables
+echo "Loading environment variables from .env..."
+set -a
+source .env
+set +a
+echo "✓ Environment variables loaded"
 echo ""
-echo "Step 1: Copying docker-compose override files..."
+
+# Step 1: Ensure Docker network exists
+echo "Step 1: Ensuring Docker network 'reverse-proxy' exists..."
+echo "----------------------------------------"
+
+if docker network inspect reverse-proxy >/dev/null 2>&1; then
+    echo "✓ Network 'reverse-proxy' already exists"
+else
+    echo "Creating network 'reverse-proxy'..."
+    docker network create reverse-proxy
+    if [ $? -eq 0 ]; then
+        echo "✓ Network 'reverse-proxy' created successfully"
+    else
+        echo "Error: Failed to create network 'reverse-proxy'"
+        exit 1
+    fi
+fi
+echo ""
+
+# Step 2: Update git repositories and submodules
+echo "Step 2: Updating git repositories and submodules..."
+echo "----------------------------------------"
+
+echo "Updating main repository..."
+git pull
+
+echo "Initializing and updating submodules..."
+git submodule update --init --recursive
+
+echo "Updating submodules to latest commits..."
+git submodule update --remote --recursive
+
+echo "✓ All repositories are up to date"
+echo ""
+
+# Step 3: Copy docker-compose override files and custom configs
+echo "Step 3: Copying docker-compose override files..."
 echo "----------------------------------------"
 
 # Define mapping of source override files to destination directories.
@@ -53,11 +99,11 @@ for source in "${!OVERRIDE_MAPPINGS[@]}"; do
         if [ -f "$destination" ]; then
             echo "Warning: Destination file already exists: $destination"
             echo "  Skipping copy to prevent overwrite. Delete manually if you want to update."
-            ((skippedCount++))
+            skippedCount=$((skippedCount + 1))
         else
             cp "$source" "$destination"
             echo "Copied: $source -> $destination"
-            ((copiedCount++))
+            copiedCount=$((copiedCount + 1))
         fi
     else
         echo "Warning: Source file not found: $source"
@@ -70,7 +116,71 @@ if [ $skippedCount -gt 0 ]; then
 fi
 echo ""
 
-echo "Step 2: Executing pre-install scripts..."
+# Step 4: Start database service
+echo "Step 4: Starting database service..."
+echo "----------------------------------------"
+
+# Check if database container is already running
+if docker compose ps database 2>/dev/null | grep -q "Up"; then
+    echo "✓ Database service is already running"
+else
+    echo "Starting database service..."
+    docker compose up -d database
+
+    if [ $? -ne 0 ]; then
+        echo "Error: Failed to start database service."
+        exit 1
+    fi
+    echo "✓ Database service started"
+fi
+echo ""
+
+# Step 5: Wait for database to be ready
+echo "Step 5: Waiting for database to be ready..."
+echo "----------------------------------------"
+
+if [ -z "${SCS_DB_ROOT_PASSWORD}" ]; then
+    echo "Warning: SCS_DB_ROOT_PASSWORD not set. Waiting 15 seconds for database to start..."
+    sleep 15
+    echo "Continuing. Please ensure database is ready before pre-install scripts run."
+else
+    max_attempts=60
+    attempt=0
+    db_ready=false
+
+    while [ $attempt -lt $max_attempts ]; do
+        # Check if container is running
+        if ! docker compose ps database 2>/dev/null | grep -q "Up"; then
+            attempt=$((attempt + 1))
+            echo "  Waiting for database container to start... (attempt $attempt/$max_attempts)"
+            sleep 2
+            continue
+        fi
+
+        # Try to connect to database and verify root user exists
+        if docker compose exec -T database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "SELECT 1;" >/dev/null 2>&1; then
+            # Verify root user can connect (this confirms root user is created and database is healthy)
+            if docker compose exec -T database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "SHOW DATABASES;" >/dev/null 2>&1; then
+                echo "✓ Database is ready and root user is accessible"
+                db_ready=true
+                break
+            fi
+        fi
+        attempt=$((attempt + 1))
+        echo "  Waiting for database to accept connections... (attempt $attempt/$max_attempts)"
+        sleep 2
+    done
+
+    if [ "$db_ready" = false ]; then
+        echo "Warning: Database may not be fully ready. Pre-install scripts may fail."
+        echo "You can check database logs with: docker compose logs database"
+        echo "Continuing anyway..."
+    fi
+fi
+echo ""
+
+# Step 6: Execute pre-install scripts
+echo "Step 6: Executing pre-install scripts..."
 echo "----------------------------------------"
 
 # Find and execute all pre-install scripts.
@@ -80,34 +190,26 @@ preInstallScripts=(
     "01_scripts/scs-manager-stack/pre-install.bash"
     "01_scripts/scs-nextcloud-stack/pre-install.bash"
     "01_scripts/scs-project-page/pre-install.bash"
+    "01_scripts/open_gdb/pre-install.bash"
 )
 
 executedCount=0
 for script in "${preInstallScripts[@]}"; do
     if [ -f "$script" ]; then
-        if [ -x "$script" ]; then
-            echo "Executing: $script"
-            # Execute from repo root to ensure relative paths work correctly.
-            bash "$script"
-            if [ $? -eq 0 ]; then
-                echo "Successfully executed: $script"
-                ((executedCount++))
-            else
-                echo "Error: Failed to execute $script"
-                exit 1
-            fi
-        else
-            echo "Warning: Script is not executable: $script"
-            echo "Making it executable and retrying..."
+        if [ ! -x "$script" ]; then
+            echo "Making script executable: $script"
             chmod +x "$script"
-            bash "$script"
-            if [ $? -eq 0 ]; then
-                echo "Successfully executed: $script"
-                ((executedCount++))
-            else
-                echo "Error: Failed to execute $script"
-                exit 1
-            fi
+        fi
+
+        echo "Executing: $script"
+        # Execute from repo root to ensure relative paths work correctly.
+        bash "$script"
+        if [ $? -eq 0 ]; then
+            echo "✓ Successfully executed: $script"
+            executedCount=$((executedCount + 1))
+        else
+            echo "Error: Failed to execute $script"
+            exit 1
         fi
         echo ""
     else
@@ -123,11 +225,8 @@ echo "Setup completed successfully!"
 echo "=========================================="
 echo ""
 echo "Next steps:"
-echo "1. Ensure Docker networks are created:"
-echo "   docker network create reverse-proxy"
-echo ""
-echo "2. Start all services:"
+echo "1. Start all services:"
 echo "   docker compose up -d"
 echo ""
-echo "3. Follow the README.md for additional setup steps."
+echo "2. Follow the README.md for additional setup steps."
 echo ""

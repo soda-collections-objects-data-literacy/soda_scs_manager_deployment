@@ -26,37 +26,61 @@ The docker-compose.yml file in this repository is structured to deploy the follo
 
 ### Prerequisites
 - [Install docker](https://docs.docker.com/engine/install/).
-### Set environment variables
-- Copy `.example-env` to `.env` and set the variables.
-- (Use `echo $(htpasswd -nb TRAEFIK_USERNAME TRAEFIK_PASSWORD) | sed -e s/\\$/\\$\\$/g` to generate hashed traefik user password.)
-### Single command compose
-- The root `.env` includes a `COMPOSE_FILE` list so you can run one command from the repo root.
-- Start everything with `docker compose up -d` after creating required networks.
+- **User must be a member of the docker group** to run Docker commands without sudo:
+  ```bash
+  sudo usermod -aG docker $USER
+  # Log out and log back in for the changes to take effect
+  ```
 ### Add GitHub package registry
 - Create a [personal access token (classic)](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) with:
     - [x] read:packages
 - [Login to GitHub packages registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-with-a-personal-access-token-classic).
+### Set environment variables
+- Copy `.example-env` to `.env` and set the variables.
+- (Use `echo $(htpasswd -nb TRAEFIK_USERNAME TRAEFIK_PASSWORD) | sed -e s/\\$/\\$\\$/g` to generate hashed traefik user password.)
 ### Initial Setup
-Run the starter script to copy override files and execute pre-install scripts:
+
+**Important Prerequisites:**
+1. Ensure your user is a member of the docker group (see Prerequisites above)
+
+Run the starter script to set up everything:
 ```bash
 ./start.sh
 ```
+
+**Note:** The `start.sh` script will automatically:
+1. Check that `.env` file exists (exits with error if not found)
+2. Ensure Docker network `reverse-proxy` is created
+3. Update main repository and all submodules to latest commits
+4. Copy docker-compose override files to submodules
+5. Start only the database service (required for pre-install scripts)
+6. Wait for database to be ready and root user accessible
+7. Execute all pre-install scripts to create databases and generate configs
+
+Do not start all services before running `start.sh`, as they depend on databases that will be created during the pre-install phase.
+### Single command compose
+- The root `.env` includes a `COMPOSE_FILE` list so you can run one command from the repo root.
+- Start everything with `docker compose up -d` after creating required networks.
+
 This script will:
 - Copy docker-compose override files from `00_custom_configs/` to their respective stack directories
-- Execute all pre-install scripts from `01_scripts/` (creates databases, generates config files, etc.)
+- Execute all pre-install scripts from `01_scripts/` in the correct order:
+  1. Global setup (snapshot directory)
+  2. Keycloak (database + realm config)
+  3. SCS Manager Stack (database + OIDC config)
+  4. Nextcloud Stack (database)
+  5. Project Page Stack (database)
+  6. OpenGDB (nginx config generation)
 - Ensure all scripts are executed from the repo root to handle relative paths correctly
+- Skip copying files that already exist to prevent overwriting custom configurations
 
 ### Build environment
 After initial setup, start SCS Manager deployment environment with:
 ```bash
-./01_scripts/global/start.sh
-```
-Or manually:
-```bash
 docker compose up -d
 ```
-### Create Portainer admin
-Visit `portainer.DOMAIN` and create admin account.
+
+**Note:** The OnlyOffice integration for Nextcloud is automatically configured via post-install hooks, so manual configuration is no longer needed.
 
 ## SCS Manager config
 
@@ -86,24 +110,40 @@ This project is licensed under the GPL v3 License - see the LICENSE file for det
 
 
 
-## Quick Start Guide
+## Step-by-Step Installation Guide
 
-1. Clone the repository:
+### Step 1: Clone the Repository
 ```bash
 git clone git@github.com:soda-collections-objects-data-literacy/soda_scs_manager_deployment.git
 cd soda_scs_manager_deployment
 ```
 
-2. Create and configure `.env` file:
+### Step 2: Initialize Submodules
 ```bash
-cp .example-env .env
-nano .env  # Set your passwords and domain
+git submodule update --init --recursive
 ```
 
-3. Setup JupyterHub:
+### Step 3: Create and Configure Environment File
+```bash
+cp example-env .env
+nano .env  # Edit and set all required variables
+```
+
+**Important variables to set:**
+- `SCS_DOMAIN` - Your main domain (e.g., `example.com`)
+- `DB_ROOT_PASSWORD` - MariaDB root password
+- `SCS_TRAEFIK_HASHED_PASSWORD` - Generate with: `echo $(htpasswd -nb USERNAME PASSWORD) | sed -e s/\\$/\\$\\$/g`
+- `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` - Keycloak admin credentials
+- `NEXTCLOUD_ADMIN_USER` and `NEXTCLOUD_ADMIN_PASSWORD` - Nextcloud admin credentials
+- `OPEN_GDB_DOMAIN` - OpenGDB domain (e.g., `ts.example.com`)
+- All client secrets for OAuth integration (JupyterHub, Nextcloud, SCS Manager, DIDMOS)
+
+### Step 4: Setup Submodule-Specific Configuration (Optional)
+If submodules require their own `.env` files:
+
+**JupyterHub:**
 ```bash
 cd jupyterhub
-git clone git@github.com:soda-collections-objects-data-literacy/jupyterhub.git .
 cp .env.example .env
 cp .secret.env.sample .secret.env
 nano .env         # Configure JupyterHub settings
@@ -111,51 +151,137 @@ nano .secret.env  # Configure OAuth secrets
 cd ..
 ```
 
-4. Setup WebProtégé:
+**WebProtégé:**
 ```bash
 cd webprotege
-git clone git@github.com:protegeproject/webprotege.git .
+# Clone if needed: git clone git@github.com:protegeproject/webprotege.git .
 cd ..
 ```
 
-5. Setup Nextcloud stack:
-```bash
-cd scs-nextcloud-stack
-cp .env.example .env
-nano .env  # Configure Nextcloud settings
-cd ..
-```
-
-6. Create Docker networks:
-```bash
-docker network create reverse-proxy
-```
-
-7. Run the starter script to set up the environment:
+### Step 5: Run Initial Setup Script
 ```bash
 ./start.sh
 ```
-This will:
-- Copy all docker-compose override files from `00_custom_configs/` to their respective stack directories
-- Execute all pre-install scripts (creates databases, generates configuration files, etc.)
 
-8. Start all services from repo root:
+**Note:** The `start.sh` script performs all necessary setup automatically. You don't need to create networks or start services manually.
+
+This script performs the following automated setup:
+
+**Step 0: Check Prerequisites**
+- Verifies `.env` file exists (exits with error if not found)
+- Loads environment variables from `.env`
+
+**Step 1: Ensure Docker Network**
+- Creates Docker network `reverse-proxy` if it doesn't exist
+- Skips if network already exists
+
+**Step 2: Update Git Repositories**
+- Pulls latest changes from main repository
+- Initializes submodules if needed
+- Updates all submodules to latest commits
+
+**Step 3: Copy Override Files**
+- Copies docker-compose override files from `00_custom_configs/` to their respective stack directories:
+  - `scs-manager-stack/docker-compose.override.yml`
+  - `scs-nextcloud-stack/docker-compose.override.yml`
+  - `scs-project-page-stack/docker-compose.override.yml`
+  - `jupyterhub/docker-compose.override.yml`
+  - `keycloak/docker-compose.override.yml`
+- Skips files that already exist to prevent overwriting custom configurations
+
+**Step 4: Start Database Service**
+- Starts only the database service (not all services)
+- Skips if database is already running
+
+**Step 5: Wait for Database Ready**
+- Waits for database container to be running
+- Verifies database accepts connections
+- Confirms root user is accessible and database is healthy
+- Times out after 60 attempts (2 minutes) with warning
+
+**Step 6: Execute Pre-Install Scripts**
+
+Executes the following pre-install scripts in order:
+
+1. **`01_scripts/global/pre-install.bash`**
+   - Creates snapshot directory `/var/backups/scs-manager/snapshots`
+   - Sets proper permissions for www-data user
+
+2. **`01_scripts/keycloak/pre-install.bash`**
+   - Validates required environment variables
+   - Creates Keycloak database and user in MariaDB
+   - Generates Keycloak realm configuration file from template (`scs-realm.json`)
+
+3. **`01_scripts/scs-manager-stack/pre-install.bash`**
+   - Creates SCS Manager database and user in MariaDB
+   - Generates OpenID Connect client configuration file
+
+4. **`01_scripts/scs-nextcloud-stack/pre-install.bash`**
+   - Creates Nextcloud database and user in MariaDB
+
+5. **`01_scripts/scs-project-page/pre-install.bash`**
+   - Creates project page database and user in MariaDB
+   - Optionally loads sammlungen.io specific variables if present
+
+6. **`01_scripts/open_gdb/pre-install.bash`**
+   - Validates `OPEN_GDB_DOMAIN` environment variable
+   - Generates OpenGDB nginx configuration from template
+
+### Step 7: Start All Services
+Now that all databases have been created by the pre-install scripts, you can start all services:
+
 ```bash
 docker compose up -d
 ```
+
+**Note:** The database service is already running from `start.sh`, so only other services will be started.
+
 Or use the convenience script:
 ```bash
-./01_scripts/global/start.sh
+./01_scripts/global/pre-install.bash  # Ensures snapshot directory exists
+docker compose up -d
 ```
 
-**Note:** The OnlyOffice integration is now automatically configured via post-install hooks, so manual configuration is no longer needed.
+### Step 8: Verify Services Are Running
+```bash
+docker compose ps
+```
 
-15. Setup admin accounts:
-    - Keycloak: Visit `https://auth.${SCS_DOMAIN}` (uses KC_BOOTSTRAP_ADMIN_USERNAME/PASSWORD from .env)
-    - Nextcloud: Visit `https://nextcloud.${SCS_DOMAIN}` and create admin
-    - Portainer: Visit `https://portainer.${SCS_DOMAIN}` and create admin
-    - OpenGDB: Visit `https://ts.${SCS_DOMAIN}/admin` (uses Django admin credentials from .env)
-    - JupyterHub: Visit `https://jupyterhub.${SCS_DOMAIN}` (uses Keycloak OAuth)
+Check logs if needed:
+```bash
+docker compose logs -f [service-name]
+```
+
+### Step 9: Setup Admin Accounts
+
+**Keycloak:**
+- Visit `https://auth.${SCS_DOMAIN}`
+- Login with `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` from `.env`
+- Configure OAuth clients and secrets as needed
+
+**Nextcloud:**
+- Visit `https://nextcloud.${SCS_DOMAIN}`
+- Login with `NEXTCLOUD_ADMIN_USER` and `NEXTCLOUD_ADMIN_PASSWORD` from `.env`
+- OnlyOffice integration is automatically configured via post-install hooks
+
+**Portainer:**
+- Visit `https://portainer.${SCS_DOMAIN}`
+- Create admin account on first visit
+- [Create access token](https://docs.portainer.io/api/access#creating-an-access-token)
+- [Add GitHub packages registry](https://docs.portainer.io/admin/registries/add/ghcr) if needed
+
+**OpenGDB:**
+- Visit `https://${OPEN_GDB_DOMAIN}/admin`
+- Login with Django admin credentials from `.env` (`DJANGO_SUPERUSER_NAME` / `DJANGO_SUPERUSER_PASSWORD`)
+
+**JupyterHub:**
+- Visit `https://jupyterhub.${SCS_DOMAIN}`
+- Uses Keycloak OAuth for authentication
+
+**SCS Manager:**
+- Visit `https://${SCS_DOMAIN}`
+- Configure at `/admin/config/soda-scs-manager/settings`
+- Set up WissKI settings with Portainer API token
 
 ## Service Stacks
 
@@ -199,8 +325,108 @@ See `open_gdb/README.md` for detailed OpenGDB stack documentation.
 
 
 
-## Keycloak
-Comes with several client connections.
+## Pre-Install Scripts Reference
+
+The `start.sh` script executes the following pre-install scripts automatically. Each script can also be run manually if needed:
+
+### `01_scripts/global/pre-install.bash`
+- **Purpose:** Sets up global infrastructure requirements
+- **Actions:**
+  - Creates `/var/backups/scs-manager/snapshots` directory
+  - Sets proper permissions for www-data user
+- **Requirements:** None (uses sudo for directory creation)
+
+### `01_scripts/keycloak/pre-install.bash`
+- **Purpose:** Prepares Keycloak identity provider
+- **Actions:**
+  - Validates required environment variables (SCS_DB_ROOT_PASSWORD, KC_*, JUPYTERHUB_*, NEXTCLOUD_*, SCS_MANAGER_*)
+  - Creates Keycloak database (`KC_DB_NAME`) and user (`KC_DB_USERNAME`)
+  - Generates Keycloak realm configuration from template (`keycloak/keycloak/import/scs-realm.json`)
+- **Requirements:**
+  - MariaDB database container must be running
+  - User must be a member of the docker group
+
+### `01_scripts/scs-manager-stack/pre-install.bash`
+- **Purpose:** Prepares SCS Manager Drupal stack
+- **Actions:**
+  - Creates SCS Manager database (`SCS_MANAGER_DB_NAME`) and user (`SCS_MANAGER_DB_USER`)
+  - Generates OpenID Connect client configuration file for SSO integration
+- **Requirements:**
+  - MariaDB database container must be running
+  - User must be a member of the docker group
+
+### `01_scripts/scs-nextcloud-stack/pre-install.bash`
+- **Purpose:** Prepares Nextcloud stack
+- **Actions:**
+  - Creates Nextcloud database (`NEXTCLOUD_DB_NAME`) and user (`NEXTCLOUD_DB_USER`)
+- **Requirements:**
+  - MariaDB database container must be running
+  - User must be a member of the docker group
+
+### `01_scripts/scs-project-page/pre-install.bash`
+- **Purpose:** Prepares project page stack
+- **Actions:**
+  - Creates project page database (`PROJECT_WEBSITE_DB_NAME`) and user (`PROJECT_WEBSITE_DB_USER`)
+  - Optionally loads sammlungen.io specific environment variables if present
+- **Requirements:**
+  - MariaDB database container must be running
+  - User must be a member of the docker group
+
+### `01_scripts/open_gdb/pre-install.bash`
+- **Purpose:** Prepares OpenGDB triplestore stack
+- **Actions:**
+  - Validates `OPEN_GDB_DOMAIN` environment variable
+  - Generates nginx configuration file from template (`open_gdb/opengdb_proxy/nginx.conf`)
+- **Requirements:** Template file must exist at `00_custom_configs/open_gdb/opengdb_proxy/nginx.conf.tpl`
+
+## Troubleshooting
+
+### Pre-Install Script Failures
+If a pre-install script fails:
+1. **Check if database container is running:** `docker compose ps database` or `docker ps | grep database`
+   - The `start.sh` script should have started it automatically
+   - If not running, start it manually: `docker compose up -d database`
+   - Check database logs: `docker compose logs database`
+2. Check the error message for missing environment variables
+3. Verify `.env` file contains all required variables (especially `SCS_DB_ROOT_PASSWORD`)
+4. Ensure your user is a member of the docker group: `groups | grep docker`
+5. Check script permissions: `chmod +x 01_scripts/*/pre-install.bash`
+6. Check Docker socket permissions if you see "permission denied" errors
+
+### Override Files Not Copied
+If override files are skipped:
+- The script protects existing files from being overwritten
+- To update override files, manually delete the destination file and re-run `./start.sh`
+- Or manually copy: `cp 00_custom_configs/[stack]/docker/docker-compose.override.yml [stack]/docker-compose.override.yml`
+
+### Database Connection Issues
+- Ensure MariaDB container is running: `docker compose ps database`
+- Verify database credentials in `.env` match what's expected
+- Check database logs: `docker compose logs database`
+
+### Submodule Issues
+If submodules are not initialized:
+```bash
+git submodule update --init --recursive
+```
+
+If a submodule commit is missing:
+```bash
+cd [submodule-name]
+git fetch origin
+git checkout main  # or master
+git pull
+cd ..
+git add [submodule-name]
+```
+
+## Keycloak Configuration
+Comes with several client connections pre-configured:
+- JupyterHub OAuth client
+- Nextcloud OAuth client
+- SCS Manager OAuth client
+- DIDMOS client (requires manual secret configuration after installation)
+
 ### Secrets
-Client secrets need to add after installation for:
-DIDMOS
+Client secrets need to be added after installation for:
+- DIDMOS: Configure `KC_DIDMOS_CLIENT_SECRET` in Keycloak admin console

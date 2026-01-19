@@ -311,7 +311,7 @@
           "attributes": {}
         }
       ],
-      "${NEXTCLOUD_DOMAIN}": [],
+      "${NEXTCLOUD_NEXTCLOUD_DOMAIN}": [],
       "security-admin-console": [],
       "admin-cli": [],
       "account-console": [],
@@ -731,19 +731,19 @@
     },
     {
       "id": "d422c116-eada-4e7c-bf4c-aaf846de1bca",
-      "clientId": "${NEXTCLOUD_DOMAIN}",
+      "clientId": "${NEXTCLOUD_NEXTCLOUD_DOMAIN}",
       "name": "drive",
       "description": "",
-      "rootUrl": "https://${NEXTCLOUD_DOMAIN}/",
-      "adminUrl": "https://${NEXTCLOUD_DOMAIN}/",
-      "baseUrl": "https://${NEXTCLOUD_DOMAIN}/",
+      "rootUrl": "https://${NEXTCLOUD_NEXTCLOUD_DOMAIN}/",
+      "adminUrl": "https://${NEXTCLOUD_NEXTCLOUD_DOMAIN}/",
+      "baseUrl": "https://${NEXTCLOUD_NEXTCLOUD_DOMAIN}/",
       "surrogateAuthRequired": false,
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
       "secret": "${NEXTCLOUD_CLIENT_SECRET}",
       "redirectUris": [
-        "https://${NEXTCLOUD_DOMAIN}/*"
+        "https://${NEXTCLOUD_NEXTCLOUD_DOMAIN}/*"
       ],
       "webOrigins": [
         "*"

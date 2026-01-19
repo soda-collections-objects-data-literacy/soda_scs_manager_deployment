@@ -4,21 +4,20 @@
 set -x
 
 # Check if required environment variables are set.
-if [ -z "${ONLYOFFICE_JWT_SECRET}" ]; then
-    echo "Error: ONLYOFFICE_JWT_SECRET environment variable is not set."
+if [ -z "${NEXTCLOUD_ONLYOFFICE_JWT_SECRET}" ]; then
+    echo "Error: NEXTCLOUD_ONLYOFFICE_JWT_SECRET environment variable is not set."
     exit 1
 fi
 
-# Check if SCS_DOMAIN is set. If not, try to use NEXTCLOUD_SLD as fallback.
-if [ -z "${SCS_DOMAIN}" ]; then
-    if [ -n "${NEXTCLOUD_SLD}" ]; then
-        # Construct domain from NEXTCLOUD_SLD if available.
-        SCS_DOMAIN="${NEXTCLOUD_SLD}"
-        echo "Warning: SCS_DOMAIN not set, using NEXTCLOUD_SLD=${SCS_DOMAIN}"
-    else
-        echo "Error: SCS_DOMAIN environment variable is not set."
-        exit 1
-    fi
+# Check if required domain variables are set.
+if [ -z "${NEXTCLOUD_NEXTCLOUD_DOMAIN}" ]; then
+    echo "Error: NEXTCLOUD_NEXTCLOUD_DOMAIN environment variable is not set."
+    exit 1
+fi
+
+if [ -z "${NEXTCLOUD_ONLYOFFICE_DOMAIN}" ]; then
+    echo "Error: NEXTCLOUD_ONLYOFFICE_DOMAIN environment variable is not set."
+    exit 1
 fi
 
 # Get the trusted domains from the Nextcloud config.
@@ -39,13 +38,13 @@ php /var/www/html/occ --no-warnings app:install onlyoffice
 
 # Set OnlyOffice configuration.
 # Set the DocumentServerUrl to the external URL of the OnlyOffice Document Server.
-php /var/www/html/occ --no-warnings config:system:set onlyoffice DocumentServerUrl --value="https://office.${SCS_DOMAIN}/"
+php /var/www/html/occ --no-warnings config:system:set onlyoffice DocumentServerUrl --value="https://${NEXTCLOUD_ONLYOFFICE_DOMAIN}/"
 # Set the DocumentServerInternalUrl to the internal URL of the OnlyOffice Document Server.
 php /var/www/html/occ --no-warnings config:system:set onlyoffice DocumentServerInternalUrl --value="http://onlyoffice-document-server/"
 # Set the StorageUrl to the external URL of Nextcloud.
-php /var/www/html/occ --no-warnings config:system:set onlyoffice StorageUrl --value="https://nextcloud.${SCS_DOMAIN}/"
+php /var/www/html/occ --no-warnings config:system:set onlyoffice StorageUrl --value="https://${NEXTCLOUD_NEXTCLOUD_DOMAIN}/"
 # Set the JWT secret.
-php /var/www/html/occ --no-warnings config:system:set onlyoffice jwt_secret --value="${ONLYOFFICE_JWT_SECRET}"
+php /var/www/html/occ --no-warnings config:system:set onlyoffice jwt_secret --value="${NEXTCLOUD_ONLYOFFICE_JWT_SECRET}"
 # Set the JWT header.
 php /var/www/html/occ --no-warnings config:system:set onlyoffice jwt_header --value="Authorization"
 # Allow local remote servers.

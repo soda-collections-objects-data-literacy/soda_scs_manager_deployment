@@ -16,7 +16,7 @@ http {
         listen 80 default_server;
         listen [::]:80 default_server;
 
-        server_name ts.dev-scs.sammlungen.io
+        server_name ${OPEN_GDB_DOMAIN};
 
         server_tokens off;
 
