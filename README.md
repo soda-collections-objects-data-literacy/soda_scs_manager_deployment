@@ -453,7 +453,7 @@ This script performs the following automated setup:
 - Copies docker-compose override files from `00_custom_configs/` to their respective stack directories:
   - `scs-manager-stack/docker-compose.override.yml`
   - `scs-nextcloud-stack/docker-compose.override.yml`
-  - `scs-project-page-stack/docker-compose.override.yml`
+  - `scs-project-website-stack/docker-compose.override.yml`
   - `jupyterhub/docker-compose.override.yml`
   - `keycloak/docker-compose.override.yml`
 - Skips files that already exist to prevent overwriting custom configurations
@@ -488,7 +488,7 @@ Executes the following pre-install scripts in order:
 4. **`01_scripts/scs-nextcloud-stack/pre-install.bash`**
    - Creates Nextcloud database and user in MariaDB
 
-5. **`01_scripts/scs-project-page/pre-install.bash`**
+5. **`01_scripts/scs-project-website/pre-install.bash`**
    - Creates project page database and user in MariaDB
    - Optionally loads sammlungen.io specific variables if present
 
@@ -632,7 +632,7 @@ The `start.sh` script executes the following pre-install scripts automatically. 
   - MariaDB database container must be running
   - User must be a member of the docker group
 
-### `01_scripts/scs-project-page/pre-install.bash`
+### `01_scripts/scs-project-website/pre-install.bash`
 - **Purpose:** Prepares project page stack
 - **Actions:**
   - Creates project page database (`PROJECT_WEBSITE_DB_NAME`) and user (`PROJECT_WEBSITE_DB_USER`)

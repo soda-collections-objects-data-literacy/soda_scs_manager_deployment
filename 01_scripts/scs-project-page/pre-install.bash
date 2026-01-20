@@ -28,11 +28,11 @@ echo "Database setup complete!"
 # Generate Varnish VCL configuration from template
 echo "Generating Varnish VCL configuration..."
 
-templatePath="00_custom_configs/scs-project-page/varnish/default.vcl.tpl"
-outputPath="scs-project-page-stack/varnish/default.vcl"
+templatePath="00_custom_configs/scs-project-website/varnish/default.vcl.tpl"
+outputPath="scs-project-website-stack/varnish/default.vcl"
 
 # Set defaults for Varnish backend configuration (matching docker-compose override)
-export VARNISH_BACKEND_HOST=${VARNISH_BACKEND_HOST:-scs-project-page--drupal}
+export VARNISH_BACKEND_HOST=${VARNISH_BACKEND_HOST:-scs-project-website--drupal}
 export VARNISH_BACKEND_PORT=${VARNISH_BACKEND_PORT:-80}
 
 if [ ! -f "$templatePath" ]; then

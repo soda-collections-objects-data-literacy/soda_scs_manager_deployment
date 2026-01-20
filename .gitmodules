@@ -18,6 +18,6 @@
 	path = webprotege
 	url = git@github.com:protegeproject/webprotege.git
 
-[submodule "scs-project-page-stack"]
-	path = scs-project-page-stack
-	url = git@github.com:soda-collections-objects-data-literacy/scs-project-page-stack.git
+[submodule "scs-project-website-stack"]
+	path = scs-project-website-stack
+	url = git@github.com:soda-collections-objects-data-literacy/scs-project-website-stack.git

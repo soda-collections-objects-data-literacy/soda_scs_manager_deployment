@@ -76,7 +76,7 @@ echo "----------------------------------------"
 declare -A OVERRIDE_MAPPINGS=(
     ["00_custom_configs/scs-manager-stack/docker/docker-compose.override.yml"]="scs-manager-stack/docker-compose.override.yml"
     ["00_custom_configs/scs-nextcloud-stack/docker/docker-compose.override.yml"]="scs-nextcloud-stack/docker-compose.override.yml"
-    ["00_custom_configs/scs-project-page/docker/docker-compose.override.yml"]="scs-project-page-stack/docker-compose.override.yml"
+    ["00_custom_configs/scs-project-website/docker/docker-compose.override.yml"]="scs-project-website-stack/docker-compose.override.yml"
     ["00_custom_configs/jupyterhub/docker/docker-compose.override.yml"]="jupyterhub/docker-compose.override.yml"
     ["00_custom_configs/keycloak/docker/docker-compose.override.yml"]="keycloak/docker-compose.override.yml"
     ["00_custom_configs/open_gdb/docker/docker-compose.override.yml"]="open_gdb/docker-compose.override.yml"
@@ -191,7 +191,7 @@ preInstallScripts=(
     "01_scripts/keycloak/pre-install.bash"
     "01_scripts/scs-manager-stack/pre-install.bash"
     "01_scripts/scs-nextcloud-stack/pre-install.bash"
-    "01_scripts/scs-project-page/pre-install.bash"
+    "01_scripts/scs-project-website/pre-install.bash"
     "01_scripts/open_gdb/pre-install.bash"
 )
 
