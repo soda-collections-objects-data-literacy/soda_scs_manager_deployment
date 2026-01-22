@@ -38,7 +38,7 @@ services:
       - "traefik.docker.network=reverse-proxy"
       - "traefik.http.routers.nextcloud--nextcloud-reverse-proxy.rule=Host(`${NEXTCLOUD_NEXTCLOUD_DOMAIN}`)"
       - "traefik.http.routers.nextcloud--nextcloud-reverse-proxy.entrypoints=web,websecure"
-      - "traefik.http.routers.nextcloud--nextcloud-reverse-proxy.middlewares=https-redirect,nextcloud-redirectregex,nextcloud-webfinger,nextcloud-nodeinfo"
+      - "traefik.http.routers.nextcloud--nextcloud-reverse-proxy.middlewares=https-redirect,nextcloud-redirectregex,nextcloud-webfinger,nextcloud-nodeinfo,rate-limit"
       - "traefik.http.routers.nextcloud--nextcloud-reverse-proxy.tls=true"
       - "traefik.http.routers.nextcloud--nextcloud-reverse-proxy.tls.certresolver=le"
       - "traefik.http.services.nextcloud--nextcloud-reverse-proxy.loadbalancer.server.port=80"

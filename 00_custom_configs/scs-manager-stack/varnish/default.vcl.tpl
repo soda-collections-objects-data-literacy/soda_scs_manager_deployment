@@ -2,88 +2,125 @@ vcl 4.1;
 
 import std;
 
+# -------------------------
+# Backend: Drupal
+# -------------------------
 backend default {
     .host = "${VARNISH_BACKEND_HOST}";
     .port = "${VARNISH_BACKEND_PORT}";
-    .connect_timeout = 600s;
-    .first_byte_timeout = 600s;
-    .between_bytes_timeout = 600s;
+
+    .connect_timeout = 5s;
+    .first_byte_timeout = 60s;
+    .between_bytes_timeout = 30s;
+
     .max_connections = 800;
 }
 
+# -------------------------
+# ACL for purge/ban
+# -------------------------
 acl purge {
-    "localhost";
-    "${VARNISH_BACKEND_HOST}";
+    "172.18.0.0"/16;
+    "172.19.0.0"/16;
+    "127.0.0.1";
 }
 
+# -------------------------
+# VCL RECV
+# -------------------------
 sub vcl_recv {
-    # Remove has_js and Google Analytics cookies.
-    set req.http.Cookie = regsuball(req.http.Cookie, "(^|;\s*)(_[_a-z]+|has_js)=[^;]*", "");
-    # Remove a ";" prefix, if present.
-    set req.http.Cookie = regsub(req.http.Cookie, "^;\s*", "");
 
-    # Allow purging from ACL.
+    # --------------------------------
+    # Forwarded headers (Traefik-safe)
+    # Traefik terminates SSL and forwards HTTP to Varnish, so we trust
+    # X-Forwarded-* headers from Traefik and only set defaults if missing.
+    # --------------------------------
+    # X-Forwarded-For: Append Varnish IP if Traefik already set it, otherwise set it.
+    if (req.http.X-Forwarded-For) {
+        set req.http.X-Forwarded-For = req.http.X-Forwarded-For + ", " + client.ip;
+    } else {
+        set req.http.X-Forwarded-For = client.ip;
+    }
+
+    # X-Forwarded-Proto: Trust Traefik's header. If missing, default to http
+    # (since Varnish receives HTTP from Traefik, but original may be HTTPS).
+    if (!req.http.X-Forwarded-Proto) {
+        set req.http.X-Forwarded-Proto = "http";
+    }
+
+    # X-Forwarded-Host: Pass through from Traefik, set from Host if missing.
+    if (!req.http.X-Forwarded-Host) {
+        set req.http.X-Forwarded-Host = req.http.Host;
+    }
+
+    # X-Forwarded-Port: Pass through from Traefik, set default if missing.
+    if (!req.http.X-Forwarded-Port) {
+        if (req.http.X-Forwarded-Proto == "https") {
+            set req.http.X-Forwarded-Port = "443";
+        } else {
+            set req.http.X-Forwarded-Port = "80";
+        }
+    }
+
+    # -------------------------
+    # PURGE / BAN
+    # -------------------------
     if (req.method == "PURGE") {
         if (!client.ip ~ purge) {
-            return (synth(405, "Not allowed."));
+            return (synth(405, "PURGE not allowed"));
         }
         return (purge);
     }
 
-    # Only allow BAN requests from IP addresses in the 'purge' ACL.
     if (req.method == "BAN") {
         if (!client.ip ~ purge) {
-            return (synth(403, "Not allowed."));
+            return (synth(403, "BAN not allowed"));
         }
-        ban("req.http.host == " + req.http.host + " && req.url == " + req.url);
-        return (synth(200, "Ban added."));
+
+        # Ban by host (Drupal cache tags compatible)
+        ban("req.http.host == " + req.http.host);
+        return (synth(200, "Ban added"));
     }
 
-    # Only cache GET and HEAD requests (pass through POST requests).
+    # -------------------------
+    # Only cache GET/HEAD
+    # -------------------------
     if (req.method != "GET" && req.method != "HEAD") {
         return (pass);
     }
 
-    # Pass through any administrative or AJAX-related paths.
-    if (req.url ~ "^/status\.php$" ||
-        req.url ~ "^/update\.php$" ||
-        req.url ~ "^/install\.php$" ||
+    # -------------------------
+    # Pass admin & system paths
+    # -------------------------
+    if (req.url ~ "^/(status|update|install)\.php$" ||
         req.url ~ "^/admin" ||
-        req.url ~ "^/admin/.*$" ||
         req.url ~ "^/user" ||
-        req.url ~ "^/user/.*$" ||
-        req.url ~ "^/flag/.*$" ||
-        req.url ~ "^.*/ajax/.*$" ||
-        req.url ~ "^.*/ahah/.*$") {
+        req.url ~ "^/flag" ||
+        req.url ~ "^.*/(ajax|ahah)/") {
         return (pass);
     }
 
-    # Remove all cookies for static files
-    # A standard Drupal installation doesn't send cookies for static files (see .htaccess).
-    # If you add custom content types, remove this rule for those content types.
-    if (req.url ~ "(?i)\.(pdf|asc|dat|txt|doc|xls|ppt|tgz|csv|png|gif|jpeg|jpg|ico|swf|css|js)(\?.*)?$") {
+    # -------------------------
+    # Static assets
+    # -------------------------
+    if (req.url ~ "(?i)\.(css|js|png|gif|jpe?g|svg|ico|webp|woff2?|ttf|eot|pdf|zip|tar|gz)(\?.*)?$") {
         unset req.http.Cookie;
+        return (hash);
     }
 
-    # Remove cookies for non-admin paths if there are no Drupal sessions.
-    if (!(req.url ~ "^/admin") &&
-        !(req.http.Cookie ~ "SESS[a-z0-9]+") &&
-        !(req.http.Cookie ~ "SSESS[a-z0-9]+")
-    ) {
-        unset req.http.Cookie;
+    # -------------------------
+    # Remove cookies for anonymous users
+    # -------------------------
+    if (req.http.Cookie) {
+        if (!(req.http.Cookie ~ "SESS") &&
+            !(req.http.Cookie ~ "SSESS")) {
+            unset req.http.Cookie;
+        }
     }
 
-    # If POST, PUT or DELETE, then don't cache.
-    if (req.method == "POST" || req.method == "PUT" || req.method == "DELETE") {
-        return (pass);
-    }
-
-    # Drupal 11: Remove cookies for anonymous users.
-    if (!(req.http.Cookie ~ "SESS") && !(req.http.Cookie ~ "SSESS")) {
-        unset req.http.Cookie;
-    }
-
-    # Pass anything that's authenticated.
+    # -------------------------
+    # Authenticated users bypass cache
+    # -------------------------
     if (req.http.Authorization || req.http.Cookie) {
         return (pass);
     }
@@ -91,35 +128,61 @@ sub vcl_recv {
     return (hash);
 }
 
+# -------------------------
+# BACKEND RESPONSE
+# -------------------------
 sub vcl_backend_response {
-    # Don't allow static files to set cookies.
-    if (bereq.url ~ "(?i)\.(pdf|asc|dat|txt|doc|xls|ppt|tgz|csv|png|gif|jpeg|jpg|ico|swf|css|js)(\?.*)?$") {
-        unset beresp.http.set-cookie;
+
+    # -------------------------
+    # Grace mode (serve stale if backend down)
+    # -------------------------
+    set beresp.grace = 6h;
+
+    # -------------------------
+    # Never cache admin or user pages
+    # -------------------------
+    if (bereq.url ~ "^/(admin|user)") {
+        set beresp.uncacheable = true;
+        set beresp.ttl = 0s;
+        return (deliver);
     }
 
-    # Cache 404s for 5 minutes.
+    # -------------------------
+    # Remove cookies from static assets
+    # -------------------------
+    if (bereq.url ~ "(?i)\.(css|js|png|gif|jpe?g|svg|ico|webp|woff2?|ttf|eot|pdf|zip|tar|gz)(\?.*)?$") {
+        unset beresp.http.Set-Cookie;
+    }
+
+    # -------------------------
+    # Cache 404 for 5 minutes
+    # -------------------------
     if (beresp.status == 404) {
-        set beresp.ttl = 300s;
-        set beresp.grace = 1h;
+        set beresp.ttl = 5m;
+        return (deliver);
     }
 
-    # Don't cache redirects with cookies or auth.
+    # -------------------------
+    # Redirect handling
+    # -------------------------
     if (beresp.status == 301 || beresp.status == 302) {
-        if (beresp.http.set-cookie || beresp.http.authorization) {
+        if (beresp.http.Set-Cookie || beresp.http.Authorization) {
             set beresp.uncacheable = true;
-            set beresp.ttl = 120s;
             return (deliver);
         }
     }
 
-    # Allow items to be stale if needed.
-    set beresp.grace = 6h;
+    # -------------------------
+    # Default TTL for anonymous pages
+    # -------------------------
+    if (beresp.ttl <= 0s) {
+        set beresp.ttl = 5m;
+    }
 
-    # Cache everything by default for 5 minutes.
-    if (beresp.ttl <= 0s ||
-        beresp.http.Set-Cookie ||
-        beresp.http.Vary == "*") {
-        set beresp.ttl = 300s;
+    # -------------------------
+    # Don't cache if cookies or wildcard vary
+    # -------------------------
+    if (beresp.http.Set-Cookie || beresp.http.Vary == "*") {
         set beresp.uncacheable = true;
         return (deliver);
     }
@@ -127,18 +190,21 @@ sub vcl_backend_response {
     return (deliver);
 }
 
+# -------------------------
+# DELIVER
+# -------------------------
 sub vcl_deliver {
-    # Add cache hit data.
+
     if (obj.hits > 0) {
         set resp.http.X-Varnish-Cache = "HIT";
-    }
-    else {
+    } else {
         set resp.http.X-Varnish-Cache = "MISS";
     }
-    # Remove some headers for security and cleanliness.
+
     unset resp.http.X-Varnish;
     unset resp.http.Via;
-    unset resp.http.X-Generator;
     unset resp.http.X-Powered-By;
+    unset resp.http.X-Generator;
+
     return (deliver);
 }

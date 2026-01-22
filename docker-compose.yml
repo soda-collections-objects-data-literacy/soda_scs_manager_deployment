@@ -111,7 +111,7 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
       - "traefik.tcp.routers.scs--database.entrypoints=mysql"
-      - "traefik.tcp.routers.scs--database.rule=HostSNI(``)"
+      - "traefik.tcp.routers.scs--database.rule=HostSNI(`*`)"
       - "traefik.tcp.routers.scs--database.tls=true"
       - "traefik.tcp.routers.scs--database.tls.certresolver=le"
       - "traefik.tcp.routers.scs--database.tls.passthrough=true"
@@ -154,7 +154,7 @@ services:
 
       # Middlewares
       ## Basic Auth
-      - "traefik.http.middlewares.admin-auth.basicauth.users=${SCS_TRAEFIK_USERNAME:-admin}:${SCS_TRAEFIK_HASHED_PASSWORD:-changeme}"
+      - "traefik.http.middlewares.admin-auth.basicauth.users=${SCS_TRAEFIK_USERNAME}:${SCS_TRAEFIK_HASHED_PASSWORD}"
       ## Redirect HTTP to HTTPS
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
       - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
@@ -179,6 +179,23 @@ services:
       - "traefik.http.middlewares.nextcloud-nodeinfo.redirectregex.regex=^https?://([^/]+)/\\.well-known/nodeinfo"
       - "traefik.http.middlewares.nextcloud-nodeinfo.redirectregex.replacement=https://$${1}/index.php/.well-known/nodeinfo"
 
+      ## Bot Protection Middlewares for Heavy Traffic Sites
+      ## High-traffic rate limit: 300 requests per minute per IP (for main sites)
+      ## To use: Add "rate-limit-high" to a service's middlewares list
+      - "traefik.http.middlewares.rate-limit-high.ratelimit.average=300"
+      - "traefik.http.middlewares.rate-limit-high.ratelimit.period=1m"
+      - "traefik.http.middlewares.rate-limit-high.ratelimit.burst=100"
+      ## Moderate rate limit: 150 requests per minute per IP (for APIs/services)
+      ## To use: Add "rate-limit" to a service's middlewares list
+      - "traefik.http.middlewares.rate-limit.ratelimit.average=150"
+      - "traefik.http.middlewares.rate-limit.ratelimit.period=1m"
+      - "traefik.http.middlewares.rate-limit.ratelimit.burst=50"
+      ## Stricter rate limit for aggressive bots: 60 requests per minute
+      ## To use: Add "rate-limit-strict" to a service's middlewares list
+      - "traefik.http.middlewares.rate-limit-strict.ratelimit.average=60"
+      - "traefik.http.middlewares.rate-limit-strict.ratelimit.period=1m"
+      - "traefik.http.middlewares.rate-limit-strict.ratelimit.burst=20"
+
       # Routers
       - "traefik.http.routers.scs--reverse-proxy.rule=Host(`${SCS_TRAEFIK_DOMAIN:-traefik.localhost}`)"
       - "traefik.http.routers.scs--reverse-proxy.entrypoints=web,websecure"
@@ -186,6 +203,9 @@ services:
       - "traefik.http.routers.scs--reverse-proxy.tls=true"
       - "traefik.http.routers.scs--reverse-proxy.tls.certresolver=le"
       - "traefik.http.routers.scs--reverse-proxy.service=api@internal"
+      # Trust X-Forwarded-* headers only from internal Docker network
+      - --entrypoints.web.forwardedHeaders.trustedIPs=172.18.0.0/16
+      - --entrypoints.websecure.forwardedHeaders.trustedIPs=172.18.0.0/16
 
     restart: unless-stopped
     volumes:
@@ -202,10 +222,6 @@ services:
       - --entrypoints.websecure.address=:443
       # Listen on port 3306 for MySQL requests
       - --entrypoints.mysql.address=:3306
-      # Redirect HTTP requests to HTTPS
-      - --entrypoints.web.http.redirections.entryPoint.to=websecure
-      - --entrypoints.web.http.redirections.entryPoint.scheme=https
-      - --entrypoints.web.http.redirections.entrypoint.permanent=true
       # Use the specified email address for Let's Encrypt certificate requests
       - --certificatesresolvers.le.acme.email=${SCS_TRAEFIK_EMAIL:-admin@example.com}
       # Use the HTTP challenge for Let's Encrypt certificate requests

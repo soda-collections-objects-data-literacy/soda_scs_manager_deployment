@@ -1,0 +1,5 @@
+# This override file exists for compatibility with COMPOSE_FILE in .env.
+# The actual service configuration is in the main docker-compose.yml.
+# This file is intentionally empty - all configuration happens in the parent.
+
+services: {}
