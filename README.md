@@ -699,3 +699,8 @@ Comes with several client connections pre-configured:
 ### Secrets
 Client secrets need to be added after installation for:
 - DIDMOS: Configure `KC_DIDMOS_CLIENT_SECRET` in Keycloak admin console
+
+
+
+
+# POST-INSTALL
