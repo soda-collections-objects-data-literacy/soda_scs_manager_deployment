@@ -9,3 +9,5 @@ configure_man
 lontod/data/ontologies
 ontology_resolver
 webprotege/.protegedata
+Openrefine
+**/*.tar.gz

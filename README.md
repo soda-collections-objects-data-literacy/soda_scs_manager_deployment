@@ -399,7 +399,7 @@ nano .env  # Edit and set all required variables
 ```
 
 **Important variables to set:**
-- `SCS_DOMAIN` - Your main domain (e.g., `example.com`)
+- `SCS_FULL_DOMAIN` - Your main domain (e.g., `example.com`)
 - `DB_ROOT_PASSWORD` - MariaDB root password
 - `SCS_TRAEFIK_HASHED_PASSWORD` - Generate with: `echo $(htpasswd -nb USERNAME PASSWORD) | sed -e s/\\$/\\$\\$/g`
 - `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` - Keycloak admin credentials
@@ -524,17 +524,17 @@ docker compose logs -f [service-name]
 ### Step 9: Setup Admin Accounts
 
 **Keycloak:**
-- Visit `https://auth.${SCS_DOMAIN}`
+- Visit `https://auth.${SCS_FULL_DOMAIN}`
 - Login with `KC_BOOTSTRAP_ADMIN_USERNAME` and `KC_BOOTSTRAP_ADMIN_PASSWORD` from `.env`
 - Configure OAuth clients and secrets as needed
 
 **Nextcloud:**
-- Visit `https://nextcloud.${SCS_DOMAIN}`
+- Visit `https://nextcloud.${SCS_FULL_DOMAIN}`
 - Login with `NEXTCLOUD_ADMIN_USER` and `NEXTCLOUD_ADMIN_PASSWORD` from `.env`
 - OnlyOffice integration is automatically configured via post-install hooks
 
 **Portainer:**
-- Visit `https://portainer.${SCS_DOMAIN}`
+- Visit `https://portainer.${SCS_FULL_DOMAIN}`
 - Create admin account on first visit
 - [Create access token](https://docs.portainer.io/api/access#creating-an-access-token)
 - [Add GitHub packages registry](https://docs.portainer.io/admin/registries/add/ghcr) if needed
@@ -544,11 +544,11 @@ docker compose logs -f [service-name]
 - Login with Django admin credentials from `.env` (`DJANGO_SUPERUSER_NAME` / `DJANGO_SUPERUSER_PASSWORD`)
 
 **JupyterHub:**
-- Visit `https://jupyterhub.${SCS_DOMAIN}`
+- Visit `https://jupyterhub.${SCS_FULL_DOMAIN}`
 - Uses Keycloak OAuth for authentication
 
 **SCS Manager:**
-- Visit `https://${SCS_DOMAIN}`
+- Visit `https://${SCS_FULL_DOMAIN}`
 - Configure at `/admin/config/soda-scs-manager/settings`
 - Set up WissKI settings with Portainer API token
 
@@ -704,3 +704,5 @@ Client secrets need to be added after installation for:
 
 
 # POST-INSTALL
+scs_user group im keycloak anlegen
+openrefine holen

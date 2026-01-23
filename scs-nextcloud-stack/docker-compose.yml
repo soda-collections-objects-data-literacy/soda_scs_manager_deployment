@@ -11,7 +11,7 @@ services:
       - 9000
     environment:
       - NEXTCLOUD_DOMAIN=${NEXTCLOUD_NEXTCLOUD_DOMAIN}
-      - ONLYOFFICE_JWT_SECRET=${NEXTCLOUD_ONLYOFFICE_JWT_SECRET:-changeme}
+      - ONLYOFFICE_JWT_SECRET=${NEXTCLOUD_ONLYOFFICE_JWT_SECRET}
       - MYSQL_HOST=${NEXTCLOUD_DB_HOST:-scs--database}
       - MYSQL_DATABASE=${NEXTCLOUD_DB_NAME:-nextcloud}
       - MYSQL_USER=${NEXTCLOUD_DB_USER:-nextcloud}
@@ -34,7 +34,7 @@ services:
     restart: unless-stopped
     environment:
       - JWT_ENABLED=true
-      - JWT_SECRET=${NEXTCLOUD_ONLYOFFICE_JWT_SECRET:-changeme}
+      - JWT_SECRET=${NEXTCLOUD_ONLYOFFICE_JWT_SECRET}
       - JWT_HEADER=Authorization
       - JWT_IN_BODY=true
     networks:

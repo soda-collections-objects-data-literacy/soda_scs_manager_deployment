@@ -81,8 +81,8 @@ From the parent directory, run:
 
 ## Access
 
-- **Nextcloud**: https://nextcloud.${SCS_DOMAIN}
-- **OnlyOffice**: https://office.${SCS_DOMAIN}
+- **Nextcloud**: https://nextcloud.${SCS_FULL_DOMAIN}
+- **OnlyOffice**: https://office.${SCS_FULL_DOMAIN}
 
 ## Traefik Integration
 
@@ -102,7 +102,7 @@ This stack is designed to work behind Traefik reverse proxy with:
 See `.env.sample` for all available configuration options.
 
 ### Required:
-- `SCS_DOMAIN`: Your domain name
+- `SCS_FULL_DOMAIN`: Your domain name
 - `NEXTCLOUD_DB_PASSWORD`: Database password for Nextcloud user
 - `NEXTCLOUD_ADMIN_PASSWORD`: Admin password for Nextcloud
 - `ONLYOFFICE_JWT_SECRET`: JWT secret for OnlyOffice security

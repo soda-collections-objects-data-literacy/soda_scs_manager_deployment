@@ -99,7 +99,6 @@ services:
     volumes:
       - scs--database-data:/var/lib/mysql
       - /var/backups/scs-manager/snapshots:/var/scs-manager/snapshots
-      - ./scripts/database:/var/scs-manager/scripts/database
     ports:
       - 3306:3306
     depends_on:
@@ -111,7 +110,7 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
       - "traefik.tcp.routers.scs--database.entrypoints=mysql"
-      - "traefik.tcp.routers.scs--database.rule=HostSNI(`*`)"
+      - "traefik.tcp.routers.scs--database.rule=HostSNI(`${SCS_DB_DOMAIN}`)"
       - "traefik.tcp.routers.scs--database.tls=true"
       - "traefik.tcp.routers.scs--database.tls.certresolver=le"
       - "traefik.tcp.routers.scs--database.tls.passthrough=true"
