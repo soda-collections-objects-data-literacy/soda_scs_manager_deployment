@@ -188,6 +188,7 @@ echo "----------------------------------------"
 # Find and execute all pre-install scripts.
 preInstallScripts=(
     "01_scripts/global/pre-install.bash"
+    "01_scripts/jupyterhub/pre-install.bash"
     "01_scripts/keycloak/pre-install.bash"
     "01_scripts/scs-manager-stack/pre-install.bash"
     "01_scripts/scs-nextcloud-stack/pre-install.bash"
