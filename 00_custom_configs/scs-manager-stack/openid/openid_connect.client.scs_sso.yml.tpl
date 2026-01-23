@@ -10,10 +10,10 @@ settings:
   client_secret: ${SCS_MANAGER_CLIENT_SECRET}
   iss_allowed_domains: '*'
   issuer_url: ''
-  authorization_endpoint: 'https://${KC_SERVICE_NAME}.${SCS_SUBDOMAIN}.${SCS_HOSTNAME}/realms/${KC_REALM}/protocol/openid-connect/auth'
-  token_endpoint: 'https://${KC_SERVICE_NAME}.${SCS_SUBDOMAIN}.${SCS_HOSTNAME}/realms/${KC_REALM}/protocol/openid-connect/token'
-  userinfo_endpoint: 'https://${KC_SERVICE_NAME}.${SCS_SUBDOMAIN}.${SCS_HOSTNAME}/realms/${KC_REALM}/protocol/openid-connect/userinfo'
-  end_session_endpoint: 'https://${KC_SERVICE_NAME}.${SCS_SUBDOMAIN}.${SCS_HOSTNAME}/realms/${KC_REALM}/protocol/openid-connect/logout'
+  authorization_endpoint: 'https://${KC_SERVICE_NAME}.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}/realms/${KC_REALM}/protocol/openid-connect/auth'
+  token_endpoint: 'https://${KC_SERVICE_NAME}.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}/realms/${KC_REALM}/protocol/openid-connect/token'
+  userinfo_endpoint: 'https://${KC_SERVICE_NAME}.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}/realms/${KC_REALM}/protocol/openid-connect/userinfo'
+  end_session_endpoint: 'https://${KC_SERVICE_NAME}.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}/realms/${KC_REALM}/protocol/openid-connect/logout'
   scopes:
     - openid
     - email
