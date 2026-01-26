@@ -706,3 +706,8 @@ Client secrets need to be added after installation for:
 # POST-INSTALL
 scs_user group im keycloak anlegen
 openrefine holen
+
+## SCS MANAGER
+OPENID konfigurieren
+### SMTP kondigurieren
+- SMTP Konfig + Basis Site Email
