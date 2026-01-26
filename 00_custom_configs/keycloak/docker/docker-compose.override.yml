@@ -3,7 +3,7 @@
 # It adds Traefik integration, proper networking, and uses parent stack's database
 
 services:
-  keycloak--keycloak:
+  keycloak:
     container_name: keycloak--keycloak
     build:
       context: keycloak/keycloak
@@ -20,7 +20,6 @@ services:
       # Use local cache for single-node deployment (eliminates JDBC ping warnings)
       KC_CACHE: local
     networks:
-      - default
       - reverse-proxy
     external_links:
       - scs--database:scs--database
@@ -39,6 +38,3 @@ networks:
   reverse-proxy:
     name: reverse-proxy
     external: true
-  default:
-    name: keycloak
-    driver: bridge
