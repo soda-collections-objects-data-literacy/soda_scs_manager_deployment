@@ -158,6 +158,12 @@ services:
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
       - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
       - "traefik.http.middlewares.https-redirect.redirectscheme.port=443"
+
+      ## Redirect to SCS Manager
+      - "traefik.http.middlewares.redirect-to-scs-manager--drupal.redirectregex.regex=^https?://scs\\.sammlungen\\.io(.*)"
+      - "traefik.http.middlewares.redirect-to-scs-manager--drupal.redirectregex.replacement=https://${SCS_MANAGER_DOMAIN}$${1}"
+      - "traefik.http.middlewares.redirect-to-scs-manager--drupal.redirectregex.permanent=true"
+
       ## Nextcloud Headers
       - "traefik.http.middlewares.nextcloud-headers.headers.stsSeconds=15552000"
       - "traefik.http.middlewares.nextcloud-headers.headers.stsIncludeSubdomains=true"
@@ -202,6 +208,13 @@ services:
       - "traefik.http.routers.scs--reverse-proxy.tls=true"
       - "traefik.http.routers.scs--reverse-proxy.tls.certresolver=le"
       - "traefik.http.routers.scs--reverse-proxy.service=api@internal"
+      ## Redirect router for scs.sammlungen.io -> manager.scs.sammlungen.io
+      ## @todo check if this is the right place.
+      - "traefik.http.routers.scs-manager-redirect.rule=Host(`${SCS_MANAGER_SECOND_DOMAIN}`)"
+      - "traefik.http.routers.scs-manager-redirect.entrypoints=web,websecure"
+      - "traefik.http.routers.scs-manager-redirect.middlewares=https-redirect,redirect-to-scs-manager--drupal"
+      - "traefik.http.routers.scs-manager-redirect.tls=true"
+      - "traefik.http.routers.scs-manager-redirect.tls.certresolver=le"
       # Trust X-Forwarded-* headers only from internal Docker network
       - --entrypoints.web.forwardedHeaders.trustedIPs=172.18.0.0/16
       - --entrypoints.websecure.forwardedHeaders.trustedIPs=172.18.0.0/16
