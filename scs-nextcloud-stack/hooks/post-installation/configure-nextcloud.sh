@@ -1,14 +1,28 @@
 #!/bin/bash
 
-# Check if NEXTCLOUD_NEXTCLOUD_DOMAIN is set.
-if [ -z "${NEXTCLOUD_NEXTCLOUD_DOMAIN}" ]; then
-    echo "Error: NEXTCLOUD_NEXTCLOUD_DOMAIN environment variable is not set."
+echo "Configuring Nextcloud..."
+
+# Check if NEXTCLOUD_DOMAIN is set.
+if [ -z "${NEXTCLOUD_DOMAIN}" ]; then
+    echo "Error: NEXTCLOUD_DOMAIN environment variable is not set."
     exit 1
 fi
 
-# Check if NEXTCLOUD_ONLYOFFICE_DOMAIN is set.
+# Check if ONLYOFFICE_DOMAIN is set.
 if [ -z "${NEXTCLOUD_ONLYOFFICE_DOMAIN}" ]; then
-    echo "Error: NEXTCLOUD_ONLYOFFICE_DOMAIN environment variable is not set."
+    echo "Error: ONLYOFFICE_DOMAIN environment variable is not set."
+    exit 1
+fi
+
+# Check if NEXTCLOUD_ONLYOFFICE_DOCUMENT_SERVER_DOMAIN is set.
+if [ -z "${NEXTCLOUD_ONLYOFFICE_DOCUMENT_SERVER_DOMAIN}" ]; then
+    echo "Error: NEXTCLOUD_ONLYOFFICE_DOCUMENT_SERVER_DOMAIN environment variable is not set."
+    exit 1
+fi
+
+# Check if NEXTCLOUD_NEXTCLOUD_REVERSE_PROXY_DOMAIN is set.
+if [ -z "${NEXTCLOUD_NEXTCLOUD_REVERSE_PROXY_DOMAIN}" ]; then
+    echo "Error: NEXTCLOUD_NEXTCLOUD_REVERSE_PROXY_DOMAIN environment variable is not set."
     exit 1
 fi
 
@@ -27,17 +41,17 @@ done
 echo "Führe Nextcloud-Konfiguration durch..."
 
 # Setze Overwrite-Einstellungen.
-php /var/www/html/occ config:system:set overwritehost --value="${NEXTCLOUD_NEXTCLOUD_DOMAIN}"
+php /var/www/html/occ config:system:set overwritehost --value="${NEXTCLOUD_DOMAIN}"
 php /var/www/html/occ config:system:set overwriteprotocol --value="https"
-php /var/www/html/occ config:system:set overwrite.cli.url --value="https://${NEXTCLOUD_NEXTCLOUD_DOMAIN}"
+php /var/www/html/occ config:system:set overwrite.cli.url --value="https://${NEXTCLOUD_DOMAIN}"
 
 # Konfiguriere Trusted-Domains.
 php /var/www/html/occ config:system:delete trusted_domains
 php /var/www/html/occ config:system:set trusted_domains 0 --value="localhost"
-php /var/www/html/occ config:system:set trusted_domains 1 --value="${NEXTCLOUD_NEXTCLOUD_DOMAIN}"
+php /var/www/html/occ config:system:set trusted_domains 1 --value="${NEXTCLOUD_DOMAIN}"
 php /var/www/html/occ config:system:set trusted_domains 2 --value="${SCS_MANAGER_DOMAIN}"
 php /var/www/html/occ config:system:set trusted_domains 3 --value="${NEXTCLOUD_ONLYOFFICE_DOMAIN}"
-php /var/www/html/occ config:system:set trusted_domains 4 --value="nextcloud-nextcloud-reverse-proxy"
+php /var/www/html/occ config:system:set trusted_domains 4 --value="${NEXTCLOUD_NEXTCLOUD_REVERSE_PROXY_DOMAIN}"
 
 # Konfiguriere Trusted-Proxies.
 php /var/www/html/occ config:system:delete trusted_proxies

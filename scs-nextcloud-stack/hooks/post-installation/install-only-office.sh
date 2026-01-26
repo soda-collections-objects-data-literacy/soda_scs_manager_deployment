@@ -3,15 +3,22 @@
 # Print all commands and their arguments as they are executed.
 set -x
 
+echo "Installing OnlyOffice app..."
+
 # Check if required environment variables are set.
-if [ -z "${NEXTCLOUD_ONLYOFFICE_JWT_SECRET}" ]; then
-    echo "Error: NEXTCLOUD_ONLYOFFICE_JWT_SECRET environment variable is not set."
+if [ -z "${ONLYOFFICE_JWT_SECRET}" ]; then
+    echo "Error: ONLYOFFICE_JWT_SECRET environment variable is not set."
     exit 1
 fi
 
 # Check if required domain variables are set.
-if [ -z "${NEXTCLOUD_NEXTCLOUD_DOMAIN}" ]; then
-    echo "Error: NEXTCLOUD_NEXTCLOUD_DOMAIN environment variable is not set."
+if [ -z "${NEXTCLOUD_DOMAIN}" ]; then
+    echo "Error: NEXTCLOUD_DOMAIN environment variable is not set."
+    exit 1
+fi
+
+if [ -z "${NEXTCLOUD_ONLYOFFICE_DOCUMENT_SERVER_DOMAIN}" ]; then
+    echo "Error: NEXTCLOUD_ONLYOFFICE_DOCUMENT_SERVER_DOMAIN environment variable is not set."
     exit 1
 fi
 
@@ -40,11 +47,11 @@ php /var/www/html/occ --no-warnings app:install onlyoffice
 # Set the DocumentServerUrl to the external URL of the OnlyOffice Document Server.
 php /var/www/html/occ --no-warnings config:system:set onlyoffice DocumentServerUrl --value="https://${NEXTCLOUD_ONLYOFFICE_DOMAIN}/"
 # Set the DocumentServerInternalUrl to the internal URL of the OnlyOffice Document Server.
-php /var/www/html/occ --no-warnings config:system:set onlyoffice DocumentServerInternalUrl --value="http://nextcloud-onlyoffice-document-server/"
+php /var/www/html/occ --no-warnings config:system:set onlyoffice DocumentServerInternalUrl --value="http://${NEXTCLOUD_ONLYOFFICE_DOCUMENT_SERVER_NAME}/"
 # Set the StorageUrl to the external URL of Nextcloud.
 php /var/www/html/occ --no-warnings config:system:set onlyoffice StorageUrl --value="https://${NEXTCLOUD_NEXTCLOUD_DOMAIN}/"
 # Set the JWT secret.
-php /var/www/html/occ --no-warnings config:system:set onlyoffice jwt_secret --value="${NEXTCLOUD_ONLYOFFICE_JWT_SECRET}"
+php /var/www/html/occ --no-warnings config:system:set onlyoffice jwt_secret --value="${ONLYOFFICE_JWT_SECRET}"
 # Set the JWT header.
 php /var/www/html/occ --no-warnings config:system:set onlyoffice jwt_header --value="Authorization"
 # Allow local remote servers.
