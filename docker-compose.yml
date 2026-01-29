@@ -215,9 +215,6 @@ services:
       - "traefik.http.routers.scs-manager-redirect.middlewares=https-redirect,redirect-to-scs-manager--drupal"
       - "traefik.http.routers.scs-manager-redirect.tls=true"
       - "traefik.http.routers.scs-manager-redirect.tls.certresolver=le"
-      # Trust X-Forwarded-* headers only from internal Docker network
-      - --entrypoints.web.forwardedHeaders.trustedIPs=172.18.0.0/16
-      - --entrypoints.websecure.forwardedHeaders.trustedIPs=172.18.0.0/16
 
     restart: unless-stopped
     volumes:
@@ -232,6 +229,9 @@ services:
       - --entrypoints.web.address=:80
       # Listen on port 443 for HTTPS requests
       - --entrypoints.websecure.address=:443
+      # Trust X-Forwarded-* headers only from internal Docker network
+      - --entrypoints.web.forwardedHeaders.trustedIPs=172.18.0.0/16
+      - --entrypoints.websecure.forwardedHeaders.trustedIPs=172.18.0.0/16
       # Listen on port 3306 for MySQL requests
       - --entrypoints.mysql.address=:3306
       # Use the specified email address for Let's Encrypt certificate requests
