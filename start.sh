@@ -40,11 +40,29 @@ echo "----------------------------------------"
 
 if docker network inspect reverse-proxy >/dev/null 2>&1; then
     echo "✓ Network 'reverse-proxy' already exists"
-else
-    echo "Creating network 'reverse-proxy'..."
-    docker network create reverse-proxy
+    # Check if IPv6 is enabled (required for proper client IP forwarding).
+    ipv6Enabled=$(docker network inspect reverse-proxy --format '{{.EnableIPv6}}' 2>/dev/null)
+    if [ "$ipv6Enabled" = "true" ]; then
+        echo "✓ IPv6 is enabled on network"
+    else
+        echo "⚠ WARNING: IPv6 is NOT enabled on network"
+        echo "  Recreating network with IPv6 enabled..."
+        # Remove old network (only if no containers are attached).
+        docker network rm reverse-proxy 2>/dev/null || {
+            echo "  Cannot remove network (containers still attached)."
+            echo "  Docker Compose will update it when you run 'docker compose up'"
+        }
+    fi
+fi
+
+# Create network if it doesn't exist (or was just removed).
+if ! docker network inspect reverse-proxy >/dev/null 2>&1; then
+    echo "Creating network 'reverse-proxy' with IPv6 enabled..."
+    docker network create reverse-proxy \
+        --driver bridge \
+        --ipv6
     if [ $? -eq 0 ]; then
-        echo "✓ Network 'reverse-proxy' created successfully"
+        echo "✓ Network 'reverse-proxy' created successfully with IPv6"
     else
         echo "Error: Failed to create network 'reverse-proxy'"
         exit 1
@@ -112,6 +130,13 @@ done
 echo "Copied $copiedCount override file(s)."
 if [ $skippedCount -gt 0 ]; then
     echo "Skipped $skippedCount existing file(s) to prevent overwrite."
+fi
+
+# Copy Nextcloud custom reverse-proxy nginx config (overwrites so .mjs MIME and custom rules apply).
+if [ -f "00_custom_configs/scs-nextcloud-stack/reverse-proxy/nginx.conf" ]; then
+    mkdir -p scs-nextcloud-stack/reverse-proxy
+    cp "00_custom_configs/scs-nextcloud-stack/reverse-proxy/nginx.conf" "scs-nextcloud-stack/reverse-proxy/nginx.conf"
+    echo "Copied custom Nextcloud nginx config: 00_custom_configs/scs-nextcloud-stack/reverse-proxy/nginx.conf -> scs-nextcloud-stack/reverse-proxy/nginx.conf"
 fi
 echo ""
 

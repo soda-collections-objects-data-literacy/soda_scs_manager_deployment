@@ -11,3 +11,4 @@ ontology_resolver
 webprotege/.protegedata
 Openrefine
 **/*.tar.gz
+backups/

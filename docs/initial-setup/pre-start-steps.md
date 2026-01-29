@@ -17,6 +17,10 @@ The script `start.sh` at the repository root performs all setup that must happen
 
 - Creates the Docker network `reverse-proxy` if it does not exist.
 - All stacks attach to this network so Traefik can route to them.
+- **Important:** The network must have IPv6 enabled for proper client IP forwarding.
+- The script creates the network with: `docker network create reverse-proxy --driver bridge --ipv6`
+- If the network already exists without IPv6, the script will attempt to recreate it.
+- For detailed information about network creation and configuration, see [Network creation](network-creation.md).
 
 ### Step 2: Update Git repositories and submodules
 
@@ -37,6 +41,8 @@ Copies override files from `00_custom_configs/` into each stack directory. The m
 | `00_custom_configs/open_gdb/docker/docker-compose.override.yml` | `open_gdb/docker-compose.override.yml` |
 
 If a destination file already exists, the script skips copying to avoid overwriting local changes.
+
+After override copies, `start.sh` copies the custom Nextcloud reverse-proxy nginx config from `00_custom_configs/scs-nextcloud-stack/reverse-proxy/nginx.conf` to `scs-nextcloud-stack/reverse-proxy/nginx.conf` (always overwrites so `.mjs` MIME and custom rules apply).
 
 **Note:** The source path for the project website uses `scs-project-website`; the actual config directory may be `00_custom_configs/scs-project-page/`. If the copy fails, check that the source path exists or adjust the script.
 

@@ -113,7 +113,7 @@ services:
       - "traefik.tcp.routers.scs--database.rule=HostSNI(`${SCS_DB_DOMAIN}`)"
       - "traefik.tcp.routers.scs--database.tls=true"
       - "traefik.tcp.routers.scs--database.tls.certresolver=le"
-      - "traefik.tcp.routers.scs--database.tls.passthrough=true"
+      # - "traefik.tcp.routers.scs--database.tls.passthrough=true" # This does not make sense in combination with certresolver.
       - "traefik.tcp.services.scs--database.loadbalancer.server.port=3306"
     restart: unless-stopped
     deploy:
@@ -132,29 +132,43 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
       - "traefik.http.routers.scs--adminer.rule=Host(`${SCS_ADMINER_DOMAIN:-adminer.localhost}`)"
-      - "traefik.http.routers.scs--adminer.entrypoints=web,websecure"
-      - "traefik.http.routers.scs--adminer.middlewares=https-redirect"
+      - "traefik.http.routers.scs--adminer.entrypoints=websecure"
       - "traefik.http.routers.scs--adminer.tls=true"
       - "traefik.http.routers.scs--adminer.tls.certresolver=le"
       - "traefik.http.services.scs--adminer.loadbalancer.server.port=8080"
+
+  # Whoami for debugging routing + proxy-header stuff
+  scs--echo:
+    image: traefik/whoami
+    container_name: scs--echo
+    networks:
+      - reverse-proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.scs--echo.rule=Host(`echo.scs.sammlungen.io`)"
+      - "traefik.http.routers.scs--echo.entrypoints=websecure"
+      - "traefik.http.routers.scs--echo.tls=true"
+      - "traefik.http.routers.scs--echo.tls.certresolver=le"
+      - "traefik.http.services.scs--echo.loadbalancer.server.port=80"
+    restart: unless-stopped
 
   # Traefik
   scs--reverse-proxy:
     image: traefik:3.6
     container_name: scs--reverse-proxy
     ports:
-      - 80:80
-      - 443:443
+      - "80:80"
+      - "443:443"
     networks:
       - reverse-proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=reverse-proxy"
+      # - "traefik.docker.network=reverse-proxy"  this should not be needed.
 
       # Middlewares
       ## Basic Auth
       - "traefik.http.middlewares.admin-auth.basicauth.users=${SCS_TRAEFIK_USERNAME}:${SCS_TRAEFIK_HASHED_PASSWORD}"
-      ## Redirect HTTP to HTTPS
+      ## Redirect HTTP to HTTPS # this should also not be needed any more
       - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
       - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
       - "traefik.http.middlewares.https-redirect.redirectscheme.port=443"
@@ -164,7 +178,7 @@ services:
       - "traefik.http.middlewares.redirect-to-scs-manager--drupal.redirectregex.replacement=https://${SCS_MANAGER_DOMAIN}$${1}"
       - "traefik.http.middlewares.redirect-to-scs-manager--drupal.redirectregex.permanent=true"
 
-      ## Nextcloud Headers
+      ## Nextcloud Headers # Put these in the NC compose?
       - "traefik.http.middlewares.nextcloud-headers.headers.stsSeconds=15552000"
       - "traefik.http.middlewares.nextcloud-headers.headers.stsIncludeSubdomains=true"
       - "traefik.http.middlewares.nextcloud-headers.headers.stsPreload=true"
@@ -227,13 +241,21 @@ services:
       - --providers.docker.exposedbydefault=false
       # Listen on port 80 for HTTP requests
       - --entrypoints.web.address=:80
+      # Allow bypassing the ACME challenge at /.well-known/acme-challenge
+      # Define a new router like this:
+      # http_acme_passthough_my.domain:
+      #   rule: "Host(`my.domain`) && PathPrefix(`/.well-known/acme-challenge/`)"
+      #   entryPoints: ["web"]
+      #   service: "proxy_https_my.domain"
+      #   priority:  "43" # THIS IS IMPORTANT priority has to be > 42 otherwise this does not work.
+      - --entrypoints.web.allowACMEByPass=true
       # Listen on port 443 for HTTPS requests
       - --entrypoints.websecure.address=:443
-      # Trust X-Forwarded-* headers only from internal Docker network
-      - --entrypoints.web.forwardedHeaders.trustedIPs=172.18.0.0/16
-      - --entrypoints.websecure.forwardedHeaders.trustedIPs=172.18.0.0/16
-      # Listen on port 3306 for MySQL requests
-      - --entrypoints.mysql.address=:3306
+      # Http to https redirect
+      - --entrypoints.web.http.redirections.entryPoint.to=websecure
+      - --entrypoints.web.http.redirections.entryPoint.scheme=https
+      - --entrypoints.web.http.redirections.entryPoint.permanent=true
+      - --entrypoints.web.http.redirections.entryPoint.priority=43
       # Use the specified email address for Let's Encrypt certificate requests
       - --certificatesresolvers.le.acme.email=${SCS_TRAEFIK_EMAIL:-admin@example.com}
       # Use the HTTP challenge for Let's Encrypt certificate requests
@@ -251,6 +273,7 @@ services:
       # Enable the Traefik API dashboard
       - --api.dashboard=true
 
+
 volumes:
   scs--database-data:
     name: scs--database-data
@@ -264,4 +287,5 @@ volumes:
 networks:
   reverse-proxy:
     name: reverse-proxy
-    external: true
+    enable_ipv6: true
+    driver: bridge 

@@ -20,14 +20,21 @@ nav:
   - Initial setup:
     - Overview: initial-setup/index.md
     - Prerequisites: initial-setup/prerequisites.md
+    - Network creation: initial-setup/network-creation.md
     - Pre-start steps: initial-setup/pre-start-steps.md
   - Post-start:
     - Overview: post-start/index.md
   - Post-configuration:
     - Overview: post-configuration/index.md
     - Checklist: post-configuration/checklist.md
+    - Nextcloud email setup: post-configuration/nextcloud-email.md
+  - Maintenance:
+    - Overview: maintenance/index.md
+    - Updates: maintenance/updates.md
+  - Troubleshooting:
+    - Overview: troubleshooting/index.md
+    - Nextcloud warnings: troubleshooting/nextcloud-warnings.md
   - Reference:
-    - Proxy headers configuration: proxy-headers-configuration.md
     - Reverse proxy backend config: reverse-proxy-backend-config-knowledge-base.md
     - Traefik labels and commands: traefik-labels-and-commands.md
 

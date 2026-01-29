@@ -32,8 +32,8 @@ The `command` block under `scs--reverse-proxy` is the list of arguments passed t
 **--providers.docker.exposedbydefault=false** — Containers are not exposed by default; only containers that have Traefik labels (and typically `traefik.enable=true`) get a router/service.
 **--entrypoints.web.address=:80** — Defines the entrypoint named `web` listening on port 80 (HTTP). Labels use this name in `traefik.http.routers.<name>.entrypoints=web,...`.
 **--entrypoints.websecure.address=:443** — Defines the entrypoint `websecure` on port 443 (HTTPS).
-**--entrypoints.web.forwardedHeaders.trustedIPs=172.18.0.0/16** — Trust `X-Forwarded-*` headers only from this CIDR (e.g. Docker bridge). Prevents header spoofing from untrusted clients.
-**--entrypoints.websecure.forwardedHeaders.trustedIPs=172.18.0.0/16** — Same for the HTTPS entrypoint.
+**--entrypoints.web.forwardedHeaders.trustedIPs=172.18.0.0/16** — (ONLY NEEDED IF TRAEFIK IS BEHIND ANOTHER PROXY) Trust `X-Forwarded-*` headers only from this CIDR. When Traefik is the edge proxy (first contact with clients), it automatically creates X-Forwarded-* headers from the real connection and this setting is not needed. Only use this if Traefik itself is behind another proxy (e.g., CloudFlare, AWS ALB).
+**--entrypoints.websecure.forwardedHeaders.trustedIPs=172.18.0.0/16** — Same as above for the HTTPS entrypoint.
 **--entrypoints.mysql.address=:3306** — TCP entrypoint `mysql` on port 3306 for MySQL. Used by `traefik.tcp.routers.scs--database.entrypoints=mysql`.
 **--certificatesresolvers.le.acme.email=...** — Email used for Let’s Encrypt (ACME) account and expiry notifications.
 **--certificatesresolvers.le.acme.httpchallenge.entrypoint=web** — Use the `web` entrypoint (port 80) for HTTP-01 challenges. Required when something else handles port 80 or for wildcard certs you may use TLS challenge instead.

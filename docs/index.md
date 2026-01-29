@@ -16,9 +16,12 @@ This documentation describes how to deploy and operate the SODa SCS Manager depl
 
 - **[Post-configuration](post-configuration/index.md)** — One-time or periodic configuration inside each service after the stack is running, with a [checklist](post-configuration/checklist.md) for Keycloak, SCS Manager, Nextcloud, JupyterHub, and others.
 
+- **[Maintenance](maintenance/index.md)** — Updates, backups, and ongoing maintenance for all services, including a detailed [update guide](maintenance/updates.md) for Nextcloud and other components.
+
+- **[Troubleshooting](troubleshooting/nextcloud-warnings.md)** — How to resolve common Nextcloud admin warnings (proxy headers, .well-known URLs, MIME types, email, etc.).
+
 ## Reference
 
-- [Proxy headers configuration](proxy-headers-configuration.md)
 - [Reverse proxy backend config knowledge base](reverse-proxy-backend-config-knowledge-base.md)
 - [Traefik labels and commands](traefik-labels-and-commands.md)
 

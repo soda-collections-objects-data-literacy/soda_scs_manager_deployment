@@ -36,6 +36,33 @@ Use this checklist after the whole environment has started (`docker compose up -
 
 ## Nextcloud
 
+- [ ] **Reverse proxy, MIME, and .well-known URLs** — Custom nginx is copied from `00_custom_configs/scs-nextcloud-stack/reverse-proxy/nginx.conf` by `start.sh`. It handles:
+  - `.mjs` files served with `application/javascript` MIME type
+  - X-Forwarded-* headers passed to PHP (fixes reverse proxy security warning)
+  - `.well-known` URLs for CalDAV, CardDAV, webfinger, nodeinfo (federation and discovery)
+
+  Post-install hook sets `trusted_proxies`, `forwarded_for_headers`, `forwarded_host_headers`, `forwarded_proto_headers` in Nextcloud config. For an existing install, run: `01_scripts/scs-nextcloud-stack/apply-nextcloud-proxy-and-region.bash`.
+
+  If `.well-known` warnings persist after updating nginx config, restart the reverse proxy: `docker compose restart nextcloud--nextcloud-reverse-proxy`.
+
+- [ ] **Maintenance window** — Post-install sets maintenance window (e.g. start hour 22, length 6). If the admin warning remains, set manually: `occ config:system:set maintenance_window_start --type integer --value=22` and `maintenance_window_length --type integer --value=6`.
+
+- [ ] **Default phone region** — Set `NEXTCLOUD_NEXTCLOUD_DEFAULT_PHONE_REGION` in `.env` (e.g. `DE`) so the container and post-install hook can set `default_phone_region`. Or set inside the container: `occ config:system:set default_phone_region --value=DE`.
+
+- [ ] **MIME type migrations and database maintenance** — If the admin panel reports "MIME-Type-Migrationen verfügbar" or database warnings (missing indices, columns, primary keys), run from repo root: `01_scripts/scs-nextcloud-stack/run-nextcloud-repair.bash`. This script runs all maintenance tasks including expensive repairs, and can take a long time on large instances.
+
+- [ ] **MariaDB version** — Nextcloud recommends MariaDB 10.6–11.4 for this version. If you see a warning about MariaDB 11.5+, it is informational; consider planning an upgrade or DB version alignment later.
+
+- [ ] **Email** — Configure the mail server either via environment variables (recommended) or admin UI:
+  - **Via environment variables:** Add `NEXTCLOUD_NEXTCLOUD_MAIL_*` variables to `.env` (see [email setup guide](nextcloud-email.md)). Apply with `01_scripts/scs-nextcloud-stack/configure-nextcloud-email.bash` or restart Nextcloud container. Settings are applied automatically by post-installation hook for new installs.
+  - **Via admin UI:** Settings → Administration → Basic settings → Email server. Set SMTP server, port, credentials. Use "Send email" button to test.
+
+  Email is required for user registration, password resets, and notifications.
+
+- [ ] **AppAPI deployment daemon** (optional) — If you want to install external apps (Ex-Apps) via AppAPI, register a default deployment daemon in Settings → Administration → AppAPI. This is only needed if you plan to use Nextcloud's external app ecosystem. Not required for core functionality.
+
+- [ ] **Check logs** — Visit Settings → Administration → Logging to review any warnings or errors. Address issues as they appear. Common items: missing indices (run repair script), caching warnings (ensure Redis is running), background job warnings (check cron is working).
+
 - [ ] **Plugins** — Post-install hooks install Social Login, configure Nextcloud, OnlyOffice, and Draw.io. Verify with `occ app:list` (inside the Nextcloud container) that `sociallogin` (and other expected apps) are enabled. If the hooks did not run, run them manually or install the apps via the Nextcloud UI.
 
 - [ ] **OpenID / Social Login** — Configure the Social Login app with Keycloak:
