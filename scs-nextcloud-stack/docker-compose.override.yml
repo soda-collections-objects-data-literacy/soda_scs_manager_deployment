@@ -67,9 +67,3 @@ services:
   # Redis for Nextcloud caching
   nextcloud--redis:
     container_name: nextcloud--redis
-
-# Networks
-networks:
-  reverse-proxy:
-    name: reverse-proxy
-    external: true

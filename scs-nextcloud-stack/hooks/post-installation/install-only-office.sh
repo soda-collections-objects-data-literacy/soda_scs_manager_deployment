@@ -43,6 +43,10 @@ rm trusted_domain.tmp
 # Install OnlyOffice app.
 php /var/www/html/occ --no-warnings app:install onlyoffice
 
+# Enable OnlyOffice app.
+php /var/www/html/occ --no-warnings app:enable onlyoffice
+echo "OnlyOffice app enabled successfully!"
+
 # Set OnlyOffice configuration.
 # Set the DocumentServerUrl to the external URL of the OnlyOffice Document Server.
 php /var/www/html/occ --no-warnings config:system:set onlyoffice DocumentServerUrl --value="https://${NEXTCLOUD_ONLYOFFICE_DOMAIN}/"
