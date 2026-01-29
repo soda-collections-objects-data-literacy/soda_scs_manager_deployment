@@ -6,6 +6,7 @@ MODE=production
 SCS_BASE_DOMAIN=localhost
 SCS_SUBDOMAIN=scs
 SCS_ROOT_PATH=/var/deploy/soda_scs_manager_deployment
+SCS_SHARED_DATA=shared_data
 
 # Database.
 SCS_DB_PORT=3306
@@ -27,7 +28,7 @@ PUBLIC_PORT=8082
 JUPYTERHUB_DOMAIN=code.scs.localhost
 JUPYTERHUB_OPENREFINE_DIR=${SCS_ROOT_PATH}/openrefine
 JUPYTERHUB_SERVICE_NAME=jupyterhub
-JUPYTERHUB_SHARE=jupyter_shared_data
+JUPYTERHUB_SHARE=shared-data
 JUPYTERHUB_CLIENT_SECRET=
 JUPYTERHUB_CLIENT_ID=http://code.scs.localhost
 JUPYTERHUB_NETWORK=reverse-proxy

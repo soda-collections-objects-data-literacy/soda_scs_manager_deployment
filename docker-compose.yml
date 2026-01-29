@@ -9,7 +9,7 @@ services:
     command: >
       sh -c "id filemanager >/dev/null 2>&1 || adduser -D -u 9000 filemanager && id www-data >/dev/null 2>&1 || adduser -D -u 33 -G www-data www-data && tail -f /dev/null"
     volumes:
-      - scs--shared-data:/shared
+      - ${SCS_SHARED_DATA}:/shared
       - /var/backups/scs-manager/snapshots:/var/scs-manager/snapshots
     networks:
       - reverse-proxy
@@ -98,7 +98,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${SCS_DB_ROOT_PASSWORD}
     volumes:
       - scs--database-data:/var/lib/mysql
-      - /var/backups/scs-manager/snapshots:/var/scs-manager/snapshots
+      - /srv/backups/scs-manager/snapshots:/var/scs-manager/snapshots
     ports:
       - 3306:3306
     depends_on:
@@ -259,7 +259,7 @@ volumes:
   scs--reverse-proxy-certificates:
     name: scs--reverse-proxy-certificates
   scs--shared-data:
-    name: scs--shared-data
+    name: ${SCS_SHARED_DATA}
 
 networks:
   reverse-proxy:
