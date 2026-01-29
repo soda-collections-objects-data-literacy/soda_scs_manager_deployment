@@ -1,0 +1,39 @@
+# MkDocs configuration for SODa SCS Manager Deployment documentation.
+# Build: mkdocs build
+# Serve locally: mkdocs serve
+
+site_name: SODa SCS Manager Deployment
+site_description: Documentation for the SODa SCS Manager Docker Compose deployment.
+site_url: https://github.com/soda-collections-objects-data-literacy/soda_scs_manager_deployment
+
+theme:
+  name: material
+  language: en
+
+docs_dir: docs
+
+nav:
+  - Home: index.md
+  - Glossary: glossary.md
+  - Service infrastructure:
+    - Overview: service-infrastructure/index.md
+  - Initial setup:
+    - Overview: initial-setup/index.md
+    - Prerequisites: initial-setup/prerequisites.md
+    - Pre-start steps: initial-setup/pre-start-steps.md
+  - Post-start:
+    - Overview: post-start/index.md
+  - Post-configuration:
+    - Overview: post-configuration/index.md
+    - Checklist: post-configuration/checklist.md
+  - Reference:
+    - Proxy headers configuration: proxy-headers-configuration.md
+    - Reverse proxy backend config: reverse-proxy-backend-config-knowledge-base.md
+    - Traefik labels and commands: traefik-labels-and-commands.md
+
+plugins:
+  - search
+
+# For Mermaid diagram rendering, add: pip install mkdocs-mermaid2-plugin
+# and under plugins: - mermaid2
+# The service-infrastructure diagram is in a mermaid code block.
