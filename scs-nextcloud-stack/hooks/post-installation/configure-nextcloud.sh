@@ -47,12 +47,13 @@ php /var/www/html/occ config:system:set overwriteprotocol --value="https"
 php /var/www/html/occ config:system:set overwrite.cli.url --value="https://${NEXTCLOUD_DOMAIN}"
 
 # Konfiguriere Trusted-Domains.
+# Clear all trusted domains first to avoid duplicates and remove any wrong entries.
 php /var/www/html/occ config:system:delete trusted_domains
 php /var/www/html/occ config:system:set trusted_domains 0 --value="localhost"
 php /var/www/html/occ config:system:set trusted_domains 1 --value="${NEXTCLOUD_DOMAIN}"
-php /var/www/html/occ config:system:set trusted_domains 2 --value="${SCS_MANAGER_DOMAIN}"
-php /var/www/html/occ config:system:set trusted_domains 3 --value="${NEXTCLOUD_ONLYOFFICE_DOMAIN}"
-php /var/www/html/occ config:system:set trusted_domains 4 --value="${NEXTCLOUD_NEXTCLOUD_REVERSE_PROXY_DOMAIN}"
+php /var/www/html/occ config:system:set trusted_domains 2 --value="${NEXTCLOUD_NEXTCLOUD_REVERSE_PROXY_DOMAIN}"
+# Note: OnlyOffice document server domain (${NEXTCLOUD_ONLYOFFICE_DOMAIN}) should NOT be in trusted domains.
+# Only add domains that users access Nextcloud from.
 
 # Konfiguriere Trusted-Proxies und Forwarded-Headers (behebt die Reverse-Proxy-Sicherheitswarnung).
 php /var/www/html/occ config:system:delete trusted_proxies
@@ -115,5 +116,8 @@ if [ -n "${NEXTCLOUD_MAIL_MODE}" ] && [ -n "${NEXTCLOUD_MAIL_SMTP_HOST}" ]; then
 else
     echo "E-Mail-Server nicht konfiguriert (env vars nicht gesetzt). Bitte in der Admin-UI konfigurieren."
 fi
+
+# Deactivate the AppApi
+php /var/www/html/occ --no-warnings app:disable app_api
 
 echo "Nextcloud-Konfiguration abgeschlossen!"
