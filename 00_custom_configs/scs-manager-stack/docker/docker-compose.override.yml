@@ -21,8 +21,7 @@ services:
     labels:
       - "traefik.enable=true"  # Varnish handles the routing
       - "traefik.http.routers.scs-manager--drupal.rule=Host(`raw.${SCS_MANAGER_DOMAIN}`)"
-      - "traefik.http.routers.scs-manager--drupal.entrypoints=web,websecure"
-      - "traefik.http.routers.scs-manager--drupal.middlewares=https-redirect"
+      - "traefik.http.routers.scs-manager--drupal.entrypoints=websecure"
       - "traefik.http.routers.scs-manager--drupal.tls=true"
       - "traefik.http.routers.scs-manager--drupal.tls.certresolver=le"
       - "traefik.http.services.scs-manager--drupal.loadbalancer.server.port=80"
@@ -60,8 +59,8 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
       - "traefik.http.routers.scs-manager--varnish.rule=Host(`${SCS_MANAGER_DOMAIN}`)"
-      - "traefik.http.routers.scs-manager--varnish.entrypoints=web,websecure"
-      - "traefik.http.routers.scs-manager--varnish.middlewares=https-redirect,rate-limit-high"
+      - "traefik.http.routers.scs-manager--varnish.entrypoints=websecure"
+      - "traefik.http.routers.scs-manager--varnish.middlewares=rate-limit-high"
       - "traefik.http.routers.scs-manager--varnish.tls=true"
       - "traefik.http.routers.scs-manager--varnish.tls.certresolver=le"
       - "traefik.http.routers.scs-manager--varnish.service=scs-manager--varnish"

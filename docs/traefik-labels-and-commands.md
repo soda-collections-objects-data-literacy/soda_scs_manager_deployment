@@ -15,7 +15,7 @@ Labels use a dot-separated path: `traefik.<scope>.<resource-type>.<resource-name
 **traefik.http.services.<name>** — Defines an HTTP service (backend). The name is the service name; routers reference it with `traefik.http.routers.<router>.service=<name>`.
 **traefik.http.services.<name>.loadbalancer.server.port** — Backend port inside the container (e.g. `8080` for Adminer). Traefik forwards to this port.
 **traefik.http.routers.<name>.entrypoints** — Comma-separated list of entrypoints (e.g. `web`, `websecure`). The router only applies to requests that arrive on these entrypoints.
-**traefik.http.routers.<name>.middlewares** — Comma-separated list of middleware names (e.g. `https-redirect`). Applied in order before forwarding to the service.
+**traefik.http.routers.<name>.middlewares** — Comma-separated list of middleware names (e.g. `rate-limit`). Applied in order before forwarding to the service.
 **traefik.http.routers.<name>.tls** — Enable TLS for this router (`true`/`false`).
 **traefik.http.routers.<name>.tls.certresolver** — Name of the certificate resolver (e.g. `le` for Let’s Encrypt) used to get the certificate.
 **traefik.http.routers.<name>.service** — Links the router to the service name. If omitted, Traefik often infers it from the container/service name, but setting it explicitly is clearer (e.g. when one service has multiple routers).

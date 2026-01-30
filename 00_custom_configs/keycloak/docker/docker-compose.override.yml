@@ -28,7 +28,7 @@ services:
       - "traefik.docker.network=reverse-proxy"
       - "traefik.http.routers.keycloak--keycloak.rule=Host(`${KC_DOMAIN}`)"
       - "traefik.http.routers.keycloak--keycloak.entrypoints=web,websecure"
-      - "traefik.http.routers.keycloak--keycloak.middlewares=https-redirect,rate-limit"
+      - "traefik.http.routers.keycloak--keycloak.middlewares=rate-limit"
       - "traefik.http.routers.keycloak--keycloak.tls=true"
       - "traefik.http.routers.keycloak--keycloak.tls.certresolver=le"
       - "traefik.http.services.keycloak--keycloak.loadbalancer.server.port=8080"

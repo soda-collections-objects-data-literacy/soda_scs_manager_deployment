@@ -83,7 +83,7 @@ Override files are copied from `00_custom_configs/<stack>/docker/` to each stack
 
 - Listens on ports 80 (HTTP) and 443 (HTTPS).
 - Uses Let’s Encrypt for TLS (certificate resolver `le`).
-- Middlewares: `https-redirect`, `nextcloud-headers`, `rate-limit`, `rate-limit-high`, `rate-limit-strict`, and redirects (e.g. SCS Manager second domain).
+- Middlewares: `rate-limit`, `rate-limit-high`, `rate-limit-strict`, and redirects (e.g. SCS Manager second domain).
 - Each service that should be reachable gets Traefik labels for router rule, entrypoints, TLS, and service port.
 
 ### Database

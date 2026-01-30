@@ -94,8 +94,8 @@ services:
       - "traefik.docker.network=reverse-proxy"
       # Main domain route
       - "traefik.http.routers.scs-project-website--varnish.rule=Host(`${PROJECT_WEBSITE_DOMAIN}`)"
-      - "traefik.http.routers.scs-project-website--varnish.entrypoints=web,websecure"
-      - "traefik.http.routers.scs-project-website--varnish.middlewares=https-redirect,rate-limit-high"
+      - "traefik.http.routers.scs-project-website--varnish.entrypoints=websecure"
+      - "traefik.http.routers.scs-project-website--varnish.middlewares=rate-limit-high"
       - "traefik.http.routers.scs-project-website--varnish.tls=true"
       - "traefik.http.routers.scs-project-website--varnish.tls.certresolver=le"
       - "traefik.http.routers.scs-project-website--varnish.service=scs-project-website--varnish"

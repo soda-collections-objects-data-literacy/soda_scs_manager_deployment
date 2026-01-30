@@ -29,7 +29,7 @@ services:
       - "traefik.docker.network=reverse-proxy"
       - "traefik.http.routers.jupyterhub--jupyterhub.rule=Host(`${JUPYTERHUB_DOMAIN}`)"
       - "traefik.http.routers.jupyterhub--jupyterhub.entrypoints=web,websecure"
-      - "traefik.http.routers.jupyterhub--jupyterhub.middlewares=https-redirect,rate-limit"
+      - "traefik.http.routers.jupyterhub--jupyterhub.middlewares=rate-limit"
       - "traefik.http.routers.jupyterhub--jupyterhub.tls=true"
       - "traefik.http.routers.jupyterhub--jupyterhub.tls.certresolver=le"
       - "traefik.http.services.jupyterhub--jupyterhub.loadbalancer.server.port=8000"
