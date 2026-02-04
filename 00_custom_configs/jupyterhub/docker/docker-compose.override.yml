@@ -13,7 +13,7 @@ services:
       # Override with parent environment variables
       CLIENT_SECRET: ${JUPYTERHUB_CLIENT_SECRET}
       CLIENT_ID: ${JUPYTERHUB_CLIENT_ID}
-    networks: !reset
+    networks: !override
       - reverse-proxy
     labels:
       - "traefik.enable=true"
