@@ -186,3 +186,21 @@ SCS_TRAEFIK_HASHED_PASSWORD=
 SCS_TRAEFIK_USERNAME=admin
 SCS_TRAEFIK_SERVICE_NAME=reverse-proxy
 
+# WebProtégé.
+WEBPROTEGE_WEBPROTEGE_DOMAIN=webprotege.scs.localhost
+# WebProtégé email configuration (optional; if not set, configure via mail.properties file).
+# SMTP server hostname (e.g., smtp.gmail.com, smtp.mailgun.org).
+WEBPROTEGE_MAIL_SMTP_HOST=
+# SMTP server port (common: 587 for STARTTLS, 465 for SSL/TLS).
+WEBPROTEGE_MAIL_SMTP_PORT=587
+# Enable SMTP authentication (true/false).
+WEBPROTEGE_MAIL_SMTP_AUTH=false
+# SMTP username (required if auth is true).
+WEBPROTEGE_MAIL_SMTP_USER=
+# SMTP password (required if auth is true).
+WEBPROTEGE_MAIL_SMTP_PASSWORD=
+# Enable STARTTLS (use with port 587).
+WEBPROTEGE_MAIL_SMTP_STARTTLS_ENABLE=true
+# Enable SSL/TLS (use with port 465).
+WEBPROTEGE_MAIL_SMTP_SSL_ENABLE=false
+

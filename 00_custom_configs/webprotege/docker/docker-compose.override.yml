@@ -1,0 +1,38 @@
+services:
+  wpmongo:
+    networks:
+      - webprotege
+    volumes: !override
+      - mongodb-data:/data/db
+  webprotege:
+    labels:
+      traefik.enable: true
+      traefik.docker.network: reverse-proxy
+      traefik.http.routers.webprotege.rule: Host(`webprotege.${SCS_FULL_DOMAIN}`)
+      traefik.http.routers.webprotege.entrypoints: web,websecure
+      traefik.http.routers.webprotege.middlewares: https-redirect
+      traefik.http.routers.webprotege.tls: true
+      traefik.http.routers.webprotege.tls.certresolver: le
+      traefik.http.services.webprotege.loadbalancer.server.port: 8080
+    networks:
+      - reverse-proxy
+      - webprotege
+    ports: []
+    volumes: !override
+      - webprotege-data:/srv/webprotege
+
+networks:
+  webprotege:
+    name: webprotege
+    driver: bridge
+  reverse-proxy:
+    name: reverse-proxy
+    external: true
+
+volumes:
+  mongodb-data:
+    name: mongodb-data
+    driver: local
+  webprotege-data:
+    name: webprotege-data
+    driver: local
