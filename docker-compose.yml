@@ -9,7 +9,7 @@ services:
     command: >
       sh -c "id filemanager >/dev/null 2>&1 || adduser -D -u 9000 filemanager && id www-data >/dev/null 2>&1 || adduser -D -u 33 -G www-data www-data && tail -f /dev/null"
     volumes:
-      - ${SCS_SHARED_DATA}:/shared
+      - scs--shared-data:/shared
       - /var/backups/scs-manager/snapshots:/var/scs-manager/snapshots
     networks:
       - reverse-proxy
@@ -97,25 +97,14 @@ services:
     volumes:
       - scs--database-data:/var/lib/mysql
       - /srv/backups/scs-manager/snapshots:/var/scs-manager/snapshots
-    ports:
-      - 3306:3306
     depends_on:
       - scs--reverse-proxy
       - scs--portainer
     networks:
       - reverse-proxy
     labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=reverse-proxy"
-      - "traefik.tcp.routers.scs--database.entrypoints=mysql"
-      - "traefik.tcp.routers.scs--database.rule=HostSNI(`${SCS_DB_DOMAIN}`)"
-      - "traefik.tcp.routers.scs--database.tls=true"
-      - "traefik.tcp.routers.scs--database.tls.certresolver=le"
-      # - "traefik.tcp.routers.scs--database.tls.passthrough=true" # This does not make sense in combination with certresolver.
-      - "traefik.tcp.services.scs--database.loadbalancer.server.port=3306"
+      - "traefik.enable=false"
     restart: unless-stopped
-    deploy:
-      replicas: 1
 
   scs--adminer:
     image: adminer
@@ -143,7 +132,7 @@ services:
       - reverse-proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.scs--echo.rule=Host(`echo.scs.sammlungen.io`)"
+      - "traefik.http.routers.scs--echo.rule=Host(`echo.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}`)"
       - "traefik.http.routers.scs--echo.entrypoints=websecure"
       - "traefik.http.routers.scs--echo.tls=true"
       - "traefik.http.routers.scs--echo.tls.certresolver=le"
@@ -168,7 +157,7 @@ services:
       - "traefik.http.middlewares.admin-auth.basicauth.users=${SCS_TRAEFIK_USERNAME}:${SCS_TRAEFIK_HASHED_PASSWORD}"
 
       ## Redirect to SCS Manager
-      - "traefik.http.middlewares.redirect-to-scs-manager--drupal.redirectregex.regex=^https?://scs\\.sammlungen\\.io(.*)"
+      - "traefik.http.middlewares.redirect-to-scs-manager--drupal.redirectregex.regex=^https?://${SCS_SUBDOMAIN}\\.${SCS_BASE_DOMAIN}(.*)"
       - "traefik.http.middlewares.redirect-to-scs-manager--drupal.redirectregex.replacement=https://${SCS_MANAGER_DOMAIN}$${1}"
       - "traefik.http.middlewares.redirect-to-scs-manager--drupal.redirectregex.permanent=true"
 
@@ -207,7 +196,7 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - scs--reverse-proxy-certificates:/certificates
+      - ./acme.json:/certificates/acme.json
     command:
       # Enable Docker provider
       - --providers.docker
@@ -261,5 +250,5 @@ volumes:
 networks:
   reverse-proxy:
     name: reverse-proxy
-    enable_ipv6: true
+    # enable_ipv6: true
     driver: bridge

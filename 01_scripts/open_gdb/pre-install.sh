@@ -1,11 +1,6 @@
 #!/bin/bash
 
-set -x
-
-# Load environment variables.
-if [ -f .env ]; then
-    source .env
-fi
+set -euo pipefail
 
 # Check if required environment variables are set.
 if [ -z "${OPEN_GDB_DOMAIN}" ]; then

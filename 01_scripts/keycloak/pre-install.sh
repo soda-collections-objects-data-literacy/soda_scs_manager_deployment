@@ -1,13 +1,6 @@
 #!/bin/bash
 
-
-
-# Load environment variables.
-if [ -f .env ]; then
-    source .env
-fi
-
-# Check if required environment variables are set.
+set -euo pipefail
 
 echo "Checking if required environment variables are set..."
 
