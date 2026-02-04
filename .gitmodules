@@ -21,3 +21,7 @@
 [submodule "scs-project-website-stack"]
 	path = scs-project-website-stack
 	url = git@github.com:soda-collections-objects-data-literacy/scs-project-website-stack.git
+
+[submodule "scs-nextcloud-stack"]
+	path = scs-nextcloud-stack
+	url = git@github.com:soda-collections-objects-data-literacy/scs-nextcloud-stack.git
