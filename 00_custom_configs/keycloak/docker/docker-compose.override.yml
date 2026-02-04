@@ -10,7 +10,7 @@ services:
     # Reset ports - no direct port binding, use Traefik instead
     ports: !reset []
     volumes: !override
-      - ./keylcoak/import:/opt/keycloak/data/import
+      - ./keycloak/import:/opt/keycloak/data/import
     environment: !override
       # Database connection - use parent stack's database.
       KC_DB_URL: jdbc:${KC_DB_DRIVER:-mariadb}://scs--database:3306/${KC_DB_NAME:-keycloak}
