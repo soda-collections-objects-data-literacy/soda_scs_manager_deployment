@@ -12,3 +12,4 @@ webprotege/.protegedata
 Openrefine
 **/*.tar.gz
 backups/
+acme.json
