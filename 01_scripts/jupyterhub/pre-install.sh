@@ -34,11 +34,12 @@ echo "Extracting to $tmpdir..."
 mkdir -p "$tmpdir"
 tar -xzf "/tmp/$tgz_name" -C "$tmpdir"
 
-# Check for old installation and potnentially remove.
+# Check for old installation and potentially remove.
 if [ -d "$JUPYTERHUB_OPENREFINE_DIR" ]; then
   echo "Removing old OpenRefine installation..."
   rm -r "$JUPYTERHUB_OPENREFINE_DIR"
 fi
-echo "Moving $tmpdir into $JUPYTERHUB_OPENREFINE_DIR..."
-mv "$tmpdir" "$JUPYTERHUB_OPENREFINE_DIR"
+echo "Moving $tmpdir/$lib_name into $JUPYTERHUB_OPENREFINE_DIR..."
+mv "$tmpdir/$lib_name" "$JUPYTERHUB_OPENREFINE_DIR"
+rm -r "$tmpdir"
 echo "Openrefine downloaded and extracted successfully!"
