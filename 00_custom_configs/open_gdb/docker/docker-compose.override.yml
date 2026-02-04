@@ -4,11 +4,11 @@
 
 services:
   # RDF4J Triplestore
-  open-gdb--rdf4j:
+  rdf4j:
     container_name: scs--rdf4j
     image: eclipse/rdf4j-workbench:5.1.0
     environment:
-      - JAVA_OPTS=-Xms1g -Xmx6g -Dhttp.nonProxyHosts="" -Dhttp.proxyHost=outproxy -Dhttp.proxyPort=8080 -Dhttps.proxyHost=outproxy -Dhttps.proxyPort=8080
+      - JAVA_OPTS=-Xms1g -Xmx6g -Dhttp.nonProxyHosts="" -Dhttp.proxyHost=scs--outproxy -Dhttp.proxyPort=8080 -Dhttps.proxyHost=scs--outproxy -Dhttps.proxyPort=8080
     networks:
       - default
       - reverse-proxy
@@ -16,10 +16,13 @@ services:
       - "traefik.enable=false"
 
   # Nginx Reverse Proxy with Traefik Integration
-  open-gdb--nginx:
+  nginx:
     container_name: scs--opengdb-proxy
-    volumes:
-      - ./open_gdb/opengdb_proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+    environment:
+      AUTHPROXY_HOSTNAME: scs--authproxy
+      RDF4J_HOSTNAME: scs--rdf4j
+    volumes: !override
+        - ./open_gdb/nginx/nginx.conf.template:/etc/nginx/templates/nginx.conf.template
     networks:
       - default
       - reverse-proxy
@@ -34,8 +37,9 @@ services:
       - "traefik.http.services.open-gdb--nginx.loadbalancer.server.port=80"
 
   # Outproxy for external HTTP requests
-  open-gdb--outproxy:
+  outproxy:
     container_name: scs--outproxy
+    build: !reset []
     networks:
       - default
       - reverse-proxy
@@ -43,8 +47,9 @@ services:
       - "traefik.enable=false"
 
   # Authentication Proxy
-  open-gdb--authproxy:
+  authproxy:
     container_name: scs--authproxy
+    build: !reset []
     networks:
       - default
       - reverse-proxy
@@ -53,9 +58,6 @@ services:
 
 # Networks
 networks:
-  reverse-proxy:
-    name: reverse-proxy
-    external: true
   default:
     name: open_gdb
     driver: bridge

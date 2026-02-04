@@ -6,25 +6,34 @@ services:
   # Drupal with NGINX
   scs-manager--drupal:
     container_name: scs-manager--drupal
+    restart: unless-stopped
     environment:
       # Override to use parent stack's database
       DB_HOST: scs--database
+      # Pass through Drupal configuration
+      DRUPAL_TRUSTED_HOSTS: ${SCS_MANAGER_DRUPAL_TRUSTED_HOSTS}
+      DRUPAL_PROXY_ADDRESSES: ${SCS_MANAGER_DRUPAL_PROXY_ADDRESSES}
     volumes:
-      - scs-manager--drupal-sites:/opt/drupal/web/sites
-      - /var/backups/scs-manager/snapshots:/var/scs-manager/snapshots
-    networks:
+      - ./scs-manager-stack/custom_configs/sync:/opt/drupal/custom_configs/sync
+      - ./scs-manager-stack/configs/php-fpm/zz-docker.conf:/usr/local/etc/php-fpm.d/zz-docker.conf:ro
+      - /srv/backups/scs-manager/snapshots:/var/scs-manager/snapshots
+      # Workaround: Mount PHP-FPM config to fix socket issue until image is rebuilt
+    networks: !override
       - default
       - reverse-proxy
     ports: !reset []  # Remove port binding, use Varnish with Traefik
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    depends_on: !override
+      - scs--reverse-proxy
+      - scs--database
     labels:
-      - "traefik.enable=true"  # Varnish handles the routing
-      - "traefik.http.routers.scs-manager--drupal.rule=Host(`raw.${SCS_MANAGER_DOMAIN}`)"
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy"
+      - "traefik.http.routers.scs-manager--drupal.rule=Host(`${SCS_MANAGER_DOMAIN}`)"
       - "traefik.http.routers.scs-manager--drupal.entrypoints=websecure"
       - "traefik.http.routers.scs-manager--drupal.tls=true"
       - "traefik.http.routers.scs-manager--drupal.tls.certresolver=le"
       - "traefik.http.services.scs-manager--drupal.loadbalancer.server.port=80"
+
 
   # Don't start local database - use parent stack's database instead
   scs-manager--database:
@@ -33,7 +42,7 @@ services:
 
   # Redis
   scs-manager--redis:
-    container_name: scs-manager-redis
+    container_name: scs-manager--redis
     networks:
       - default
     labels:
@@ -41,36 +50,17 @@ services:
 
   # Varnish with Traefik Integration
   scs-manager--varnish:
-    container_name: scs-manager--varnish
-    environment:
-      # Override to use correct container name
-      - VARNISH_BACKEND_HOST=scs-manager--drupal
-      - VARNISH_BACKEND_PORT=80
-      - VARNISH_SIZE=256M
-    volumes:
-      - /var/deploy/soda_scs_manager_deployment/scs-manager-stack/varnish/default.vcl:/etc/varnish/default.vcl:ro
-    entrypoint: ["/usr/sbin/varnishd"]
-    command: ["-F", "-f", "/etc/varnish/default.vcl", "-a", ":80", "-s", "malloc,256M"]
-    networks:
-      - default
-      - reverse-proxy
-    ports: !reset []  # Remove port binding, use Traefik instead
-    labels:
-      - "traefik.enable=true"
-      - "traefik.docker.network=reverse-proxy"
-      - "traefik.http.routers.scs-manager--varnish.rule=Host(`${SCS_MANAGER_DOMAIN}`)"
-      - "traefik.http.routers.scs-manager--varnish.entrypoints=websecure"
-      - "traefik.http.routers.scs-manager--varnish.middlewares=rate-limit-high"
-      - "traefik.http.routers.scs-manager--varnish.tls=true"
-      - "traefik.http.routers.scs-manager--varnish.tls.certresolver=le"
-      - "traefik.http.routers.scs-manager--varnish.service=scs-manager--varnish"
-      - "traefik.http.services.scs-manager--varnish.loadbalancer.server.port=80"
+    deploy:
+      replicas: 0
 
 # Networks
 networks:
-  reverse-proxy:
-    name: reverse-proxy
-    external: true
   default:
     name: scs-manager
     driver: bridge
+
+volumes:
+  scs-manager--custom-modules:
+    name: scs-manager--custom-modules
+    driver: local
+
