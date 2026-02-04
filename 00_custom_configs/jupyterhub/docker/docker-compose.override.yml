@@ -10,6 +10,7 @@ services:
     build:
       context: jupyterhub/jupyterhub
     environment:
+      DOCKER_NETWORK: ${JUPYTERHUB_NETWORK}
       # Override with parent environment variables
       CLIENT_SECRET: ${JUPYTERHUB_CLIENT_SECRET}
       CLIENT_ID: ${JUPYTERHUB_CLIENT_ID}
