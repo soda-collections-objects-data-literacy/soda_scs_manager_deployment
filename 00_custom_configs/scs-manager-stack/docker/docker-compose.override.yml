@@ -68,9 +68,6 @@ services:
 
 # Networks
 networks:
-  reverse-proxy:
-    name: reverse-proxy
-    external: true
   default:
     name: scs-manager
     driver: bridge

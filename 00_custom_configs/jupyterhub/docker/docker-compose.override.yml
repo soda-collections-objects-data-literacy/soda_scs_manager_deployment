@@ -41,10 +41,6 @@ services:
       context: jupyterhub/spawner_image
 
 # Networks
-networks:
-  reverse-proxy:
-    name: reverse-proxy
-    external: true
   default:
     name: jupyterhub
     driver: bridge

@@ -105,7 +105,3 @@ services:
 volumes:
   scs-project-website--redis-data:
     name: scs-project-website--redis-data
-
-networks:
-  reverse-proxy:
-    external: true

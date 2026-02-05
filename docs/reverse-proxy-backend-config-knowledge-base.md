@@ -19,6 +19,7 @@ ports:
 - The network driver is set to `bridge`
 
 **Required network configuration:**
+
 ```yaml
 networks:
   reverse-proxy:
@@ -27,12 +28,14 @@ networks:
     driver: bridge
 ```
 
-The `enable_ipv6: true` setting is critical for preserving real client IPs with the standard port binding syntax. Without IPv6 enabled, you may need to use `mode: host` explicitly.
+Docker will automatically assign appropriate IPv6 subnets. The `enable_ipv6: true` setting is critical for preserving real client IPs with the standard port binding syntax. Without IPv6 enabled, you may need to use `mode: host` explicitly.
 
 **Network creation command:**
 ```bash
 docker network create reverse-proxy --driver bridge --ipv6
 ```
+
+For detailed explanations of IPAM, ULA addresses, gateways, and IPv6 subnetting concepts, see the [Docker IPv6 Networking guide](knowledge-base/docker-ipv6-networking.md).
 
 For detailed network creation information, troubleshooting, and reverse engineering details, see the [Network creation guide](initial-setup/network-creation.md).
 

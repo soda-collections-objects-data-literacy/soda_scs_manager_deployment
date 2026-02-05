@@ -52,10 +52,6 @@ services:
       - "traefik.enable=false"
 
 # Networks
-networks:
-  reverse-proxy:
-    name: reverse-proxy
-    external: true
   default:
     name: open_gdb
     driver: bridge

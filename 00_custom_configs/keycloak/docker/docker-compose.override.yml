@@ -33,8 +33,3 @@ services:
       - "traefik.http.routers.keycloak--keycloak.tls.certresolver=le"
       - "traefik.http.services.keycloak--keycloak.loadbalancer.server.port=8080"
 
-# Networks
-networks:
-  reverse-proxy:
-    name: reverse-proxy
-    external: true
