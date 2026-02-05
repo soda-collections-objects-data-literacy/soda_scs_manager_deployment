@@ -5,31 +5,22 @@
 services:
   # JupyterHub Service
   jupyterhub--jupyterhub:
-    container_name: jupyterhub--jupyterhub
+    container_name: ${JUPYTERHUB_SERVICE_NAME}
+    env_file: !reset
     build:
       context: jupyterhub/jupyterhub
     environment:
+      DOCKER_NETWORK: ${JUPYTERHUB_NETWORK}
       # Override with parent environment variables
-      DOCKER_JUPYTER_IMAGE: spawner_image
-      DOCKER_NETWORK: jupyterhub
-      HUB_IP: 0.0.0.0
-      JUPYTERHUB_OPENREFINE_DIR: ${JUPYTERHUB_OPENREFINE_DIR}
-      JUPYTERHUB_SHARE: ${JUPYTERHUB_SHARE}
-      KC_ADMIN_GROUPS: ${KC_ADMIN_GROUPS}
-      KC_USER_GROUPS: ${KC_USER_GROUPS}
-      KC_AUTHORIZE_URL: ${KC_URL}/realms/${KC_REALM}/protocol/openid-connect/auth
-      KC_TOKEN_URL: ${KC_URL}/realms/${KC_REALM}/protocol/openid-connect/token
-      KC_USERINFO_URL: ${KC_URL}/realms/${KC_REALM}/protocol/openid-connect/userinfo
-      KC_OAUTH_CALLBACK_URL: https://${JUPYTERHUB_DOMAIN}/hub/oauth_callback
-    networks:
-      - default
+      CLIENT_SECRET: ${JUPYTERHUB_CLIENT_SECRET}
+      CLIENT_ID: ${JUPYTERHUB_CLIENT_ID}
+    networks: !override
       - reverse-proxy
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
       - "traefik.http.routers.jupyterhub--jupyterhub.rule=Host(`${JUPYTERHUB_DOMAIN}`)"
-      - "traefik.http.routers.jupyterhub--jupyterhub.entrypoints=web,websecure"
-      - "traefik.http.routers.jupyterhub--jupyterhub.middlewares=rate-limit"
+      - "traefik.http.routers.jupyterhub--jupyterhub.entrypoints=websecure"
       - "traefik.http.routers.jupyterhub--jupyterhub.tls=true"
       - "traefik.http.routers.jupyterhub--jupyterhub.tls.certresolver=le"
       - "traefik.http.services.jupyterhub--jupyterhub.loadbalancer.server.port=8000"
@@ -40,7 +31,3 @@ services:
     build:
       context: jupyterhub/spawner_image
 
-# Networks
-  default:
-    name: jupyterhub
-    driver: bridge

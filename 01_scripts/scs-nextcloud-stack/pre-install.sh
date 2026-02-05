@@ -1,15 +1,6 @@
 #!/bin/bash
 
-set -e
-
-# Load environment variables.
-if [ -f .env ]; then
-    source .env
-    echo "Loaded environment variables from .env file."
-else
-    echo "No .env file found. Please create one and set the environment variables. Have you execute the script from the root directory?"
-    exit 1
-fi
+set -euo pipefail
 
 # Check if SCS_DB_ROOT_PASSWORD is set.
 if [ -z "${SCS_DB_ROOT_PASSWORD}" ]; then

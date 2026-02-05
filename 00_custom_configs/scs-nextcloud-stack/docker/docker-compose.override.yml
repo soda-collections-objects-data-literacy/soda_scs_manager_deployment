@@ -30,7 +30,7 @@ services:
   nextcloud--nextcloud-reverse-proxy:
     container_name: nextcloud--nextcloud-reverse-proxy
     volumes:
-      - ${SCS_ROOT_PATH}/scs-nextcloud-stack/reverse-proxy/nginx.conf:/etc/nginx/nginx.conf
+      - ./scs-nextcloud-stack/reverse-proxy/nginx.conf:/etc/nginx/nginx.conf
     networks:
       - default
       - reverse-proxy

@@ -1,8 +1,7 @@
 #!/bin/bash
 # Load environment variables.
-if [ -f .env ]; then
-    source .env
-fi
+
+set -euo pipefail
 
 # Check if snapshot dir exists
 if [ ! -d "/var/snapshots" ]; then

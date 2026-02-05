@@ -1,13 +1,6 @@
 #!/bin/bash
 
-
-
-# Load environment variables.
-if [ -f .env ]; then
-    source .env
-fi
-
-# Check if required environment variables are set.
+set -euo pipefail
 
 echo "Checking if required environment variables are set..."
 
@@ -21,6 +14,8 @@ required_vars=(
     "KC_DB_NAME"
     "KC_DB_PASSWORD"
     "KC_DB_USERNAME"
+    "KC_ADMIN_GROUPS"
+    "KC_USER_GROUPS"
     "KC_DIDMOS_CLIENT_ID"
     "KC_DIDMOS_CLIENT_SECRET"
     "KC_REALM"
@@ -45,23 +40,16 @@ echo "Creating Keycloak database and user..."
 docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS ${KC_DB_NAME};"
 docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "CREATE USER IF NOT EXISTS '${KC_DB_USERNAME}'@'%' IDENTIFIED BY '${KC_DB_PASSWORD}';"
 docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "GRANT ALL PRIVILEGES ON ${KC_DB_NAME}.* TO '${KC_DB_USERNAME}'@'%';"
-
 docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;"
 
 echo "Keycloak database and user created successfully."
 
-echo "Creating OpenID Connect client realm file..."
-
-# Get the script directory and repo root
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-cd "$REPO_ROOT"
-
+echo "Creating OpenID Connect client realm file for ${KC_REALM}..."
 # Create OpenID Connect client config file.
 # Only substitute environment variables that are actually used in the template.
 # Keycloak internal variables (${role_*}, ${client_*}, ${authBaseUrl}, etc.) are handled by Keycloak itself.
 # Ensure output directory exists
-mkdir -p keycloak/keycloak/import
-envsubst '${KC_REALM} ${JUPYTERHUB_DOMAIN} ${NEXTCLOUD_NEXTCLOUD_DOMAIN} ${SCS_MANAGER_DOMAIN} ${JUPYTERHUB_CLIENT_SECRET} ${NEXTCLOUD_CLIENT_SECRET} ${SCS_MANAGER_CLIENT_SECRET} ${KC_DIDMOS_CLIENT_SECRET} ${KC_DIDMOS_CLIENT_ID}' < 00_custom_configs/keycloak/templates/realm/scs-realm.json.tpl > keycloak/keycloak/import/scs-realm.json
+mkdir -p keycloak/import
+envsubst '${KC_REALM} ${KC_ADMIN_GROUPS} ${KC_USER_GROUPS} ${JUPYTERHUB_DOMAIN} ${NEXTCLOUD_NEXTCLOUD_DOMAIN} ${SCS_MANAGER_DOMAIN} ${JUPYTERHUB_CLIENT_SECRET} ${NEXTCLOUD_CLIENT_SECRET} ${SCS_MANAGER_CLIENT_SECRET} ${KC_DIDMOS_CLIENT_SECRET} ${KC_DIDMOS_CLIENT_ID}' < 00_custom_configs/keycloak/templates/realm/scs-realm.json.tpl > "keycloak/import/${KC_REALM}.json"
 
 echo "OpenID Connect client config file created successfully."

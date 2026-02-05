@@ -6,6 +6,11 @@ Docker Compose environment for the Drupal-based SCS Manager plus Keycloak, Nextc
 
 - SODa SCS Manager Deployment 1.0.0 · Drupal 11 · MariaDB 11.5 · Traefik 3 · Portainer CE 2.21
 
+
+## Requirements:
+- `jq`
+- `curl`
+
 ## Quick start
 
 1. Clone the repo and init submodules: `git submodule update --init --recursive`

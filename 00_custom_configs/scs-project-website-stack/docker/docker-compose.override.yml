@@ -1,0 +1,44 @@
+services:
+  # Disable local database - use parent database instead.
+  scs-project-website--database:
+    deploy:
+      replicas: 0
+
+  # Drupal - connect to parent database via reverse-proxy network.
+  scs-project-website--drupal:
+    build:
+      context: scs-project-website-stack
+    depends_on: []
+    volumes:
+      - ./scs-project-website-stack/volumes/drupal-root:/opt/drupal
+      - ./scs-project-website-stack/volumes/database/state:/var/database_state
+    environment:
+      DB_HOST: scs--database
+    networks:
+      - reverse-proxy
+    external_links:
+      - scs--database
+
+  # Redis - add to reverse-proxy network.
+  scs-project-website--redis:
+    networks:
+      - reverse-proxy
+
+  # Varnish - expose via Traefik and direct port 3099.
+  scs-project-website--varnish:
+    entrypoint: ["/bin/sh", "-c"]
+    command: ["exec /usr/sbin/varnishd -F -f /etc/varnish/default.vcl -a :80 -s malloc,256M"]
+    volumes:
+      - ./scs-project-website-stack/varnish/default.vcl:/etc/varnish/default.vcl:ro
+    ports: !override [3099:80]
+    networks:
+      - reverse-proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy"
+      - "traefik.http.routers.scs-project-website--varnish.rule=Host(`${PROJECT_WEBSITE_DOMAIN}`)"
+      - "traefik.http.routers.scs-project-website--varnish.entrypoints=websecure"
+      - "traefik.http.routers.scs-project-website--varnish.tls=true"
+      - "traefik.http.routers.scs-project-website--varnish.tls.certresolver=le"
+      - "traefik.http.services.scs-project-website--varnish.loadbalancer.server.port=80"
+
