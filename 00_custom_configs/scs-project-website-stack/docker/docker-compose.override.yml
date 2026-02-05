@@ -8,16 +8,23 @@ services:
   scs-project-website--drupal:
     build:
       context: scs-project-website-stack
-    depends_on: []
-    volumes:
-      - ./scs-project-website-stack/volumes/drupal-root:/opt/drupal
-      - ./scs-project-website-stack/volumes/database/state:/var/database_state
+    depends_on:
+      - scs--database
+    volumes: !override
+      - scs-project-website-data:/opt/drupal/web/sites
     environment:
-      DB_HOST: scs--database
+      DB_DRIVER: ${PROJECT_WEBSITE_DB_DRIVER}
+      DB_HOST: ${PROJECT_WEBSITE_DB_HOST}
+      DB_NAME: ${PROJECT_WEBSITE_DB_NAME}
+      DB_PASSWORD: ${PROJECT_WEBSITE_DB_PASSWORD}
+      DB_PORT: ${PROJECT_WEBSITE_DB_PORT}
+      DB_USER: ${PROJECT_WEBSITE_DB_USER}
+      DRUPAL_SITE_NAME: ${PROJECT_WEBSITE_SITE_NAME}
+      DRUPAL_ADMIN_USER: ${PROJECT_WEBSITE_ADMIN_NAME}
+      DRUPAL_ADMIN_PASSWORD: ${PROJECT_WEBSITE_ADMIN_PASSWORD}
+      DRUPAL_ADMIN_EMAIL: ${PROJECT_WEBSITE_ADMIN_EMAIL}
     networks:
       - reverse-proxy
-    external_links:
-      - scs--database
 
   # Redis - add to reverse-proxy network.
   scs-project-website--redis:
@@ -26,9 +33,6 @@ services:
 
   # Varnish - expose via Traefik and direct port 3099.
   scs-project-website--varnish:
-    entrypoint: ["/bin/sh", "-c"]
-    command: ["exec /usr/sbin/varnishd -F -f /etc/varnish/default.vcl -a :80 -s malloc,256M"]
-    ports: !override [3099:80]
     networks:
       - reverse-proxy
     labels:
@@ -40,3 +44,5 @@ services:
       - "traefik.http.routers.scs-project-website--varnish.tls.certresolver=le"
       - "traefik.http.services.scs-project-website--varnish.loadbalancer.server.port=80"
 
+volumes:
+  scs-project-website-data:

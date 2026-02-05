@@ -16,7 +16,7 @@ services:
     networks:
       - reverse-proxy
       - webprotege
-    ports: []
+    ports: !reset []
     volumes: !override
       - webprotege-data:/srv/webprotege
 
