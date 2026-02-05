@@ -9,8 +9,7 @@ services:
       traefik.enable: true
       traefik.docker.network: reverse-proxy
       traefik.http.routers.webprotege.rule: Host(`webprotege.${SCS_FULL_DOMAIN}`)
-      traefik.http.routers.webprotege.entrypoints: web,websecure
-      traefik.http.routers.webprotege.middlewares: https-redirect
+      traefik.http.routers.webprotege.entrypoints: websecure
       traefik.http.routers.webprotege.tls: true
       traefik.http.routers.webprotege.tls.certresolver: le
       traefik.http.services.webprotege.loadbalancer.server.port: 8080
