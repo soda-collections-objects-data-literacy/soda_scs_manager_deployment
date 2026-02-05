@@ -2,16 +2,17 @@
 # SODa SCS manager deployment starter script
 # This script ensures prerequisites, copies configs, starts database, and executes pre-install scripts.
 
-set -euo --pipefail
+set -euo pipefail
 
 # Get the repo root and script directories
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPT_DIR="$REPO_ROOT"
+export REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export CONFIG_DIR="$REPO_ROOT/00_custom_configs"
+SCRIPTS_DIR="$REPO_ROOT/01_scripts"
 
 # Runs all scripts within base_dir that are named script_name
 run_scripts() {
     local script_name="$1"
-    local base_dir="${2:-$SCRIPT_DIR}"
+    local base_dir="$2"
     local count=0
 
     if [[ -z "$script_name" ]]; then
@@ -87,13 +88,6 @@ echo "All repositories are up to date"
 # TODO: this should fail when submodules cannot be initialized
 echo ""
 
-# Copy Nextcloud custom reverse-proxy nginx config (overwrites so .mjs MIME and custom rules apply).
-if [ -f "00_custom_configs/scs-nextcloud-stack/reverse-proxy/nginx.conf" ]; then
-    mkdir -p scs-nextcloud-stack/reverse-proxy
-    cp "00_custom_configs/scs-nextcloud-stack/reverse-proxy/nginx.conf" "scs-nextcloud-stack/reverse-proxy/nginx.conf"
-    echo "Copied custom Nextcloud nginx config: 00_custom_configs/scs-nextcloud-stack/reverse-proxy/nginx.conf -> scs-nextcloud-stack/reverse-proxy/nginx.conf"
-fi
-echo ""
 
 echo "Step 3: Starting database service..."
 echo "----------------------------------------"
@@ -123,8 +117,8 @@ if [ -z "${SCS_DB_ROOT_PASSWORD}" ]; then
     exit 1
 fi
 
-echo "Waiting 15 seconds for database to start..." && sleep 15
-
+# Check if the database is ready
+# Takes the number of attempts as argument
 db_ready() {
   max_attempts=${1:-60}
   attempt=0
@@ -162,11 +156,11 @@ if ! db_ready; then
 fi
 
 echo ""
-echo "Step 5: Executing pre-install scripts..."
+echo "Step 5: Executing pre-install scripts in $SCRIPTS_DIR..."
 echo "----------------------------------------"
 
 # Find and execute all pre-install scripts.
-if ! run_scripts "pre-install.sh"; then
+if ! run_scripts "pre-install.sh" "$SCRIPTS_DIR"; then
 
   echo ""
   echo "=========================================="

@@ -34,23 +34,3 @@ cd "$REPO_ROOT"
 # Ensure output directory exists
 mkdir -p scs-manager-stack/custom_configs
 envsubst '${SCS_MANAGER_CLIENT_SECRET} ${KC_SERVICE_NAME} ${SCS_SUBDOMAIN} ${SCS_BASE_DOMAIN} ${KC_REALM}' < 00_custom_configs/scs-manager-stack/openid/openid_connect.client.scs_sso.yml.tpl > scs-manager-stack/custom_configs/openid_connect.client.scs_sso.yml
-
-# Generate Varnish VCL configuration from template
-echo "Generating Varnish VCL configuration..."
-
-templatePath="00_custom_configs/scs-manager-stack/varnish/default.vcl.tpl"
-outputPath="scs-manager-stack/varnish/default.vcl"
-
-# Set defaults for Varnish backend configuration (matching docker-compose override)
-VARNISH_BACKEND_HOST=${VARNISH_BACKEND_HOST:-scs-manager--drupal}
-VARNISH_BACKEND_PORT=${VARNISH_BACKEND_PORT:-80}
-
-if [ ! -f "$templatePath" ]; then
-    echo "Error: Template file not found at $templatePath."
-    exit 1
-fi
-
-mkdir -p "$(dirname "$outputPath")"
-envsubst '${VARNISH_BACKEND_HOST} ${VARNISH_BACKEND_PORT}' < "$templatePath" > "$outputPath"
-
-echo "Varnish VCL configuration generated at $outputPath."
