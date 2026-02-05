@@ -28,8 +28,6 @@ services:
   scs-project-website--varnish:
     entrypoint: ["/bin/sh", "-c"]
     command: ["exec /usr/sbin/varnishd -F -f /etc/varnish/default.vcl -a :80 -s malloc,256M"]
-    volumes:
-      - ./scs-project-website-stack/varnish/default.vcl:/etc/varnish/default.vcl:ro
     ports: !override [3099:80]
     networks:
       - reverse-proxy
