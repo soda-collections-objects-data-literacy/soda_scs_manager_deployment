@@ -95,10 +95,11 @@ echo "Docker volumes that can be removed:"
 echo "  - scs-manager---database-data (MariaDB data)"
 echo "  - scs-manager--drupal-sites (Drupal sites)"
 echo "  - scs-manager--redis-data (Redis cache data)"
+echo "  - scs-manager--drupal-custom-modules (Drupal custom modules)"
 read -p "Do you want to remove these Docker volumes (this will delete all data)? (yes/no): " removeVolumes
 if [ "$removeVolumes" = "yes" ]; then
     echo "Removing Docker volumes..."
-    docker volume rm scs-manager---database-data scs-manager--drupal-sites scs-manager--redis-data 2>/dev/null || echo "Some volumes may not exist or are in use."
+    docker volume rm scs-manager---database-data scs-manager--drupal-sites scs-manager--redis-data scs-manager--drupal-custom-modules 2>/dev/null || echo "Some volumes may not exist or are in use."
     echo "Volumes removed."
 else
     echo "Docker volumes preserved."
