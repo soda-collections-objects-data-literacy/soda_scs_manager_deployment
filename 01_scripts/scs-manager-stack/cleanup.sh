@@ -50,18 +50,24 @@ echo ""
 
 # Stop scs-manager-stack services.
 echo "Stopping scs-manager-stack containers:"
-echo "  - scs-manager--drupal"
-echo "  - scs-manager--database"
-echo "  - scs-manager--redis"
-echo "  - scs-manager--varnish"
-if [ ! -d "scs-manager-stack" ]; then
-    echo "Error: scs-manager-stack directory not found in ${REPO_ROOT}."
-    exit 1
-fi
-cd scs-manager-stack
-docker compose down 2>&1 | grep -v "WARN\[0000\] The .* variable is not set"
-cd "$REPO_ROOT"
-echo "Containers stopped."
+containerNames=(
+    "scs-manager--varnish"
+    "scs-manager--drupal"
+    "scs-manager--redis"
+    "scs-manager--database"
+)
+
+for container in "${containerNames[@]}"; do
+    if docker ps -a --format '{{.Names}}' | grep -q "^${container}$"; then
+        echo "  - Stopping and removing: ${container}"
+        docker stop "${container}" 2>/dev/null || true
+        docker rm "${container}" 2>/dev/null || true
+    else
+        echo "  - Container not found: ${container}"
+    fi
+done
+
+echo "Containers stopped and removed."
 
 # Delete database and user.
 echo "Deleting from scs--database container:"
