@@ -13,7 +13,8 @@ services:
       # Pass through Drupal configuration
       DRUPAL_TRUSTED_HOSTS: ${SCS_MANAGER_DRUPAL_TRUSTED_HOSTS}
       DRUPAL_PROXY_ADDRESSES: ${SCS_MANAGER_DRUPAL_PROXY_ADDRESSES}
-    volumes:
+    volumes: !override
+      - scs-manager--drupal-sites:/opt/drupal/web/sites
       - ./scs-manager-stack/custom_configs/sync:/opt/drupal/custom_configs/sync
       - ./scs-manager-stack/configs/php-fpm/zz-docker.conf:/usr/local/etc/php-fpm.d/zz-docker.conf:ro
       - /srv/backups/scs-manager/snapshots:/var/scs-manager/snapshots
