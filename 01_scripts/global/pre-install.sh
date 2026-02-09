@@ -3,6 +3,10 @@
 
 set -euo pipefail
 
+# Create the acme.json for certs:
+touch acme.json
+chmod 600 acme.json
+
 # Check if snapshot dir exists
 if [ ! -d "/var/snapshots" ]; then
     echo "Snapshot directory does not exist. Creating..."
