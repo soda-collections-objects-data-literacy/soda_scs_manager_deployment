@@ -8,7 +8,7 @@ services:
     labels:
       traefik.enable: true
       traefik.docker.network: reverse-proxy
-      traefik.http.routers.webprotege.rule: Host(`webprotege.${SCS_FULL_DOMAIN}`)
+      traefik.http.routers.webprotege.rule: Host(`webprotege.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}`)
       traefik.http.routers.webprotege.entrypoints: websecure
       traefik.http.routers.webprotege.tls: true
       traefik.http.routers.webprotege.tls.certresolver: le
@@ -24,9 +24,6 @@ networks:
   webprotege:
     name: webprotege
     driver: bridge
-  reverse-proxy:
-    name: reverse-proxy
-    external: true
 
 volumes:
   mongodb-data:
