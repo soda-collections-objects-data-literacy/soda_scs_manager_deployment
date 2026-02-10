@@ -50,6 +50,9 @@ services:
   authproxy:
     container_name: scs--authproxy
     build: !reset []
+    environment:
+      DJANGO_ALLOWED_HOSTS: ${OPEN_GDB_DOMAIN},${SCS_BASE_DOMAIN}
+      DJANGO_CSRF_TRUSTED_ORIGINS: https://${OPEN_GDB_DOMAIN}
     networks:
       - default
       - reverse-proxy
