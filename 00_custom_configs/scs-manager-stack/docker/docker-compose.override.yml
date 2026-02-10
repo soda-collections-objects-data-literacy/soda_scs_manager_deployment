@@ -16,7 +16,7 @@ services:
     volumes: !override
       - scs-manager--drupal-sites:/opt/drupal/web/sites
       - scs-manager--drupal-custom-modules:/opt/drupal/web/modules/custom
-      - ./scs-manager-stack/custom_configs/sync:/opt/drupal/custom_configs/sync
+      - ./scs-manager-stack/custom_configs:/opt/drupal/custom_configs
       - ./scs-manager-stack/configs/php-fpm/zz-docker.conf:/usr/local/etc/php-fpm.d/zz-docker.conf:ro
       - /srv/backups/scs-manager/snapshots:/var/scs-manager/snapshots
       # Workaround: Mount PHP-FPM config to fix socket issue until image is rebuilt
@@ -27,6 +27,12 @@ services:
     depends_on: !override
       - scs--reverse-proxy
       - scs--database
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-H", "Host: ${SCS_MANAGER_DOMAIN}", "http://localhost/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
