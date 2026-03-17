@@ -88,7 +88,7 @@ if ! backup_database "$SCS_MANAGER_DB_NAME" "$SCS_MANAGER_BACKUP_DIR" "scs-manag
 fi
 
 # Backup volumes.
-SCS_MANAGER_DB_VOLUME="soda_scs_manager_deployment_scs-manager---database-data"
+SCS_MANAGER_DB_VOLUME="soda_scs_manager_deployment_scs-manager--database-data"
 if docker volume inspect "$SCS_MANAGER_DB_VOLUME" >/dev/null 2>&1; then
     backup_volume "$SCS_MANAGER_DB_VOLUME" "$SCS_MANAGER_BACKUP_DIR" "scs-manager-database-data" "$TIMESTAMP"
 fi
