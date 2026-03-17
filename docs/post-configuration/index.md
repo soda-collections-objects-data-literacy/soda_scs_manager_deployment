@@ -15,3 +15,7 @@ After the whole environment has started with `docker compose up -d`, many servic
 Use the [Post-configuration checklist](checklist.md) for a service-by-service list of what to verify and configure after the stack is running. It covers Keycloak, SCS Manager, Nextcloud, JupyterHub, OpenGDB, project website, Portainer, and Traefik.
 
 For more detail on specific services, see also the main [README](../../README.md) (e.g. Portainer access token, SCS Manager settings, WissKI/Portainer API, Nextcloud admin).
+
+## Keycloak and Nextcloud Integration
+
+For a step-by-step guide on configuring Keycloak and Nextcloud for SSO and Bearer token validation (including cross-client token sharing for WissKI/WebDAV), see [Keycloak and Nextcloud](keycloak-nextcloud.md).
