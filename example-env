@@ -66,6 +66,7 @@ NEXTCLOUD_NEXTCLOUD_DOMAIN=drive.scs.localhost
 NEXTCLOUD_NEXTCLOUD_PORT=8080
 NEXTCLOUD_NEXTCLOUD_REVERSE_PROXY_DOMAIN=nextcloud-nextcloud-reverse-proxy
 NEXTCLOUD_NEXTCLOUD_SERVICE_NAME=nextcloud
+# Required for OnlyOffice. If empty, DOCX etc. won't open (Invalid token). Run fix-onlyoffice-jwt.bash to generate.
 NEXTCLOUD_ONLYOFFICE_JWT_SECRET=
 NEXTCLOUD_ONLYOFFICE_PORT=8081
 NEXTCLOUD_ONLYOFFICE_SERVICE_NAME=office

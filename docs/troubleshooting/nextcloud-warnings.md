@@ -364,22 +364,100 @@ docker exec nextcloud--nextcloud php /var/www/html/occ config:system:set redis p
 
 ---
 
-## Summary: Fix all common warnings
+## DOCX (and other Office files) not opening in OnlyOffice
 
-Run these commands from the repo root to address most warnings at once:
+**Symptom:** Clicking DOCX, XLSX, or PPTX files downloads them instead of opening in OnlyOffice, or shows an error. Logs may show `Error occurred in the document service: Invalid token` or `checkJwt error: invalid signature`.
+
+**Common causes and fixes:**
+
+### 1. JWT secret mismatch (Invalid token / invalid signature)
+
+Nextcloud and the OnlyOffice Document Server must share the same JWT secret. If `NEXTCLOUD_ONLYOFFICE_JWT_SECRET` is empty in `.env`, the Document Server gets a random secret on start, causing signature mismatch.
+
+**Fix:** Run the JWT fix script:
 
 ```bash
-# 1. Ensure custom nginx config is in use (fixes .mjs, .well-known, proxy headers)
-cp 00_custom_configs/scs-nextcloud-stack/reverse-proxy/nginx.conf scs-nextcloud-stack/reverse-proxy/nginx.conf
+01_scripts/scs-nextcloud-stack/fix-onlyoffice-jwt.bash
+```
+
+Then add the printed secret to your `.env`:
+
+```
+NEXTCLOUD_ONLYOFFICE_JWT_SECRET=<the-secret-from-script-output>
+```
+
+Without this in `.env`, the mismatch will return on the next `docker compose up`.
+
+### 2. Re-save OnlyOffice connector settings
+
+Connector settings can be lost after upgrades or config changes. Re-saving often fixes the issue:
+
+1. Go to Settings → Administration → OnlyOffice
+2. Verify Document Server URL and JWT secret match your `.env`
+3. Click **Save**
+
+### 3. Collabora (richdocuments) conflict
+
+If both OnlyOffice and Collabora (richdocuments) are enabled, Collabora can override OnlyOffice's file associations. Check:
+
+```bash
+docker exec nextcloud--nextcloud php /var/www/html/occ app:list | grep -E "onlyoffice|richdocuments"
+```
+
+If `richdocuments` is enabled and you want OnlyOffice for DOCX/XLSX/PPTX, disable Collabora:
+
+```bash
+docker exec nextcloud--nextcloud php /var/www/html/occ app:disable richdocuments
+```
+
+### 4. File extension case sensitivity
+
+Some setups only handle lowercase extensions. Try files named `document.docx` (lowercase) instead of `document.DOCX`.
+
+### 5. Verify OnlyOffice configuration
+
+```bash
+docker exec nextcloud--nextcloud php /var/www/html/occ config:list onlyoffice
+```
+
+Ensure:
+- `DocumentServerUrl` is your external OnlyOffice URL (e.g. `https://office.yourdomain.com/`)
+- `StorageUrl` is your Nextcloud URL
+- `jwt_secret` matches `NEXTCLOUD_ONLYOFFICE_JWT_SECRET` in `.env`
+
+### 6. Test Document Server connectivity
+
+```bash
+docker exec nextcloud--nextcloud php /var/www/html/occ onlyoffice:documentserver --check
+```
+
+### 7. Check OnlyOffice logs
+
+```bash
+docker compose logs nextcloud--onlyoffice-document-server --tail 100
+```
+
+---
+
+## Summary: Fix all common warnings
+
+Run the fix-all script from the repo root:
+
+```bash
+01_scripts/scs-nextcloud-stack/fix-nextcloud-warnings.bash
+```
+
+Or run the steps manually:
+
+```bash
+# 1. Restart reverse proxy (picks up nginx config: .well-known URLs, etc.)
 docker compose restart nextcloud--nextcloud-reverse-proxy
 
-# 2. Apply proxy, maintenance window, and phone region settings
+# 2. Apply proxy, maintenance window, phone region, overwritecondaddr
 01_scripts/scs-nextcloud-stack/apply-nextcloud-proxy-and-region.bash
 
 # 3. Run comprehensive maintenance (MIME migrations, DB indices, columns, keys)
 01_scripts/scs-nextcloud-stack/run-nextcloud-repair.bash
-
-# 4. Refresh admin panel and check remaining warnings
 ```
 
 For email and AppAPI, configure manually via the Nextcloud admin UI as needed.

@@ -37,16 +37,15 @@ $OCC config:system:set trusted_proxies 3 --value="192.168.0.0/16"
 $OCC config:system:set forwarded_for_headers 0 --value="HTTP_X_FORWARDED_FOR"
 $OCC config:system:set forwarded_host_headers 0 --value="HTTP_X_FORWARDED_HOST"
 $OCC config:system:set forwarded_proto_headers 0 --value="HTTP_X_FORWARDED_PROTO"
+$OCC config:system:set overwritecondaddr --value='^127\.0\.0\.1$|^10\.|^172\.(1[6-9]|2[0-9]|3[0-1])\.|^192\.168\.'
 
 echo "Setting maintenance window (22:00, 6 hours)..."
 $OCC config:system:set maintenance_window_start --type integer --value=22
 $OCC config:system:set maintenance_window_length --type integer --value=6
 
-if [ -n "${NEXTCLOUD_NEXTCLOUD_DEFAULT_PHONE_REGION}" ]; then
-    echo "Setting default_phone_region to ${NEXTCLOUD_NEXTCLOUD_DEFAULT_PHONE_REGION}..."
-    $OCC config:system:set default_phone_region --value="${NEXTCLOUD_NEXTCLOUD_DEFAULT_PHONE_REGION}"
-else
-    echo "NEXTCLOUD_NEXTCLOUD_DEFAULT_PHONE_REGION not set; skipping default_phone_region."
-fi
+# Set default_phone_region (fallback to DE if not set; fixes admin warning).
+PHONE_REGION="${NEXTCLOUD_NEXTCLOUD_DEFAULT_PHONE_REGION:-DE}"
+echo "Setting default_phone_region to ${PHONE_REGION}..."
+$OCC config:system:set default_phone_region --value="${PHONE_REGION}"
 
 echo "Done."
