@@ -1,20 +1,12 @@
 <?php
 /**
- * phpMyAdmin signon: reads the Keycloak JWT forwarded by traefik-forward-auth
- * (FORWARD_TOKEN_HEADER_NAME=X-Auth-Token) and extracts:
- *   - preferred_username  → MariaDB username
- *   - mariadb_password    → per-user MariaDB password (set by SCS Manager via
- *                           Keycloak user attribute + protocol mapper)
- *
- * Falls back to SCS_DBMS_SSO_DB_PASSWORD env var for users whose attribute has
- * not yet been set (e.g. before their first SQL component was created).
+ * phpMyAdmin signon: reads Keycloak JWT (X-Auth-Token), tests MariaDB connection,
+ * redirects to index.php on success. Connection test prevents redirect loop when
+ * password is wrong. Credentials come from Keycloak only.
  */
 declare(strict_types=1);
 
-session_name('PMA_single_signon');
-session_start();
-
-// Decode JWT payload — no signature verification, token comes from trusted middleware.
+// Decode JWT payload — token from trusted forward-auth middleware.
 $payload = [];
 $rawToken = $_SERVER['HTTP_X_AUTH_TOKEN'] ?? '';
 if ($rawToken !== '') {
@@ -43,17 +35,35 @@ if ($mysqlUser === '') {
     exit;
 }
 
-// Password: per-user Keycloak attribute (mariadb_password) set by SCS Manager
-// when a SQL component is created. Falls back to the shared SSO password.
-$mysqlPass = $payload['mariadb_password'] ?? getenv('SCS_DBMS_SSO_DB_PASSWORD') ?: '';
+// Password: per-user Keycloak attribute (mariadb_password) set by SCS Manager.
+$mysqlPass = $payload['mariadb_password'] ?? '';
+if ($mysqlPass === '') {
+    header('Content-Type: text/html; charset=utf-8');
+    http_response_code(403);
+    echo '<!DOCTYPE html><html><head><title>No DB access</title></head><body>';
+    echo '<h1>No database access</h1><p>Your Keycloak account has no MariaDB password. ';
+    echo 'Create an SQL component or join a project with SQL databases to get access.</p></body></html>';
+    exit;
+}
+
 $mysqlHost = getenv('PMA_HOST') ?: 'scs--database';
 
-$_SESSION['PMA_single_signon_user'] = $mysqlUser;
-$_SESSION['PMA_single_signon_password'] = $mysqlPass;
-$_SESSION['PMA_single_signon_host'] = $mysqlHost;
-$_SESSION['PMA_single_signon_port'] = 3306;
-session_write_close();
+// Test connection before redirecting — prevents infinite redirect loop when
+// password is wrong or user doesn't exist. phpMyAdmin would fail and redirect
+// back here; we show the error instead.
+$conn = @mysqli_connect($mysqlHost, $mysqlUser, $mysqlPass, '', 3306);
+if (!$conn) {
+    header('Content-Type: text/html; charset=utf-8');
+    http_response_code(503);
+    $baseUrl = rtrim(getenv('PMA_ABSOLUTE_URI') ?: 'https://' . ($_SERVER['HTTP_HOST'] ?? '') . '/', '/');
+    echo '<!DOCTYPE html><html><head><title>Connection failed</title></head><body>';
+    echo '<h1>Database connection failed</h1>';
+    echo '<p>MariaDB rejected the credentials. Edit a project with SQL components in SCS Manager to sync your password.</p>';
+    echo '<p><a href="' . htmlspecialchars($baseUrl) . '/">Try again</a></p></body></html>';
+    exit;
+}
+mysqli_close($conn);
 
-$base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
-header('Location: ' . $base . '/index.php');
+$baseUrl = rtrim(getenv('PMA_ABSOLUTE_URI') ?: 'https://' . ($_SERVER['HTTP_HOST'] ?? '') . '/', '/');
+header('Location: ' . $baseUrl . '/index.php?server=1');
 exit;

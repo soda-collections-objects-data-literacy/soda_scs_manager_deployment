@@ -105,7 +105,7 @@ Use this checklist after the whole environment has started (`docker compose up -
   - `SCS_DBMS_FORWARD_AUTH_ENCRYPTION_KEY` — Exactly 32 characters (e.g. hex) for cookie encryption
   - Re-run Keycloak pre-install to add the phpMyAdmin client to the realm, or create the client manually with redirect URI `https://${SCS_DBMS_DOMAIN}/_oauth`
 
-- [ ] **phpMyAdmin signon (per-user Keycloak credentials)** — phpMyAdmin reads `preferred_username` and `mariadb_password` from the Keycloak JWT. Users get a MariaDB account only when they create an SQL component via SCS Manager; the password is then synced to the user's Keycloak `mariadb_password` attribute. No bootstrap users are pre-installed.
+- [ ] **phpMyAdmin signon (per-user Keycloak credentials)** — phpMyAdmin reads `preferred_username` and `mariadb_password` from the Keycloak JWT. Users get a MariaDB account when they create an SQL component or when they are added to a project that has SQL databases; the password is synced to Keycloak `mariadb_password`. Project members can log into phpMyAdmin via SSO and access databases connected to their projects.
 
 - [ ] **phpMyAdmin configuration storage (pmadb)** — To fix "Configuration storage … not OK", set `SCS_DBMS_PMA_PASSWORD` in `.env` (any random string), run `./start.sh` to create the phpmyadmin database and control user, then restart phpMyAdmin. See [phpMyAdmin configuration storage](https://docs.phpmyadmin.net/en/latest/setup.html#phpmyadmin-configuration-storage).
 

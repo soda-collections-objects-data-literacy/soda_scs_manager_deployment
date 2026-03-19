@@ -2,7 +2,7 @@
 
 Docker Compose environment for the Drupal-based SCS Manager plus Keycloak, Nextcloud, JupyterHub, OpenGDB, phpMyAdmin (DBMS), and related services. Uses MariaDB, Traefik, and Portainer.
 
-**DBMS / phpMyAdmin:** Keycloak SSO with per-user MariaDB credentials. When SCS Manager creates a SQL component, it provisions the MariaDB user and syncs the password to the user's Keycloak `mariadb_password` attribute so phpMyAdmin signon auth works automatically.
+**DBMS / phpMyAdmin:** Keycloak SSO; credentials come from Keycloak only (no fallback passwords). Users get DB access when they create an SQL component or when added to a project with SQL databases. SCS Manager provisions the MariaDB user and syncs the password to Keycloak `mariadb_password` for phpMyAdmin signon.
 
 ## Version
 

@@ -1,18 +1,17 @@
 <?php
 /**
- * phpMyAdmin signon auth: use SSO user (X-Forwarded-User) as MariaDB username.
- * Set SCS_DBMS_SSO_DB_PASSWORD in env; create MariaDB users for each Keycloak user with that password.
- * pmadb: configuration storage for bookmarks, history, recent tables (requires SCS_DBMS_PMA_PASSWORD).
+ * phpMyAdmin signon: SignonScript (X-Auth-Token) + SignonURL (fallback). pmadb: SCS_DBMS_PMA_PASSWORD.
  */
 declare(strict_types=1);
 
+$signonScript = '/var/www/html/signon-script.php';
 $signonUrl = (getenv('PMA_ABSOLUTE_URI') ?: 'https://' . ($_SERVER['HTTP_HOST'] ?? '') . '/') . 'signon.php';
 $pmaPass = getenv('SCS_DBMS_PMA_PASSWORD') ?: '';
 
 foreach (array_keys($cfg['Servers'] ?? []) as $i) {
     $cfg['Servers'][$i]['auth_type'] = 'signon';
+    $cfg['Servers'][$i]['SignonScript'] = $signonScript;
     $cfg['Servers'][$i]['SignonURL'] = $signonUrl;
-    $cfg['Servers'][$i]['SignonSession'] = 'PMA_single_signon';
     if ($pmaPass !== '') {
         $cfg['Servers'][$i]['pmadb'] = 'phpmyadmin';
         $cfg['Servers'][$i]['controluser'] = 'pma';

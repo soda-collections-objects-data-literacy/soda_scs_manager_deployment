@@ -1,6 +1,8 @@
 # DBMS/phpMyAdmin SSO: ERR_TOO_MANY_REDIRECTS
 
-This error occurs when the forward-auth flow gets stuck in a redirect loop between Keycloak and the DBMS domain.
+This error can occur when:
+1. The forward-auth OAuth flow gets stuck between Keycloak and the DBMS domain.
+2. Connection failure loop: wrong MariaDB password or user doesn't exist. **Fix:** signon.php tests the connection before redirecting; on failure it shows "Connection failed" instead of looping. Edit a project with SQL components in SCS Manager to sync your password.
 
 ## Cause
 

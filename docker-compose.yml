@@ -113,13 +113,11 @@ services:
     environment:
       - PMA_HOST=${SCS_DBMS_DEFAULT_SERVER:-scs--database}
       - PMA_ABSOLUTE_URI=https://${SCS_DBMS_DOMAIN:-dbms.localhost}/
-      # Signon auth: X-Forwarded-User (Keycloak preferred_username) is used as MariaDB username
-      - SCS_DBMS_SSO_DB_PASSWORD=${SCS_DBMS_SSO_DB_PASSWORD:-${SCS_DB_ROOT_PASSWORD}}
-      - SCS_DB_ROOT_PASSWORD=${SCS_DB_ROOT_PASSWORD}
       # phpMyAdmin configuration storage (pmadb) control user
       - SCS_DBMS_PMA_PASSWORD=${SCS_DBMS_PMA_PASSWORD:-}
     volumes:
       - ./config/phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php:ro
+      - ./config/phpmyadmin/signon-script.php:/var/www/html/signon-script.php:ro
       - ./config/phpmyadmin/signon.php:/var/www/html/signon.php:ro
     depends_on:
       - scs--database
