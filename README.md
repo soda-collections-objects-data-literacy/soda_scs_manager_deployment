@@ -1,6 +1,8 @@
 # SODa SCS Manager Deployment
 
-Docker Compose environment for the Drupal-based SCS Manager plus Keycloak, Nextcloud, JupyterHub, OpenGDB, and related services. Uses MariaDB, Traefik, and Portainer.
+Docker Compose environment for the Drupal-based SCS Manager plus Keycloak, Nextcloud, JupyterHub, OpenGDB, phpMyAdmin (DBMS), and related services. Uses MariaDB, Traefik, and Portainer.
+
+**DBMS / phpMyAdmin:** Keycloak SSO with per-user MariaDB credentials. When SCS Manager creates a SQL component, it provisions the MariaDB user and syncs the password to the user's Keycloak `mariadb_password` attribute so phpMyAdmin signon auth works automatically.
 
 ## Version
 
@@ -14,10 +16,10 @@ Docker Compose environment for the Drupal-based SCS Manager plus Keycloak, Nextc
 ## Quick start
 
 1. Clone the repo and init submodules: `git submodule update --init --recursive`
-2. Copy `example-env` to `.env` and set required variables (database, Keycloak, client secrets, domains).
+2. Copy `example-env` to `.env` and set required variables (database, Keycloak, client secrets, domains, `SCS_DBMS_*` for phpMyAdmin SSO).
 3. Run `./start.sh` (creates network, starts DB, runs pre-install scripts).
 4. Run `docker compose up -d`.
-5. Complete post-configuration (Keycloak, SCS Manager, Nextcloud, etc.) — see **Technical documentation** below.
+5. Complete post-configuration (Keycloak, SCS Manager, Nextcloud, phpMyAdmin/DBMS SSO, etc.) — see **Technical documentation** below.
 
 **Prerequisites:** Docker, user in `docker` group, GitHub auth for ghcr.io and Git (see technical docs).
 

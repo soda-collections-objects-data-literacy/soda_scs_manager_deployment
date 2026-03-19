@@ -2,18 +2,18 @@
 ## How Traefik labels work
 Traefik’s Docker provider reads container labels. Any label whose key starts with `traefik.` is treated as Traefik configuration. Labels are the main way to define routers, services, and middlewares per container without editing Traefik’s own config files. Traefik discovers running containers (on the same Docker host) and builds its dynamic configuration from these labels.
 ## Label notation (dot-separated hierarchy)
-Labels use a dot-separated path: `traefik.<scope>.<resource-type>.<resource-name>.<property>[.<subproperty>]=<value>`. Each segment has a fixed meaning: the first is always the `traefik` prefix, then protocol/scope, then the kind of resource (routers, services, middlewares), then a unique name, then the option and optional sub-options. Example: `traefik.http.routers.scs--adminer.rule=Host(...)` sets the `rule` property of the HTTP router named `scs--adminer`.
-## Meaning of the single terms (example: `traefik.http.routers.scs--adminer.rule=Host(...)`)
+Labels use a dot-separated path: `traefik.<scope>.<resource-type>.<resource-name>.<property>[.<subproperty>]=<value>`. Each segment has a fixed meaning: the first is always the `traefik` prefix, then protocol/scope, then the kind of resource (routers, services, middlewares), then a unique name, then the option and optional sub-options. Example: `traefik.http.routers.scs--phpmyadmin.rule=Host(...)` sets the `rule` property of the HTTP router named `scs--phpmyadmin`.
+## Meaning of the single terms (example: `traefik.http.routers.scs--phpmyadmin.rule=Host(...)`)
 **traefik** — Label namespace. Only labels starting with `traefik.` are read by Traefik’s Docker provider; other labels are ignored.
 **http** — Protocol scope. Options are `http` (HTTP/HTTPS, layer 7) or `tcp` (raw TCP, e.g. MySQL). Determines whether the router/service is for HTTP rules (Host, Path, etc.) or TCP (e.g. HostSNI).
 **routers** — Resource type: a router. A router matches incoming requests (by rule and entrypoint) and sends them to a service. You define routers with `traefik.http.routers.<name>.*` or `traefik.tcp.routers.<name>.*`.
-**scs--adminer** — Router name. Must be unique in the same protocol. Often matches the service/container name (e.g. `scs--adminer`). All labels that share this name configure the same router.
+**scs--phpmyadmin** — Router name. Must be unique in the same protocol. Often matches the service/container name (e.g. `scs--phpmyadmin`). All labels that share this name configure the same router.
 **rule** — Router property: the matching rule. For HTTP, common forms are `Host(`domain`)`, `Path(`path`)`, or combined (e.g. `Host(...) && Path(...)`). For TCP you use e.g. `HostSNI(`domain`)`. The request must match the rule for this router to be chosen.
 ## Other label terms used in this stack
 **traefik.enable** — Top-level: `true` or `false`. If `false`, Traefik ignores all other Traefik labels on that container (e.g. `scs--access-proxy`).
 **traefik.docker.network** — Top-level: the Docker network name Traefik must use to reach this container (e.g. `reverse-proxy`). Required when the container is on multiple networks so Traefik knows which IP to use.
 **traefik.http.services.<name>** — Defines an HTTP service (backend). The name is the service name; routers reference it with `traefik.http.routers.<router>.service=<name>`.
-**traefik.http.services.<name>.loadbalancer.server.port** — Backend port inside the container (e.g. `8080` for Adminer). Traefik forwards to this port.
+**traefik.http.services.<name>.loadbalancer.server.port** — Backend port inside the container (e.g. `80` for phpMyAdmin). Traefik forwards to this port.
 **traefik.http.routers.<name>.entrypoints** — Comma-separated list of entrypoints (e.g. `web`, `websecure`). The router only applies to requests that arrive on these entrypoints.
 **traefik.http.routers.<name>.middlewares** — Comma-separated list of middleware names (e.g. `rate-limit`). Applied in order before forwarding to the service.
 **traefik.http.routers.<name>.tls** — Enable TLS for this router (`true`/`false`).

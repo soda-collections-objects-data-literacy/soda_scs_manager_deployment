@@ -54,6 +54,9 @@ echo "Privileges flushed successfully."
 
 echo "SCS Manager database and user created successfully."
 
+# No bootstrap DB users for phpMyAdmin. Users get a MariaDB account when they create an SQL component
+# via SCS Manager (which also syncs the password to Keycloak mariadb_password attribute).
+
 echo "Creating OpenID Connect client config file..."
 # Ensure output directory exists
 mkdir -p scs-manager-stack/custom_configs

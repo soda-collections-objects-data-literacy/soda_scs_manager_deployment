@@ -97,6 +97,20 @@ Use this checklist after the whole environment has started (`docker compose up -
 
 ---
 
+## phpMyAdmin / DBMS (with Keycloak SSO)
+
+- [ ] **phpMyAdmin SSO** — If using Keycloak SSO for phpMyAdmin, set in `.env`:
+  - `SCS_DBMS_CLIENT_SECRET` — Must match the phpMyAdmin client in Keycloak (client ID: `https://${SCS_DBMS_DOMAIN}`)
+  - `SCS_DBMS_FORWARD_AUTH_SECRET` — Random string for cookie signing
+  - `SCS_DBMS_FORWARD_AUTH_ENCRYPTION_KEY` — Exactly 32 characters (e.g. hex) for cookie encryption
+  - Re-run Keycloak pre-install to add the phpMyAdmin client to the realm, or create the client manually with redirect URI `https://${SCS_DBMS_DOMAIN}/_oauth`
+
+- [ ] **phpMyAdmin signon (per-user Keycloak credentials)** — phpMyAdmin reads `preferred_username` and `mariadb_password` from the Keycloak JWT. Users get a MariaDB account only when they create an SQL component via SCS Manager; the password is then synced to the user's Keycloak `mariadb_password` attribute. No bootstrap users are pre-installed.
+
+- [ ] **ERR_TOO_MANY_REDIRECTS** — If you see this, the OAuth token exchange is failing. See [DBMS SSO redirect loop](troubleshooting/dbms-sso-redirect-loop.md): verify `SCS_DBMS_CLIENT_SECRET` matches Keycloak exactly, re-run Keycloak pre-install, or check redirect URI.
+
+---
+
 ## Other services
 
 - [ ] **Portainer** — On first visit, create the admin account. Create an [access token](https://docs.portainer.io/api/access#creating-an-access-token) for SCS Manager/WissKI. Add the GitHub Container Registry (ghcr.io) if you need to pull private images from the UI.

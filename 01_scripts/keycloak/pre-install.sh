@@ -50,6 +50,6 @@ echo "Creating OpenID Connect client realm file for ${KC_REALM}..."
 # Keycloak internal variables (${role_*}, ${client_*}, ${authBaseUrl}, etc.) are handled by Keycloak itself.
 # Ensure output directory exists
 mkdir -p keycloak/import
-envsubst '${KC_REALM} ${KC_ADMIN_GROUPS} ${KC_USER_GROUPS} ${JUPYTERHUB_DOMAIN} ${NEXTCLOUD_NEXTCLOUD_DOMAIN} ${SCS_MANAGER_DOMAIN} ${JUPYTERHUB_CLIENT_SECRET} ${NEXTCLOUD_CLIENT_SECRET} ${SCS_MANAGER_CLIENT_SECRET} ${KC_DIDMOS_CLIENT_SECRET} ${KC_DIDMOS_CLIENT_ID}' < 00_custom_configs/keycloak/templates/realm/scs-realm.json.tpl > "keycloak/import/${KC_REALM}.json"
+envsubst '${KC_REALM} ${KC_ADMIN_GROUPS} ${KC_USER_GROUPS} ${JUPYTERHUB_DOMAIN} ${NEXTCLOUD_NEXTCLOUD_DOMAIN} ${SCS_MANAGER_DOMAIN} ${SCS_DBMS_DOMAIN} ${JUPYTERHUB_CLIENT_SECRET} ${NEXTCLOUD_CLIENT_SECRET} ${SCS_MANAGER_CLIENT_SECRET} ${SCS_DBMS_CLIENT_SECRET} ${KC_DIDMOS_CLIENT_SECRET} ${KC_DIDMOS_CLIENT_ID}' < 00_custom_configs/keycloak/templates/realm/scs-realm.json.tpl > "keycloak/import/${KC_REALM}.json"
 
 echo "OpenID Connect client config file created successfully."

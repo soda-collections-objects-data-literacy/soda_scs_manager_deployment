@@ -106,10 +106,19 @@ services:
       - "traefik.enable=false"
     restart: unless-stopped
 
-  scs--adminer:
-    image: adminer
-    container_name: scs--adminer
+  scs--phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: scs--phpmyadmin
     restart: unless-stopped
+    environment:
+      - PMA_HOST=${SCS_DBMS_DEFAULT_SERVER:-scs--database}
+      - PMA_ABSOLUTE_URI=https://${SCS_DBMS_DOMAIN:-dbms.localhost}/
+      # Signon auth: X-Forwarded-User (Keycloak preferred_username) is used as MariaDB username
+      - SCS_DBMS_SSO_DB_PASSWORD=${SCS_DBMS_SSO_DB_PASSWORD:-${SCS_DB_ROOT_PASSWORD}}
+      - SCS_DB_ROOT_PASSWORD=${SCS_DB_ROOT_PASSWORD}
+    volumes:
+      - ./config/phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php:ro
+      - ./config/phpmyadmin/signon.php:/var/www/html/signon.php:ro
     depends_on:
       - scs--database
       - scs--reverse-proxy
@@ -118,11 +127,42 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
-      - "traefik.http.routers.scs--adminer.rule=Host(`${SCS_ADMINER_DOMAIN:-adminer.localhost}`)"
-      - "traefik.http.routers.scs--adminer.entrypoints=websecure"
-      - "traefik.http.routers.scs--adminer.tls=true"
-      - "traefik.http.routers.scs--adminer.tls.certresolver=le"
-      - "traefik.http.services.scs--adminer.loadbalancer.server.port=8080"
+      # Handle ALL paths including /_oauth (callback detected via X-Forwarded-Uri by mesosphere fork)
+      - "traefik.http.routers.scs--phpmyadmin.rule=Host(`${SCS_DBMS_DOMAIN:-dbms.localhost}`)"
+      - "traefik.http.routers.scs--phpmyadmin.entrypoints=websecure"
+      - "traefik.http.routers.scs--phpmyadmin.middlewares=dbms-sso"
+      - "traefik.http.routers.scs--phpmyadmin.tls=true"
+      - "traefik.http.routers.scs--phpmyadmin.tls.certresolver=le"
+      - "traefik.http.services.scs--phpmyadmin.loadbalancer.server.port=80"
+
+  scs--forward-auth:
+    image: mesosphere/traefik-forward-auth:3.1.0
+    container_name: scs--forward-auth
+    restart: unless-stopped
+    # Map Keycloak domain to host so token exchange reaches Traefik (avoids hairpin NAT)
+    extra_hosts:
+      - "${KC_DOMAIN:-auth.localhost}:host-gateway"
+    environment:
+      - CLIENT_ID=https://${SCS_DBMS_DOMAIN:-dbms.localhost}
+      - CLIENT_SECRET=${SCS_DBMS_CLIENT_SECRET}
+      - ENCRYPTION_KEY=${SCS_DBMS_FORWARD_AUTH_ENCRYPTION_KEY}
+      - SECRET=${SCS_DBMS_FORWARD_AUTH_SECRET}
+      - PROVIDER_URI=https://${KC_DOMAIN:-auth.localhost}/realms/${KC_REALM:-scs-dev}
+      - AUTH_HOST=${SCS_DBMS_DOMAIN:-dbms.localhost}
+      # No leading dot - forward-auth adds it internally (double dot causes cookie mismatch)
+      - COOKIE_DOMAIN=${SCS_DBMS_DOMAIN:-dbms.localhost}
+      # Forward the raw ID token so signon.php can extract preferred_username from the JWT
+      - FORWARD_TOKEN_HEADER_NAME=X-Auth-Token
+      - LOG_LEVEL=debug
+    depends_on:
+      - scs--reverse-proxy
+    networks:
+      - reverse-proxy
+    labels:
+      # forward-auth is only used as a middleware target (not a Traefik router endpoint).
+      # Traefik calls http://scs--forward-auth:4181 internally via dbms-sso middleware,
+      # passing X-Forwarded-Uri so mesosphere fork can detect /_oauth callbacks correctly.
+      - "traefik.enable=false"
 
   # Whoami for debugging routing + proxy-header stuff
   scs--echo:
@@ -155,6 +195,11 @@ services:
       # Middlewares
       ## Basic Auth
       - "traefik.http.middlewares.admin-auth.basicauth.users=${SCS_TRAEFIK_USERNAME}:${SCS_TRAEFIK_HASHED_PASSWORD}"
+
+      ## DBMS SSO (Keycloak forward auth)
+      - "traefik.http.middlewares.dbms-sso.forwardauth.address=http://scs--forward-auth:4181"
+      - "traefik.http.middlewares.dbms-sso.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.dbms-sso.forwardauth.authResponseHeaders=X-Forwarded-User,X-Auth-Token"
 
       ## Redirect to SCS Manager
       - "traefik.http.middlewares.redirect-to-scs-manager--drupal.redirectregex.regex=^https?://${SCS_SUBDOMAIN}\\.${SCS_BASE_DOMAIN}(.*)"

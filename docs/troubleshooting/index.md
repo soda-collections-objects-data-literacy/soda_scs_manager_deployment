@@ -75,6 +75,10 @@ The `docs/troubleshooting/` directory contains test scripts to verify your deplo
    - Nextcloud: Check `OVERWRITEPROTOCOL=https` and `OVERWRITEHOST` in environment
 5. See [Reverse proxy backend config](../reverse-proxy-backend-config-knowledge-base.md) for detailed configuration
 
+### DBMS/phpMyAdmin SSO: ERR_TOO_MANY_REDIRECTS
+
+See [DBMS SSO redirect loop](dbms-sso-redirect-loop.md) when Keycloak SSO for phpMyAdmin causes infinite redirects.
+
 ### Nextcloud Warnings
 
 See [Nextcloud warnings](nextcloud-warnings.md) for common Nextcloud admin panel warnings and how to resolve them.

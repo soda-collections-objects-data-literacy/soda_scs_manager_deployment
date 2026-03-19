@@ -365,6 +365,84 @@
         "organization",
         "microprofile-jwt"
       ]
+    },
+    {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "clientId": "https://${SCS_DBMS_DOMAIN}",
+      "name": "DBMS SSO",
+      "description": "Forward auth client for phpMyAdmin database admin",
+      "rootUrl": "https://${SCS_DBMS_DOMAIN}/",
+      "adminUrl": "https://${SCS_DBMS_DOMAIN}/",
+      "baseUrl": "https://${SCS_DBMS_DOMAIN}/",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${SCS_DBMS_CLIENT_SECRET}",
+      "redirectUris": [
+        "https://${SCS_DBMS_DOMAIN}/_oauth"
+      ],
+      "webOrigins": [
+        "https://${SCS_DBMS_DOMAIN}"
+      ],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "publicClient": false,
+      "frontchannelLogout": true,
+      "protocol": "openid-connect",
+      "attributes": {
+        "realm_client": "false",
+        "oidc.ciba.grant.enabled": "false",
+        "backchannel.logout.session.required": "true",
+        "frontchannel.logout.session.required": "true",
+        "post.logout.redirect.uris": "*",
+        "display.on.consent.screen": "false",
+        "oauth2.device.authorization.grant.enabled": "false",
+        "use.jwks.url": "false",
+        "backchannel.logout.revoke.offline.tokens": "false"
+      },
+      "authenticationFlowBindingOverrides": {},
+      "fullScopeAllowed": true,
+      "nodeReRegistrationTimeout": -1,
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "groups",
+        "basic",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "organization",
+        "microprofile-jwt"
+      ],
+      "protocolMappers": [
+        {
+          "id": "b1c2d3e4-f5a6-7890-bcde-f12345678901",
+          "name": "mariadb-password",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "false",
+            "user.attribute": "mariadb_password",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "mariadb_password",
+            "jsonType.label": "String",
+            "introspection.token.claim": "false"
+          }
+        }
+      ]
     }
   ],
   "clientScopes": [

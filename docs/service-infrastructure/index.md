@@ -6,7 +6,7 @@ This section describes what is in the SODa SCS Manager deployment and how the se
 
 The deployment is built from multiple Docker Compose files merged via the `COMPOSE_FILE` environment variable (see `example-env`). It includes:
 
-- A **main stack** (`docker-compose.yml`): Traefik reverse proxy, shared MariaDB, Portainer, Adminer, and an access-proxy helper.
+- A **main stack** (`docker-compose.yml`): Traefik reverse proxy, shared MariaDB, Portainer, phpMyAdmin, and an access-proxy helper.
 - **Submodule stacks**: SCS Manager (Drupal), Nextcloud, JupyterHub, Keycloak, OpenGDB, and the project website stack.
 
 All services that serve HTTP or need to be reached by Traefik attach to the same Docker network, `reverse-proxy`. The shared MariaDB instance is used by Keycloak, SCS Manager, Nextcloud, and the project website; each has its own database and user created by pre-install scripts.
@@ -64,7 +64,7 @@ flowchart LR
 - **scs--reverse-proxy** — Traefik: HTTP/HTTPS entrypoints, TLS (e.g. Let’s Encrypt), middlewares (HTTPS redirect, Nextcloud headers, rate limiting). Routes by `Host(...)` using Docker labels.
 - **scs--database** — MariaDB. Single instance; databases and users for Keycloak, SCS Manager, Nextcloud, and project website are created by pre-install scripts.
 - **scs--portainer** — Portainer CE for container management; used by SCS Manager for WissKI stack operations.
-- **scs--adminer** — Adminer for database access (optional).
+- **scs--phpmyadmin** — phpMyAdmin for database access (optional).
 - **scs--access-proxy** — Helper container for file management and snapshot paths.
 
 ## Compose file aggregation
@@ -97,7 +97,7 @@ Override files are copied from `00_custom_configs/<stack>/docker/` to each stack
 ### Keycloak
 
 - Realm is generated from `00_custom_configs/keycloak/templates/realm/scs-realm.json.tpl` (pre-install) and imported at startup.
-- Clients: JupyterHub (by `JUPYTERHUB_DOMAIN`), Nextcloud (by `NEXTCLOUD_NEXTCLOUD_DOMAIN`), SCS Manager (by `SCS_MANAGER_DOMAIN`), DIDMOS. Each has a client secret from `.env`.
+- Clients: JupyterHub (by `JUPYTERHUB_DOMAIN`), Nextcloud (by `NEXTCLOUD_NEXTCLOUD_DOMAIN`), SCS Manager (by `SCS_MANAGER_DOMAIN`), phpMyAdmin/DBMS (by `SCS_DBMS_DOMAIN`), DIDMOS. Each has a client secret from `.env`.
 - Uses the shared MariaDB for persistence.
 - Exposed via Traefik on the Keycloak domain (e.g. `auth.scs.localhost`).
 

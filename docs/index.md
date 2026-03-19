@@ -18,7 +18,7 @@ This documentation describes how to deploy and operate the SODa SCS Manager depl
 
 - **[Maintenance](maintenance/index.md)** — Updates, backups, and ongoing maintenance for all services, including a detailed [update guide](maintenance/updates.md) for Nextcloud and other components.
 
-- **[Troubleshooting](troubleshooting/nextcloud-warnings.md)** — How to resolve common Nextcloud admin warnings (proxy headers, .well-known URLs, MIME types, email, etc.).
+- **[Troubleshooting](troubleshooting/index.md)** — Common issues including Nextcloud admin warnings (proxy headers, .well-known URLs, MIME types, email) and [DBMS SSO redirect loop](troubleshooting/dbms-sso-redirect-loop.md).
 
 ## Reference
 

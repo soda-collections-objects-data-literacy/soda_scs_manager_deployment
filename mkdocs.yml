@@ -33,6 +33,7 @@ nav:
     - Updates: maintenance/updates.md
   - Troubleshooting:
     - Overview: troubleshooting/index.md
+    - DBMS SSO redirect loop: troubleshooting/dbms-sso-redirect-loop.md
     - Nextcloud warnings: troubleshooting/nextcloud-warnings.md
   - Reference:
     - Reverse proxy backend config: reverse-proxy-backend-config-knowledge-base.md

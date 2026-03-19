@@ -227,6 +227,28 @@ Decode your access token (base64url-decode the middle part). You should see:
 
 Re-run the `user_oidc:provider` command. Ensure the client secret matches Keycloak exactly (no extra spaces or encoding issues).
 
+### App password creation fails / "app client account is not created"
+
+**Cause**: The Nextcloud user_oidc account does not exist yet. Bearer-based app password creation and Login Flow v2 require the user to exist in Nextcloud.
+
+**Solution**: Log into Nextcloud via the web at least once using Keycloak/SSO (Social Login). This creates the user_oidc account. After that:
+
+- **Bearer flow**: SCS Manager can create app passwords via `createAppPassword` (e.g. when creating a WissKI component).
+- **Login Flow v2**: The "Connect via app password" flow on the Connected Accounts page will work.
+
+**Verify**:
+
+1. Open Nextcloud in a browser, log out if needed.
+2. Click the Keycloak/SSO login button and complete the flow.
+3. You should land on the Nextcloud dashboard. The account is now created.
+4. Return to SCS Manager and create a WissKI or use "Connect via app password".
+
+**Check bearer-provisioning**: Ensure the user_oidc provider has `--bearer-provisioning=1` (auto-provision users when Bearer token is valid). The post-install hook `configure-user-oidc-bearer.sh` sets this. Verify with:
+
+```bash
+docker exec nextcloud--nextcloud php /var/www/html/occ config:list --private | grep -i bearer
+```
+
 ---
 
 ## 5. Environment Variables (SCS Deployment)

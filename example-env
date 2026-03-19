@@ -12,7 +12,7 @@ SCS_SHARED_DATA=shared_data
 SCS_DB_PORT=3306
 SCS_DB_ROOT_PASSWORD=
 SCS_DB_SERVICE_NAME=db
-SCS_DB_DOMAIN=db.scs.localhost
+SCS_DB_DOMAIN=dbms.scs.localhost
 
 # Open GDB.
 DJANGO_ALLOWED_HOSTS=localhost
@@ -156,9 +156,17 @@ SCS_MANAGER_DRUPAL_TRUSTED_HOSTS='localhost|manager.scs.sammlungen.io|raw.manage
 SCS_MANAGER_SECOND_DOMAIN=scs.localhost
 
 
-# Adminer
-SCS_ADMINER_DOMAIN=db.scs.localhost
-SCS_ADMINER_SERVICE_NAME=db
+# phpMyAdmin / DBMS (with Keycloak SSO)
+SCS_DBMS_DOMAIN=dbms.scs.localhost
+SCS_DBMS_DEFAULT_SERVER=scs--database
+# Keycloak client for phpMyAdmin SSO (create client with redirect URI https://${SCS_DBMS_DOMAIN}/_oauth)
+SCS_DBMS_CLIENT_SECRET=
+# Forward-auth: 32-char hex string for cookie encryption; random string for secret
+SCS_DBMS_FORWARD_AUTH_ENCRYPTION_KEY=
+SCS_DBMS_FORWARD_AUTH_SECRET=
+# phpMyAdmin signon: fallback password when Keycloak mariadb_password attribute is not set (rare). Users get a DB account
+# when they create an SQL component via SCS Manager, which syncs the password to Keycloak.
+SCS_DBMS_SSO_DB_PASSWORD=
 
 # SCS Project Page.
 PROJECT_WEBSITE_DB_DRIVER=mysql
