@@ -19,8 +19,9 @@ if ($managerDomain === false || $managerDomain === '') {
     $host = $_SERVER['HTTP_HOST'] ?? parse_url($pmaBase, PHP_URL_HOST) ?: '';
     $managerDomain = ($host !== '' && strpos($host, 'dbms.') === 0) ? 'manager.' . substr($host, 5) : (($host !== '') ? 'manager.' . $host : 'manager.localhost');
 }
-$logoutRedirect = 'https://' . $managerDomain . '/';
-$logoutUrl = $kcBase . '/realms/' . $kcRealm . '/protocol/openid-connect/logout?client_id=' . rawurlencode($dbmsClientId) . '&post_logout_redirect_uri=' . rawurlencode($logoutRedirect);
+// Logout via forward-auth first to clear the auth cookie on dbms domain; it then redirects to Keycloak
+$dbmsBase = 'https://' . $dbmsDomain . '/';
+$logoutUrl = $dbmsBase . '_oauth/logout';
 
 foreach (array_keys($cfg['Servers'] ?? []) as $i) {
     $cfg['Servers'][$i]['auth_type'] = 'signon';

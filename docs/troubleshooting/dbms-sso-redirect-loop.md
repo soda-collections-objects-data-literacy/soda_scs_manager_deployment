@@ -1,5 +1,11 @@
 # DBMS/phpMyAdmin SSO Troubleshooting
 
+## /_oauth/logout returns 404 (Apache "Not Found")
+
+The mesosphere/traefik-forward-auth fork does not implement `/_oauth/logout`. Traefik handles it via the `scs--dbms-logout` router (priority 100) with `dbms-logout-headers` and `dbms-logout-redirect` middlewares: clears the cookie and redirects to Keycloak. No extra service.
+
+---
+
 ## Env vars not set (manager.localhost, auth.localhost, etc.)
 
 If logout redirects to `manager.localhost` or Keycloak uses `auth.localhost`, the phpMyAdmin container is not receiving env vars from the main `docker-compose.yml`.

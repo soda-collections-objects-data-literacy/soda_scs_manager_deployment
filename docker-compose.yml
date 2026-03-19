@@ -141,6 +141,13 @@ services:
       - "traefik.http.routers.scs--phpmyadmin.tls=true"
       - "traefik.http.routers.scs--phpmyadmin.tls.certresolver=le"
       - "traefik.http.services.scs--phpmyadmin.loadbalancer.server.port=80"
+      # /_oauth/logout: mesosphere forward-auth has no logout handler; use redirect+headers (no extra service)
+      - "traefik.http.routers.scs--dbms-logout.rule=Host(`dbms.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) && PathPrefix(`/_oauth/logout`)"
+      - "traefik.http.routers.scs--dbms-logout.priority=100"
+      - "traefik.http.routers.scs--dbms-logout.entrypoints=websecure"
+      - "traefik.http.routers.scs--dbms-logout.middlewares=dbms-logout-headers,dbms-logout-redirect"
+      - "traefik.http.routers.scs--dbms-logout.tls=true"
+      - "traefik.http.routers.scs--dbms-logout.tls.certresolver=le"
 
   scs--forward-auth:
     image: mesosphere/traefik-forward-auth:3.1.0
@@ -160,6 +167,8 @@ services:
       - COOKIE_DOMAIN=dbms.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}
       # Forward the raw ID token so signon.php can extract preferred_username from the JWT
       - FORWARD_TOKEN_HEADER_NAME=X-Auth-Token
+      # After clearing cookie, redirect to Keycloak logout then to manager
+      - LOGOUT_REDIRECT=https://auth.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}/realms/${KC_REALM:-scs-dev}/protocol/openid-connect/logout?client_id=https%3A%2F%2Fdbms.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}&post_logout_redirect_uri=https%3A%2F%2Fmanager.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}%2F
       - LOG_LEVEL=debug
     depends_on:
       - scs--reverse-proxy
@@ -207,6 +216,12 @@ services:
       - "traefik.http.middlewares.dbms-sso.forwardauth.address=http://scs--forward-auth:4181"
       - "traefik.http.middlewares.dbms-sso.forwardauth.trustForwardHeader=true"
       - "traefik.http.middlewares.dbms-sso.forwardauth.authResponseHeaders=X-Forwarded-User,X-Auth-Token"
+
+      ## DBMS logout: clear forward-auth cookie + redirect to Keycloak (mesosphere fork has no /_oauth/logout)
+      - "traefik.http.middlewares.dbms-logout-headers.headers.customResponseHeaders.Set-Cookie=_forward_auth=; Path=/; Domain=dbms.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}; Max-Age=0; HttpOnly; Secure; SameSite=Lax"
+      - "traefik.http.middlewares.dbms-logout-redirect.redirectregex.regex=^https?://[^/]+/_oauth/logout.*"
+      - "traefik.http.middlewares.dbms-logout-redirect.redirectregex.replacement=https://auth.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}/realms/${KC_REALM:-scs-dev}/protocol/openid-connect/logout?client_id=https%3A%2F%2Fdbms.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}&post_logout_redirect_uri=https%3A%2F%2Fmanager.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}%2F"
+      - "traefik.http.middlewares.dbms-logout-redirect.redirectregex.permanent=false"
 
       ## Redirect to SCS Manager
       - "traefik.http.middlewares.redirect-to-scs-manager--drupal.redirectregex.regex=^https?://${SCS_SUBDOMAIN}\\.${SCS_BASE_DOMAIN}(.*)"
