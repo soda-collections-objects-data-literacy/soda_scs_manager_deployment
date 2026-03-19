@@ -167,6 +167,9 @@ SCS_DBMS_FORWARD_AUTH_SECRET=
 # phpMyAdmin signon: fallback password when Keycloak mariadb_password attribute is not set (rare). Users get a DB account
 # when they create an SQL component via SCS Manager, which syncs the password to Keycloak.
 SCS_DBMS_SSO_DB_PASSWORD=
+# phpMyAdmin configuration storage (pmadb): password for control user 'pma'. Enables bookmarks, history, recent tables.
+# Set to a random string to fix "Configuration storage … not OK" warning. Leave empty to skip pmadb setup.
+SCS_DBMS_PMA_PASSWORD=
 
 # SCS Project Page.
 PROJECT_WEBSITE_DB_DRIVER=mysql

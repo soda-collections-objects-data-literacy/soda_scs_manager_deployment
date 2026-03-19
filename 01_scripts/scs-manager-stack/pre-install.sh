@@ -57,6 +57,18 @@ echo "SCS Manager database and user created successfully."
 # No bootstrap DB users for phpMyAdmin. Users get a MariaDB account when they create an SQL component
 # via SCS Manager (which also syncs the password to Keycloak mariadb_password attribute).
 
+# phpMyAdmin configuration storage (pmadb) — database + control user for bookmarks, history, etc.
+if [ -n "${SCS_DBMS_PMA_PASSWORD:-}" ]; then
+    echo "Creating phpMyAdmin configuration storage (pmadb)..."
+    docker exec -i scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" < "${REPO_ROOT}/config/phpmyadmin/create_tables.sql"
+    docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "CREATE USER IF NOT EXISTS 'pma'@'%' IDENTIFIED BY '${SCS_DBMS_PMA_PASSWORD}';"
+    docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "GRANT SELECT, INSERT, UPDATE, DELETE, ALTER ON phpmyadmin.* TO 'pma'@'%';"
+    docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;"
+    echo "phpMyAdmin pmadb created successfully."
+else
+    echo "Skipping phpMyAdmin pmadb (SCS_DBMS_PMA_PASSWORD not set)."
+fi
+
 echo "Creating OpenID Connect client config file..."
 # Ensure output directory exists
 mkdir -p scs-manager-stack/custom_configs

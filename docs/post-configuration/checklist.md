@@ -107,6 +107,8 @@ Use this checklist after the whole environment has started (`docker compose up -
 
 - [ ] **phpMyAdmin signon (per-user Keycloak credentials)** — phpMyAdmin reads `preferred_username` and `mariadb_password` from the Keycloak JWT. Users get a MariaDB account only when they create an SQL component via SCS Manager; the password is then synced to the user's Keycloak `mariadb_password` attribute. No bootstrap users are pre-installed.
 
+- [ ] **phpMyAdmin configuration storage (pmadb)** — To fix "Configuration storage … not OK", set `SCS_DBMS_PMA_PASSWORD` in `.env` (any random string), run `./start.sh` to create the phpmyadmin database and control user, then restart phpMyAdmin. See [phpMyAdmin configuration storage](https://docs.phpmyadmin.net/en/latest/setup.html#phpmyadmin-configuration-storage).
+
 - [ ] **ERR_TOO_MANY_REDIRECTS** — If you see this, the OAuth token exchange is failing. See [DBMS SSO redirect loop](troubleshooting/dbms-sso-redirect-loop.md): verify `SCS_DBMS_CLIENT_SECRET` matches Keycloak exactly, re-run Keycloak pre-install, or check redirect URI.
 
 ---
