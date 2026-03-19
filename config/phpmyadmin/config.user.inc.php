@@ -5,13 +5,28 @@
 declare(strict_types=1);
 
 $signonScript = '/var/www/html/signon-script.php';
-$signonUrl = (getenv('PMA_ABSOLUTE_URI') ?: 'https://' . ($_SERVER['HTTP_HOST'] ?? '') . '/') . 'signon.php';
+$pmaBase = rtrim(getenv('PMA_ABSOLUTE_URI') ?: 'https://' . ($_SERVER['HTTP_HOST'] ?? '') . '/', '/');
+$signonUrl = $pmaBase . '/signon.php';
 $pmaPass = getenv('SCS_DBMS_PMA_PASSWORD') ?: '';
+// KC_LOGOUT_BASE and SCS_DBMS_DOMAIN_PMA are built in docker-compose so ${SCS_SUBDOMAIN} etc. expand
+$kcBase = rtrim(getenv('KC_LOGOUT_BASE') ?: 'https://auth.localhost', '/');
+$kcRealm = getenv('KC_REALM') ?: 'main';
+$dbmsDomain = getenv('SCS_DBMS_DOMAIN_PMA') ?: 'dbms.localhost';
+$dbmsClientId = 'https://' . $dbmsDomain;
+// Derive manager URL from request host (dbms.X -> manager.X); HTTP_HOST is what the user actually visited
+$managerDomain = getenv('SCS_MANAGER_DOMAIN_PMA');
+if ($managerDomain === false || $managerDomain === '') {
+    $host = $_SERVER['HTTP_HOST'] ?? parse_url($pmaBase, PHP_URL_HOST) ?: '';
+    $managerDomain = ($host !== '' && strpos($host, 'dbms.') === 0) ? 'manager.' . substr($host, 5) : (($host !== '') ? 'manager.' . $host : 'manager.localhost');
+}
+$logoutRedirect = 'https://' . $managerDomain . '/';
+$logoutUrl = $kcBase . '/realms/' . $kcRealm . '/protocol/openid-connect/logout?client_id=' . rawurlencode($dbmsClientId) . '&post_logout_redirect_uri=' . rawurlencode($logoutRedirect);
 
 foreach (array_keys($cfg['Servers'] ?? []) as $i) {
     $cfg['Servers'][$i]['auth_type'] = 'signon';
     $cfg['Servers'][$i]['SignonScript'] = $signonScript;
     $cfg['Servers'][$i]['SignonURL'] = $signonUrl;
+    $cfg['Servers'][$i]['LogoutURL'] = $logoutUrl;
     if ($pmaPass !== '') {
         $cfg['Servers'][$i]['pmadb'] = 'phpmyadmin';
         $cfg['Servers'][$i]['controluser'] = 'pma';

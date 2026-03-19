@@ -1,4 +1,47 @@
-# DBMS/phpMyAdmin SSO: ERR_TOO_MANY_REDIRECTS
+# DBMS/phpMyAdmin SSO Troubleshooting
+
+## Env vars not set (manager.localhost, auth.localhost, etc.)
+
+If logout redirects to `manager.localhost` or Keycloak uses `auth.localhost`, the phpMyAdmin container is not receiving env vars from the main `docker-compose.yml`.
+
+**Cause:** `scs--phpmyadmin` is defined only in the **main** `docker-compose.yml` at the repo root. If that file is not in your `COMPOSE_FILE`, or you run from a different directory, the service may use a different compose definition without the env vars.
+
+**Fix:**
+1. Ensure `COMPOSE_FILE` has the main `docker-compose.yml` **first**:
+   ```
+   COMPOSE_FILE=docker-compose.yml:jupyterhub/docker-compose.yml:...
+   ```
+2. Run `docker compose` from the repo root (where the main `docker-compose.yml` lives).
+3. **Recreate** the container (restart does not pick up new env):
+   ```bash
+   docker compose up -d scs--phpmyadmin
+   ```
+4. Verify env in the container:
+   ```bash
+   docker exec scs--phpmyadmin env | grep -E 'KC_|SCS_DBMS|SCS_MANAGER'
+   ```
+
+**Fallback:** The config derives the manager URL from `HTTP_HOST` (dbms.X → manager.X), so it should work even without env if you visit phpMyAdmin at the correct host (e.g. dbms.dev-scs.sammlungen.io).
+
+---
+
+## ERR_CONNECTION_REFUSED on logout
+
+When clicking "Log out" in phpMyAdmin, the browser redirects to Keycloak's logout URL. If you see **ERR_CONNECTION_REFUSED**, the browser cannot reach the Keycloak host.
+
+**Cause:** The logout URL is built from `KC_URL` (or `KC_DOMAIN`). If that host is not reachable from your browser (e.g. internal hostname, wrong domain), the connection fails.
+
+**Fix:**
+1. Ensure `.env` has the correct Keycloak URL and realm (same as forward-auth):
+   - `KC_URL=https://auth.dev-scs.sammlungen.io` (or `KC_DOMAIN=auth.dev-scs.sammlungen.io`)
+   - `KC_REALM=dev-scs` (must match your Keycloak realm)
+   - `SCS_DBMS_DOMAIN=dbms.dev-scs.sammlungen.io` (must match the phpMyAdmin host)
+2. If `KC_URL`/`KC_DOMAIN` are unset, the URL is built from `KC_SERVICE_NAME.SCS_SUBDOMAIN.SCS_BASE_DOMAIN` (e.g. auth.dev-scs.sammlungen.io)
+3. Restart phpMyAdmin: `docker compose restart scs--phpmyadmin`
+
+---
+
+## ERR_TOO_MANY_REDIRECTS
 
 This error can occur when:
 1. The forward-auth OAuth flow gets stuck between Keycloak and the DBMS domain.
