@@ -246,7 +246,9 @@ services:
       - "traefik.http.middlewares.rate-limit-strict.ratelimit.burst=20"
 
       # Routers
-      - "traefik.http.routers.scs--reverse-proxy.rule=Host(`${SCS_TRAEFIK_DOMAIN:-traefik.localhost}`)"
+      # Default hostname matches other services (e.g. manager.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}).
+      # Set SCS_TRAEFIK_DOMAIN only if the dashboard must use a different host.
+      - "traefik.http.routers.scs--reverse-proxy.rule=Host(`${SCS_TRAEFIK_DOMAIN:-reverse-proxy.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}}`)"
       - "traefik.http.routers.scs--reverse-proxy.entrypoints=websecure"
       - "traefik.http.routers.scs--reverse-proxy.middlewares=admin-auth"
       - "traefik.http.routers.scs--reverse-proxy.tls=true"
@@ -320,5 +322,7 @@ volumes:
 networks:
   reverse-proxy:
     name: reverse-proxy
+    # If clients use IPv6 (AAAA DNS), enable on the live network — see docs/initial-setup/network-creation.md
     # enable_ipv6: true
     driver: bridge
+    external: true

@@ -1,4 +1,8 @@
 # Compose files for single-command startup.
+# Docker Compose loads this file as `.env` only from the project directory (repo root).
+# Run `docker compose` from the same directory as `docker-compose.yml`, or use:
+#   docker compose --project-directory /path/to/soda_scs_manager_deployment …
+# Otherwise variables here are missing during parsing and you see "variable is not set" warnings.
 COMPOSE_FILE=docker-compose.yml:scs-manager-stack/docker-compose.yml:scs-nextcloud-stack/docker-compose.yml:scs-nextcloud-stack/docker-compose.override.yml:jupyterhub/docker-compose.yml:jupyterhub/docker-compose.override.yml:keycloak/docker-compose.yml:open_gdb/docker-compose.yml:open_gdb/docker-compose.override.yml:scs-manager-stack/docker-compose.override.yml:scs-nextcloud-stack/docker-compose.override.yml:scs-project-website-stack/docker-compose.yml:scs-project-website-stack/docker-compose.override.yml:jupyterhub/docker-compose.override.yml:keycloak/docker-compose.override.yml
 
 # General
@@ -25,6 +29,7 @@ OPEN_GDB_DOMAIN=ts.scs.localhost
 PUBLIC_PORT=8082
 
 # Jupyter.
+# Optional if it matches code.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}; compose defaults match that pattern.
 JUPYTERHUB_DOMAIN=code.scs.localhost
 JUPYTERHUB_OPENREFINE_DIR=${SCS_ROOT_PATH}/openrefine
 JUPYTERHUB_SERVICE_NAME=jupyterhub
@@ -188,7 +193,9 @@ PROJECT_WEBSITE_VARNISH_IMAGE_VERSION=1.0.0
 PROJECT_WEBSITE_VARNISH_PORT=80
 
 # Traefik.
-SCS_TRAEFIK_DOMAIN=reverse-proxy.scs.localhost
+# Optional: dashboard hostname. If unset, defaults to reverse-proxy.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}
+# (e.g. reverse-proxy.scs.sammlungen.io when those match your DNS). Set explicitly only for a custom name.
+SCS_TRAEFIK_DOMAIN=reverse-proxy.scs.sammlungen.io
 SCS_TRAEFIK_EMAIL=admin@example.com
 SCS_TRAEFIK_PASSWORD=
 SCS_TRAEFIK_HASHED_PASSWORD=

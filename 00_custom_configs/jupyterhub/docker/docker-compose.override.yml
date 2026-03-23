@@ -6,7 +6,6 @@ services:
   # JupyterHub Service
   jupyterhub--jupyterhub:
     container_name: ${JUPYTERHUB_SERVICE_NAME}
-    env_file: !reset
     build:
       context: jupyterhub/jupyterhub
     environment:
@@ -19,7 +18,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
-      - "traefik.http.routers.jupyterhub--jupyterhub.rule=Host(`${JUPYTERHUB_DOMAIN}`)"
+      - "traefik.http.routers.jupyterhub--jupyterhub.rule=Host(`${JUPYTERHUB_DOMAIN:-code.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}}`)"
       - "traefik.http.routers.jupyterhub--jupyterhub.entrypoints=websecure"
       - "traefik.http.routers.jupyterhub--jupyterhub.tls=true"
       - "traefik.http.routers.jupyterhub--jupyterhub.tls.certresolver=le"
