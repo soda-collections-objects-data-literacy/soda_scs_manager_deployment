@@ -3,9 +3,8 @@
 
 set -euo pipefail
 
-# Create the acme.json for certs:
-touch acme.json
-chmod 600 acme.json
+# Let's Encrypt state (acme.json) is stored in the Docker volume scs--reverse-proxy-certificates
+# (see docker-compose.yml service scs--reverse-proxy).
 
 # Check if snapshot dir exists
 if [ ! -d "/var/snapshots" ]; then

@@ -36,9 +36,8 @@ The `command` block under `scs--reverse-proxy` is the list of arguments passed t
 **--entrypoints.websecure.forwardedHeaders.trustedIPs=172.18.0.0/16** — Same as above for the HTTPS entrypoint.
 **--entrypoints.mysql.address=:3306** — TCP entrypoint `mysql` on port 3306 for MySQL. Used by `traefik.tcp.routers.scs--database.entrypoints=mysql`.
 **--certificatesresolvers.le.acme.email=...** — Email used for Let’s Encrypt (ACME) account and expiry notifications.
-**--certificatesresolvers.le.acme.httpchallenge.entrypoint=web** — Use the `web` entrypoint (port 80) for HTTP-01 challenges. Required when something else handles port 80 or for wildcard certs you may use TLS challenge instead.
-**--certificatesresolvers.le.acme.storage=/certificates/acme.json** — Path inside the container where ACME state and certificates are stored (must be persistent volume).
-**--certificatesresolvers.le.acme.tlschallenge=true** — Enable TLS-ALPN-01 challenge (often used together with or instead of HTTP-01 for Let’s Encrypt).
+**--certificatesresolvers.le.acme.httpchallenge.entrypoint=web** — Use the `web` entrypoint (port 80) for HTTP-01 challenges. Do not enable `tlschallenge` on the same resolver: Traefik then skips HTTP-01 while `allowACMEByPass` still expects it, which produces `HTTP challenge is not enabled` / missing resolver `le` symptoms. For TLS-ALPN-01 only (port 443), omit `httpchallenge` and `allowACMEByPass` instead.
+**--certificatesresolvers.le.acme.storage=/certificates/acme.json** — Path inside the container where ACME state and certificates are stored. This stack uses the named volume `scs--reverse-proxy-certificates` mounted at `/certificates` so `acme.json` is created with mode 600.
 **--accesslog** — Enable access logging (each request logged).
 **--log** — Enable general application logging.
 **--api** — Enable the Traefik API (used by the dashboard and health checks).

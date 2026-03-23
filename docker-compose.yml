@@ -187,7 +187,7 @@ services:
     networks:
       - reverse-proxy
     labels:
-      - "traefik.enable=true"
+      - "traefik.enable=false"
       - "traefik.http.routers.scs--echo.rule=Host(`echo.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}`)"
       - "traefik.http.routers.scs--echo.entrypoints=websecure"
       - "traefik.http.routers.scs--echo.tls=true"
@@ -263,7 +263,10 @@ services:
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./acme.json:/certificates/acme.json
+      # Named volume so acme.json is created with mode 600 (bind mounts often end up 644/755).
+      # To import an existing host acme.json once:
+      # docker compose run --rm -v "$(pwd)/acme.json:/import:ro" -v scs--reverse-proxy-certificates:/cert alpine sh -c "cp /import /cert/acme.json && chmod 600 /cert/acme.json"
+      - scs--reverse-proxy-certificates:/certificates
     command:
       # Enable Docker provider
       - --providers.docker
@@ -292,8 +295,8 @@ services:
       - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
       # Use the specified storage location for Let's Encrypt certificates
       - --certificatesresolvers.le.acme.storage=/certificates/acme.json
-      # Use the TLS-ALPN-01 challenge for Let's Encrypt certificate requests
-      - --certificatesresolvers.le.acme.tlschallenge=true
+      # HTTP-01 only: do not enable tlsChallenge alongside httpChallenge — Traefik then
+      # skips HTTP-01, but allowACMEByPass still registers acme-http-bypass and logs errors.
       # Enable access log output
       - --accesslog
       # Enable general log output
