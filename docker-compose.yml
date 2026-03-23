@@ -279,12 +279,11 @@ services:
       - --entrypoints.web.http.redirections.entryPoint.priority=43
       # Use the specified email address for Let's Encrypt certificate requests
       - --certificatesresolvers.le.acme.email=${SCS_TRAEFIK_EMAIL:-admin@example.com}
-      # Use the HTTP challenge for Let's Encrypt certificate requests
-      - --certificatesresolvers.le.acme.httpchallenge.entrypoint=web
+      # TLS-ALPN-01 on websecure: avoids HTTP-01 being answered by app stacks behind Docker routers
+      # (e.g. WissKI) after redirect to HTTPS. Do not set httpChallenge on the same resolver.
+      - --certificatesresolvers.le.acme.tlschallenge=true
       # Use the specified storage location for Let's Encrypt certificates
       - --certificatesresolvers.le.acme.storage=/certificates/acme.json
-      # HTTP-01 only: do not enable tlsChallenge alongside httpChallenge — Traefik then
-      # skips HTTP-01, but allowACMEByPass still registers acme-http-bypass and logs errors.
       # Enable access log output
       - --accesslog
       # Enable general log output
