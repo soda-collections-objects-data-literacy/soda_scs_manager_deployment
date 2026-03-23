@@ -1,20 +1,6 @@
 #todo use label mappings
 
 services:
-  # Filemanagement
-  scs--access-proxy:
-    image: alpine:latest
-    container_name: scs--access-proxy
-    restart: unless-stopped
-    command: >
-      sh -c "id filemanager >/dev/null 2>&1 || adduser -D -u 9000 filemanager && id www-data >/dev/null 2>&1 || adduser -D -u 33 -G www-data www-data && tail -f /dev/null"
-    volumes:
-      - scs--shared-data:/shared
-      - /var/backups/scs-manager/snapshots:/var/scs-manager/snapshots
-    networks:
-      - reverse-proxy
-    labels:
-      - "traefik.enable=false"
 
   # SCS Manager
   scs--portainer:
