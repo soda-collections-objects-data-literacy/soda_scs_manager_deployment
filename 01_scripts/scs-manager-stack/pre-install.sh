@@ -35,6 +35,13 @@ done
 
 echo "All required environment variables are set."
 
+# Snapshot bind mount on host (same path as in docker-compose; writable by UID 33).
+SNAPSHOT_HOST_DIR="${SNAPSHOT_HOST_DIR:-/srv/backups/scs-manager/snapshots}"
+echo "Ensuring snapshot directory for SCS Manager: ${SNAPSHOT_HOST_DIR}"
+sudo mkdir -p "${SNAPSHOT_HOST_DIR}"
+sudo chown -R 33:33 "${SNAPSHOT_HOST_DIR}"
+sudo chmod -R 775 "${SNAPSHOT_HOST_DIR}"
+
 # Create Database.
 echo "Creating SCS Manager database..."
 docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS ${SCS_MANAGER_DB_NAME};"

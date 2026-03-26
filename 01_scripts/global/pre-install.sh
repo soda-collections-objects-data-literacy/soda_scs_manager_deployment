@@ -1,24 +1,19 @@
 #!/bin/bash
-# Load environment variables.
+# Host preparation shared by stacks (paths must match Docker bind mounts).
 
 set -euo pipefail
 
-# Let's Encrypt state (acme.json) is stored in the Docker volume scs--reverse-proxy-certificates
-# (see docker-compose.yml service scs--reverse-proxy).
+# Drupal / MariaDB snapshot bind mount (see docker-compose.yml). UID/GID 33 is
+# www-data in the official Drupal image and matches snapshot dump/exec users.
+SNAPSHOT_HOST_DIR="${SNAPSHOT_HOST_DIR:-/srv/backups/scs-manager/snapshots}"
 
-# Check if snapshot dir exists
-if [ ! -d "/var/snapshots" ]; then
-    echo "Snapshot directory does not exist. Creating..."
-    sudo mkdir -p /var/backups/scs-manager/snapshots
-fi
+echo "Ensuring SCS Manager snapshot directory exists: ${SNAPSHOT_HOST_DIR}"
+sudo mkdir -p "${SNAPSHOT_HOST_DIR}"
+sudo chown -R 33:33 "${SNAPSHOT_HOST_DIR}"
+sudo chmod -R 775 "${SNAPSHOT_HOST_DIR}"
 
-# Check if snapshot dir is writable by www-data
-if sudo -u www-data [ ! -w "/var/backups/scs-manager/snapshots" ]; then
-    echo "Snapshot directory is not writable by www-data. Fixing permissions..."
-    sudo chown -R www-data:www-data /var/backups/scs-manager/snapshots
-    sudo chmod -R 775 /var/backups/scs-manager/snapshots
-    if sudo -u www-data [ ! -w "/var/backups/scs-manager/snapshots" ]; then
-        echo "Failed to make snapshot directory writable by www-data. Please check permissions."
-        exit 1
-    fi
+if sudo -u \#33 test -w "${SNAPSHOT_HOST_DIR}"; then
+  echo "Snapshot directory is writable as UID 33 (container www-data)."
+else
+  echo "Warning: ${SNAPSHOT_HOST_DIR} is not writable as UID 33; snapshots may fail until permissions are fixed."
 fi
