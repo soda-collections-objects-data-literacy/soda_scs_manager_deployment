@@ -8,6 +8,8 @@ services:
     container_name: ${JUPYTERHUB_SERVICE_NAME}
     build:
       context: jupyterhub/jupyterhub
+    env_file: !override
+      - ${SCS_ROOT_PATH}/jupyterhub/secret.env
     environment:
       DOCKER_NETWORK: ${JUPYTERHUB_NETWORK}
       # Override with parent environment variables
