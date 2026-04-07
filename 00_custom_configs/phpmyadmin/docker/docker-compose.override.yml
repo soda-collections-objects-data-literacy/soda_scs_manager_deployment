@@ -1,0 +1,6 @@
+services:
+  scs--phpmyadmin:
+    volumes:
+      - ${SCS_ROOT_PATH}/00_custom_configs/phpmyadmin/configs/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php:ro
+      - ${SCS_ROOT_PATH}/00_custom_configs/phpmyadmin/configs/signon-script.php:/var/www/html/signon-script.php:ro
+      - ${SCS_ROOT_PATH}/00_custom_configs/phpmyadmin/configs/signon.php:/var/www/html/signon.php:ro

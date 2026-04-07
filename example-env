@@ -3,7 +3,8 @@
 # Run `docker compose` from the same directory as `docker-compose.yml`, or use:
 #   docker compose --project-directory /path/to/soda_scs_manager_deployment …
 # Otherwise variables here are missing during parsing and you see "variable is not set" warnings.
-COMPOSE_FILE=docker-compose.yml:scs-manager-stack/docker-compose.yml:scs-nextcloud-stack/docker-compose.yml:scs-nextcloud-stack/docker-compose.override.yml:jupyterhub/docker-compose.yml:jupyterhub/docker-compose.override.yml:keycloak/docker-compose.yml:open_gdb/docker-compose.yml:open_gdb/docker-compose.override.yml:scs-manager-stack/docker-compose.override.yml:scs-nextcloud-stack/docker-compose.override.yml:scs-project-website-stack/docker-compose.yml:scs-project-website-stack/docker-compose.override.yml:jupyterhub/docker-compose.override.yml:keycloak/docker-compose.override.yml
+# Place overrides at the end of the list. See docs/service-infrastructure/index.md for more details.
+COMPOSE_FILE=docker-compose.yml:scs-manager-stack/docker-compose.yml:scs-nextcloud-stack/docker-compose.yml:jupyterhub/docker-compose.yml:keycloak/docker-compose.yml:open_gdb/docker-compose.yml:scs-manager-stack/docker-compose.yml:scs-nextcloud-stack/docker-compose.yml:scs-project-website-stack/docker-compose.yml:keycloak/docker-compose.yml
 
 # General
 MODE=production
