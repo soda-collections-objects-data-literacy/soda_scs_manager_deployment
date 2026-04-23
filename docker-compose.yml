@@ -214,22 +214,27 @@ services:
       - "traefik.http.middlewares.redirect-to-scs-manager--drupal.redirectregex.replacement=https://${SCS_MANAGER_DOMAIN}$${1}"
       - "traefik.http.middlewares.redirect-to-scs-manager--drupal.redirectregex.permanent=true"
 
-      ## Bot Protection Middlewares for Heavy Traffic Sites
-      ## High-traffic rate limit: 300 requests per minute per IP (for main sites)
+      ## Bot protection (per source IP). Tuned for ~50 concurrent human users; each IP gets its own bucket.
+      ## Web UIs / SPAs: ~3 req/s sustained with headroom for asset bursts on first paint
       ## To use: Add "rate-limit-high" to a service's middlewares list
-      - "traefik.http.middlewares.rate-limit-high.ratelimit.average=300"
+      - "traefik.http.middlewares.rate-limit-high.ratelimit.average=180"
       - "traefik.http.middlewares.rate-limit-high.ratelimit.period=1m"
-      - "traefik.http.middlewares.rate-limit-high.ratelimit.burst=100"
-      ## Moderate rate limit: 150 requests per minute per IP (for APIs/services)
+      - "traefik.http.middlewares.rate-limit-high.ratelimit.burst=90"
+      ## APIs / interactive services: ~1.5 req/s sustained, moderate burst for batch calls
       ## To use: Add "rate-limit" to a service's middlewares list
-      - "traefik.http.middlewares.rate-limit.ratelimit.average=150"
+      - "traefik.http.middlewares.rate-limit.ratelimit.average=90"
       - "traefik.http.middlewares.rate-limit.ratelimit.period=1m"
-      - "traefik.http.middlewares.rate-limit.ratelimit.burst=50"
-      ## Stricter rate limit for aggressive bots: 60 requests per minute
+      - "traefik.http.middlewares.rate-limit.ratelimit.burst=45"
+      ## Sensitive endpoints (auth, search): slows scripted abuse; legitimate users stay well under this
       ## To use: Add "rate-limit-strict" to a service's middlewares list
-      - "traefik.http.middlewares.rate-limit-strict.ratelimit.average=60"
+      - "traefik.http.middlewares.rate-limit-strict.ratelimit.average=30"
       - "traefik.http.middlewares.rate-limit-strict.ratelimit.period=1m"
-      - "traefik.http.middlewares.rate-limit-strict.ratelimit.burst=20"
+      - "traefik.http.middlewares.rate-limit-strict.ratelimit.burst=15"
+      ## Nextcloud: WebDAV + desktop sync + UI assets + /login/v2/poll (device login polls rapidly from one IP)
+      ## To use: Add "rate-limit-nextcloud" on the Nextcloud Traefik router (not rate-limit-high)
+      - "traefik.http.middlewares.rate-limit-nextcloud.ratelimit.average=480"
+      - "traefik.http.middlewares.rate-limit-nextcloud.ratelimit.period=1m"
+      - "traefik.http.middlewares.rate-limit-nextcloud.ratelimit.burst=150"
 
       # Routers
       # Default hostname matches other services (e.g. manager.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}).
