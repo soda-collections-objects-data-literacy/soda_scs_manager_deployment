@@ -15,6 +15,8 @@ services:
       # Override with parent environment variables
       CLIENT_SECRET: ${JUPYTERHUB_CLIENT_SECRET}
       CLIENT_ID: ${JUPYTERHUB_CLIENT_ID}
+      # Nextcloud WebDAV base for hub auth_state / spawn env (must match root jupyterhub compose)
+      NC_URL: ${NEXTCLOUD_URL}
     networks: !override
       - reverse-proxy
     labels:
