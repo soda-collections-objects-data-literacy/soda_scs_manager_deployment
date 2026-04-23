@@ -1,6 +1,8 @@
 {
   "id": "6b2f2c6e-b516-4535-bd4f-6cac461821d3",
   "realm": "${KC_REALM}",
+  "displayName": "Semantic Co-Working Space",
+  "loginTheme": "scs",
   "notBefore": 0,
   "defaultSignatureAlgorithm": "RS256",
   "revokeRefreshToken": false,
@@ -170,6 +172,40 @@
       "authenticationFlowBindingOverrides": {},
       "fullScopeAllowed": true,
       "nodeReRegistrationTimeout": -1,
+      "protocolMappers": [
+        {
+          "id": "a1b2c3d4-e5f6-7890-abcd-ef1111111111",
+          "name": "nextcloud-login-name",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "introspection.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "user.attribute": "nextcloud_login_name",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "nextcloud_login_name",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "id": "a1b2c3d4-e5f6-7890-abcd-ef2222222222",
+          "name": "nextcloud-app-password",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "introspection.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "user.attribute": "nextcloud_app_password",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "nextcloud_app_password",
+            "jsonType.label": "String"
+          }
+        }
+      ],
       "defaultClientScopes": [
         "service_account",
         "web-origins",
