@@ -14,10 +14,40 @@ services:
     labels:
       traefik.enable: true
       traefik.docker.network: reverse-proxy
+
+      # Cache-header middlewares
+      ## GWT content-hashed permutations (*.cache.js / *.cache.html / etc.) — safe to cache forever.
+      traefik.http.middlewares.webprotege-immutable.headers.customResponseHeaders.Cache-Control: "public, max-age=31536000, immutable"
+      ## GWT bootstrap (*.nocache.js) must always be revalidated, otherwise stale bundles get served.
+      traefik.http.middlewares.webprotege-nocache.headers.customResponseHeaders.Cache-Control: "no-cache, no-store, must-revalidate"
+
+      # Routers (more specific rules + explicit priorities to win over the catch-all).
+      # Note: $$ escapes a literal $ in the regex (docker-compose treats $ as variable interpolation).
+      ## Bootstrap file: never cache
+      traefik.http.routers.webprotege-nocache.rule: Host(`webprotege.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}`) && PathRegexp(`\.nocache\.[^/]+$$`)
+      traefik.http.routers.webprotege-nocache.priority: "100"
+      traefik.http.routers.webprotege-nocache.entrypoints: websecure
+      traefik.http.routers.webprotege-nocache.tls: true
+      traefik.http.routers.webprotege-nocache.tls.certresolver: le
+      traefik.http.routers.webprotege-nocache.middlewares: webprotege-nocache,compression@docker
+      traefik.http.routers.webprotege-nocache.service: webprotege
+
+      ## Content-hashed assets: cache for one year as immutable
+      traefik.http.routers.webprotege-immutable.rule: Host(`webprotege.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}`) && PathRegexp(`\.cache\.[^/]+$$`)
+      traefik.http.routers.webprotege-immutable.priority: "90"
+      traefik.http.routers.webprotege-immutable.entrypoints: websecure
+      traefik.http.routers.webprotege-immutable.tls: true
+      traefik.http.routers.webprotege-immutable.tls.certresolver: le
+      traefik.http.routers.webprotege-immutable.middlewares: webprotege-immutable,compression@docker
+      traefik.http.routers.webprotege-immutable.service: webprotege
+
+      ## Catch-all (HTML, RPC, API, etc.): just compression, no cache override
       traefik.http.routers.webprotege.rule: Host(`webprotege.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}`)
       traefik.http.routers.webprotege.entrypoints: websecure
       traefik.http.routers.webprotege.tls: true
       traefik.http.routers.webprotege.tls.certresolver: le
+      traefik.http.routers.webprotege.middlewares: compression@docker
+
       traefik.http.services.webprotege.loadbalancer.server.port: 8080
     environment:
       # Single sign-on against the Keycloak realm; values come from the root .env file.

@@ -236,6 +236,13 @@ services:
       - "traefik.http.middlewares.rate-limit-nextcloud.ratelimit.period=1m"
       - "traefik.http.middlewares.rate-limit-nextcloud.ratelimit.burst=150"
 
+      ## Response compression (zstd > brotli > gzip, negotiated per Accept-Encoding).
+      ## Big win for text/JS/CSS payloads — e.g. WebProtégé's 57 MB GWT bundle compresses to ~3.5 MB.
+      ## To use: Add "compression@docker" to a service's router middlewares list.
+      - "traefik.http.middlewares.compression.compress=true"
+      - "traefik.http.middlewares.compression.compress.minResponseBodyBytes=1024"
+      - "traefik.http.middlewares.compression.compress.encodings=zstd,br,gzip"
+
       # Routers
       # Default hostname matches other services (e.g. manager.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}).
       # Set SCS_TRAEFIK_DOMAIN only if the dashboard must use a different host.
