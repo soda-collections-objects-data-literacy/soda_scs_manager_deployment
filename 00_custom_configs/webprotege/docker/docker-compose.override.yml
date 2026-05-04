@@ -5,6 +5,12 @@ services:
     volumes: !override
       - mongodb-data:/data/db
   webprotege:
+    image: webprotege:scs
+    build:
+      context: ${SCS_ROOT_PATH}/webprotege
+      dockerfile: Dockerfile
+      args:
+        WEBPROTEGE_VERSION: 5.0.0-SNAPSHOT
     labels:
       traefik.enable: true
       traefik.docker.network: reverse-proxy
@@ -13,6 +19,16 @@ services:
       traefik.http.routers.webprotege.tls: true
       traefik.http.routers.webprotege.tls.certresolver: le
       traefik.http.services.webprotege.loadbalancer.server.port: 8080
+    environment:
+      # Single sign-on against the Keycloak realm; values come from the root .env file.
+      # Leave the WEBPROTEGE_OIDC_* keys empty in .env to fall back to local username/password login.
+      - WEBPROTEGE_OIDC_ISSUER_URI=${WEBPROTEGE_OIDC_ISSUER_URI:-}
+      - WEBPROTEGE_OIDC_CLIENT_ID=${WEBPROTEGE_OIDC_CLIENT_ID:-}
+      - WEBPROTEGE_OIDC_CLIENT_SECRET=${WEBPROTEGE_OIDC_CLIENT_SECRET:-}
+      - WEBPROTEGE_OIDC_REDIRECT_URI=${WEBPROTEGE_OIDC_REDIRECT_URI:-}
+      - WEBPROTEGE_OIDC_SCOPES=${WEBPROTEGE_OIDC_SCOPES:-}
+      - WEBPROTEGE_OIDC_USERNAME_CLAIM=${WEBPROTEGE_OIDC_USERNAME_CLAIM:-}
+      - WEBPROTEGE_OIDC_HIDE_LOCAL_LOGIN=${WEBPROTEGE_OIDC_HIDE_LOCAL_LOGIN:-}
     networks:
       - reverse-proxy
       - webprotege
