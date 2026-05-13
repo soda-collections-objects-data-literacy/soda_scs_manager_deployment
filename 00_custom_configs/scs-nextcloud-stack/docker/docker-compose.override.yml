@@ -43,7 +43,8 @@ services:
       - "traefik.docker.network=reverse-proxy"
       - "traefik.http.routers.nextcloud--nextcloud-reverse-proxy.rule=Host(`${NEXTCLOUD_NEXTCLOUD_DOMAIN}`)"
       - "traefik.http.routers.nextcloud--nextcloud-reverse-proxy.entrypoints=websecure"
-      - "traefik.http.routers.nextcloud--nextcloud-reverse-proxy.middlewares=rate-limit-nextcloud"
+      # No Traefik rate limit: SPA + WebDAV fire many parallel requests; edge 429 breaks JS modules and app-menu icons.
+      # Abuse mitigation: Nextcloud ratelimit + brute-force remain; consider WAF / IP allowlist if needed.
       - "traefik.http.routers.nextcloud--nextcloud-reverse-proxy.tls=true"
       - "traefik.http.routers.nextcloud--nextcloud-reverse-proxy.tls.certresolver=le"
       - "traefik.http.services.nextcloud--nextcloud-reverse-proxy.loadbalancer.server.port=80"
@@ -62,7 +63,7 @@ services:
       - "traefik.docker.network=reverse-proxy"
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.rule=Host(`${NEXTCLOUD_ONLYOFFICE_DOMAIN}`)"
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.entrypoints=websecure"
-      - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.middlewares=rate-limit"
+      - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.middlewares=rate-limit-onlyoffice"
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.tls=true"
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.tls.certresolver=le"
       - "traefik.http.services.nextcloud--onlyoffice-reverse-proxy.loadbalancer.server.port=80"

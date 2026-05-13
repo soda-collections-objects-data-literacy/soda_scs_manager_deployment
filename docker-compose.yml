@@ -230,11 +230,15 @@ services:
       - "traefik.http.middlewares.rate-limit-strict.ratelimit.average=30"
       - "traefik.http.middlewares.rate-limit-strict.ratelimit.period=1m"
       - "traefik.http.middlewares.rate-limit-strict.ratelimit.burst=15"
-      ## Nextcloud: WebDAV + desktop sync + UI assets + /login/v2/poll (device login polls rapidly from one IP)
+      ## Nextcloud: WebDAV + sync + SPA loads dozens/hundreds of chunks in one paint (burst must be high or MIME/chunk errors follow 429s)
       ## To use: Add "rate-limit-nextcloud" on the Nextcloud Traefik router (not rate-limit-high)
-      - "traefik.http.middlewares.rate-limit-nextcloud.ratelimit.average=480"
+      - "traefik.http.middlewares.rate-limit-nextcloud.ratelimit.average=5000"
       - "traefik.http.middlewares.rate-limit-nextcloud.ratelimit.period=1m"
-      - "traefik.http.middlewares.rate-limit-nextcloud.ratelimit.burst=150"
+      - "traefik.http.middlewares.rate-limit-nextcloud.ratelimit.burst=1200"
+      ## OnlyOffice: editor loads many font shards in parallel (XHR); generic rate-limit causes 429 and "fonts cannot be loaded"
+      - "traefik.http.middlewares.rate-limit-onlyoffice.ratelimit.average=8000"
+      - "traefik.http.middlewares.rate-limit-onlyoffice.ratelimit.period=1m"
+      - "traefik.http.middlewares.rate-limit-onlyoffice.ratelimit.burst=3000"
 
       ## Response compression (zstd > brotli > gzip, negotiated per Accept-Encoding).
       ## Big win for text/JS/CSS payloads — e.g. WebProtégé's 57 MB GWT bundle compresses to ~3.5 MB.
