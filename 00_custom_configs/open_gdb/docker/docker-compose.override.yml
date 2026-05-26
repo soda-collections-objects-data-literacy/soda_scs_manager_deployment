@@ -49,7 +49,6 @@ services:
   # Authentication Proxy
   authproxy:
     container_name: scs--authproxy
-    image: open_gdb_authproxy:local-cosp
     build:
       context: ${SCS_ROOT_PATH}/open_gdb/authproxy
     environment:
