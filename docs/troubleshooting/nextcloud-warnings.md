@@ -431,6 +431,20 @@ Ensure:
 docker exec nextcloud--nextcloud php /var/www/html/occ onlyoffice:documentserver --check
 ```
 
+### 6b. Converter / thumbnails: HTTP 504 Gateway Time-out (`/converter`)
+
+If logs show failures when Nextcloud POSTs internally to OnlyOffice (`http://nextcloud--onlyoffice-document-server/converter`), the bottleneck is usually the **default nginx proxy read timeout (~60 s)** inside the Document Server image while the converter renders previews.
+
+The deployment binds `scs-nextcloud-stack/onlyoffice-document-server/ds-timeout.conf` (via `SCS_ROOT_PATH` in `00_custom_configs/.../docker-compose.override.yml`) to raise those timeouts to **600 s**. After changing that file, recreate the Document Server container: `docker compose up -d nextcloud--onlyoffice-document-server`.
+
+### 6c. `https://office.…` returns 404 (`404 page not found`, plain text)
+
+Traefik’s default 404 means **no valid router** for that host. Check Traefik logs for:
+
+`middleware "rate-limit-onlyoffice@docker" does not exist`
+
+Middleware labels on the Traefik container (`scs--reverse-proxy`) are **not** applied as Docker-provider middlewares. The rate-limit must be **declared on a backend service** (this repo: `nextcloud--onlyoffice-reverse-proxy` in `00_custom_configs/scs-nextcloud-stack/docker/docker-compose.override.yml`). After fixing labels, recreate: `docker compose up -d --force-recreate nextcloud--onlyoffice-reverse-proxy`.
+
 ### 7. Check OnlyOffice logs
 
 ```bash

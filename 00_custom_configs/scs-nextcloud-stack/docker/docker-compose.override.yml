@@ -28,6 +28,10 @@ services:
       - reverse-proxy
     labels:
       - "traefik.enable=false"
+    # Inner DS nginx defaults ~60s → 504 on slow /converter (e.g. previews). Uses SCS_ROOT_PATH so
+    # `docker compose -f docker-compose.yml -f …/scs-nextcloud-stack/docker-compose.yml` resolves bind correctly.
+    volumes:
+      - ${SCS_ROOT_PATH}/scs-nextcloud-stack/onlyoffice-document-server/ds-timeout.conf:/etc/nginx/includes/ds-timeout.conf:ro
 
   # Nginx Reverse Proxy for Nextcloud with Traefik
   nextcloud--nextcloud-reverse-proxy:
@@ -63,6 +67,11 @@ services:
       - "traefik.docker.network=reverse-proxy"
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.rule=Host(`${NEXTCLOUD_ONLYOFFICE_DOMAIN}`)"
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.entrypoints=websecure"
+      # Middleware must be declared on a backend container Traefik discovers; labels on `scs--reverse-proxy` are ignored
+      # (“middleware …@docker does not exist”), which breaks routing and yields 404 for office.*.
+      - "traefik.http.middlewares.rate-limit-onlyoffice.ratelimit.average=8000"
+      - "traefik.http.middlewares.rate-limit-onlyoffice.ratelimit.period=1m"
+      - "traefik.http.middlewares.rate-limit-onlyoffice.ratelimit.burst=3000"
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.middlewares=rate-limit-onlyoffice"
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.tls=true"
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.tls.certresolver=le"
