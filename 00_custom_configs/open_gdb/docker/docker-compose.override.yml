@@ -49,7 +49,9 @@ services:
   # Authentication Proxy
   authproxy:
     container_name: scs--authproxy
-    build: !reset []
+    image: open_gdb_authproxy:local-cosp
+    build:
+      context: ${SCS_ROOT_PATH}/open_gdb/authproxy
     environment:
       DJANGO_ALLOWED_HOSTS: ${OPEN_GDB_DOMAIN},${SCS_BASE_DOMAIN}
       DJANGO_CSRF_TRUSTED_ORIGINS: https://${OPEN_GDB_DOMAIN}
