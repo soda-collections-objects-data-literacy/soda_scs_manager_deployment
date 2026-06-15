@@ -76,6 +76,23 @@ $settings['reverse_proxy_trusted_headers'] = \Symfony\Component\HttpFoundation\R
   | \Symfony\Component\HttpFoundation\Request::HEADER_X_FORWARDED_PROTO;
 ```
 **Meaning:** Only requests from those IPs (Traefik/Varnish) are treated as coming from a reverse proxy; Drupal then uses the X-Forwarded-* headers for scheme, host, port and client IP.
+
+## WissKI stacks (Portainer / wisski-base-image)
+
+**Role:** Each WissKI instance runs the wisski-base-image Drupal container behind Traefik → Varnish. The image entrypoint runs `sync-reverse-proxy.sh`, which writes `reverse_proxy` settings into the instance `settings.php`.
+
+**Where:** SCS Manager → `/admin/config/soda-scs-manager/settings` → WissKI → **Drupal reverse proxy addresses** (`wisski.instances.proxyAddresses`). Passed to Portainer as env `DRUPAL_PROXY_ADDRESSES` when creating stacks.
+
+**Values:**
+
+| Value | When to use |
+|-------|-------------|
+| `auto` | SCS deployment behind Traefik (default); image detects Docker network CIDRs on each boot |
+| `none` | Standalone stacks without TLS edge (e.g. local [dockerWissKI](https://github.com/soda-collections-objects-data-literacy/dockerWissKI)) |
+| `172.20.0.0/16\|…` | Explicit CIDRs if auto-detection is not sufficient |
+
+**Note:** Changing the setting in SCS Manager affects **new** stacks and the env on stack recreate. Existing instances also need the updated wisski-base-image and a Drupal container recreate so `sync-reverse-proxy.sh` runs.
+
 ## Varnish (backend)
 **Role:** Sits between Traefik and Drupal. Receives HTTP from Traefik with X-Forwarded-* already selt. Must pass them through to Drupal and only add/complete them when missing (e.g. append Varnish IP to X-Forwarded-For).
 **Where:** `00_custom_configs/scs-manager-stack/varnish/default.vcl.tpl` → `vcl_recv`.
@@ -173,7 +190,8 @@ docker network inspect reverse-proxy --format '{{.EnableIPv6}}'
 |-----------|-------------|
 | Docker Network | **REQUIRED:** Enable IPv6 on the `reverse-proxy` network: `enable_ipv6: true` and `driver: bridge`. This is critical for the standard port binding syntax to preserve real client IPs. |
 | Traefik (edge) | Standard port bindings (`- "80:80"`, `- "443:443"`) preserve real client IPs correctly with IPv6-enabled bridge networks. No `forwardedHeaders` config needed - automatically creates X-Forwarded-* headers. Only use `forwardedHeaders.trustedIPs` if behind another proxy. Alternative: Use `mode: host` for explicit docker-proxy bypass. |
-| Drupal | `reverse_proxy`, `reverse_proxy_addresses`, `reverse_proxy_trusted_headers` in settings |
+| Drupal (SCS Manager) | `reverse_proxy`, `reverse_proxy_addresses`, `reverse_proxy_trusted_headers` in settings |
+| WissKI (Portainer stacks) | `DRUPAL_PROXY_ADDRESSES=auto` via SCS Manager settings; image `sync-reverse-proxy.sh` syncs `settings.php` |
 | Varnish | In vcl_recv: pass through X-Forwarded-* from Traefik, only set defaults when missing; append to X-Forwarded-For |
 | Nextcloud | `OVERWRITEPROTOCOL=https`, `OVERWRITEHOST=<domain>`, `NEXTCLOUD_TRUSTED_DOMAINS` |
 | Keycloak | `KC_PROXY_HEADERS=xforwarded`, `KC_PROXY_TRUSTED_ADDRESSES=<Docker networks>`, `KC_HOSTNAME=<domain>` (no protocol), `KC_HTTP_ENABLED=true`, `KC_HOSTNAME_STRICT=true` |

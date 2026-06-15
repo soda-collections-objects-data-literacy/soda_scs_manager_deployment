@@ -106,6 +106,7 @@ Override files are copied from `00_custom_configs/<stack>/docker/` to each stack
 - Drupal application (and optionally Varnish in front). Image and mode from env (e.g. `scs-manager-image-development:latest`).
 - OpenID Connect client config is generated from `00_custom_configs/scs-manager-stack/openid/openid_connect.client.scs_sso.yml.tpl` into `scs-manager-stack/custom_configs/openid_connect.client.scs_sso.yml` during pre-install. Drupal uses this for Keycloak SSO.
 - Drupal settings (e.g. OpenID behaviour, reverse proxy) come from `00_custom_configs/scs-manager-stack/drupal/` (e.g. `openid-connect.settings.php`, `reverse-proxy.settings.php`).
+- WissKI stacks are deployed via Portainer from `wisski-base-stack`. **Drupal reverse proxy addresses** in SCS Manager settings (`auto` by default) become `DRUPAL_PROXY_ADDRESSES` on the stack; the wisski-base-image syncs trusted proxy CIDRs into each instance `settings.php` on boot.
 - Varnish VCL is generated from `00_custom_configs/scs-manager-stack/varnish/default.vcl.tpl` during pre-install.
 - Connects to shared MariaDB (own database).
 
@@ -128,3 +129,10 @@ Override files are copied from `00_custom_configs/<stack>/docker/` to each stack
 
 - Drupal plus Varnish and Redis. Database and user created by pre-install; Varnish VCL is generated from a template.
 - **Note:** The pre-install script lives in `01_scripts/scs-project-page/` and references `00_custom_configs/scs-project-website/varnish/default.vcl.tpl` in the script, but the template file is under `00_custom_configs/scs-project-page/varnish/default.vcl.tpl`. If the script fails, use the path under `scs-project-page`. `start.sh` lists the script as `01_scripts/scs-project-website/pre-install.bash`; the actual directory is `scs-project-page`. These path/naming inconsistencies may need to be fixed in a separate change.
+
+## WissKI stacks (per-instance, via Portainer)
+
+WissKI is not merged into the root `COMPOSE_FILE`. Each catalogue instance is a separate stack (`wisski-base-stack`) managed by SCS Manager through Portainer.
+
+- **Infrastructure:** [WissKI stack](wisski-stack/index.md) — Traefik → Varnish → Nginx + PHP-FPM, networks, headers, `raw.*` bypass
+- **Drupal `settings.php` snippets:** [configs/](configs/index.md) — trusted hosts, private files, Redis, reverse proxy
