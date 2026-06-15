@@ -13,3 +13,5 @@ Openrefine
 **/*.tar.gz
 backups/
 acme.json
+/scs-health
+/scs-health/*
