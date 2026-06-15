@@ -24,13 +24,15 @@ Use this checklist after the whole environment has started (`docker compose up -
 
 - [ ] **OpenID config** — Pre-install writes `00_custom_configs/scs-manager-stack/openid/openid_connect.client.scs_sso.yml.tpl` to `scs-manager-stack/custom_configs/openid_connect.client.scs_sso.yml`. Ensure this config is imported/synced into Drupal (e.g. config sync or install profile). Drupal OpenID behaviour is further tuned in `00_custom_configs/scs-manager-stack/drupal/openid-connect.settings.php`.
 
-- [ ] **Trusted hosts / proxy** — `00_custom_configs/scs-manager-stack/drupal/reverse-proxy.settings.php` and env vars `SCS_MANAGER_DRUPAL_TRUSTED_HOSTS` and `DRUPAL_PROXY_ADDRESSES` must match your deployment (Traefik/proxy and domain).
+- [ ] **Trusted hosts / proxy (SCS Manager)** — `00_custom_configs/scs-manager-stack/drupal/reverse-proxy.settings.php` and env `SCS_MANAGER_DRUPAL_TRUSTED_HOSTS` / `SCS_MANAGER_DRUPAL_PROXY_ADDRESSES` must match your deployment (include the `reverse-proxy` Docker network CIDR, e.g. `172.20.0.0/16`).
+
+- [ ] **WissKI reverse proxy** — At `/admin/config/soda-scs-manager/settings` → WissKI: set **Drupal reverse proxy addresses** to `auto` for stacks behind Traefik (default on SCS). Existing Portainer stacks need `DRUPAL_PROXY_ADDRESSES=auto` and a wisski-base-image that runs `sync-reverse-proxy.sh`, then recreate the Drupal container. Use `none` only for standalone stacks without TLS edge (e.g. local dockerWissKI).
+
+- [ ] **WissKI / Portainer** — Configure WissKI settings with the Portainer API token: endpoint (e.g. `1`), create/read/update/delete stack API URLs (e.g. `https://portainer.&lt;DOMAIN&gt;/api/stacks/...`). See the main README for the exact routes.
 
 - [ ] **Docs and settings** — Confirm SCS Manager settings at `/admin/config/soda-scs-manager/settings`. If the product exposes a docs path, ensure the base URL or path is correct.
 
 - [ ] **SMTP config** — Ensure SMTP (outgoing mail) is configured and working in Drupal (e.g. Configuration → System → Basic site settings → SMTP Authentication Support, or the mail system in use). If SMTP is not working, user registration will fail because verification or welcome emails cannot be sent.
-
-- [ ] **WissKI** — Configure WissKI settings with the Portainer API token: endpoint (e.g. `1`), create/read/update/delete stack API URLs (e.g. `https://portainer.&lt;DOMAIN&gt;/api/stacks/...`). See the main README for the exact routes.
 
 ---
 
