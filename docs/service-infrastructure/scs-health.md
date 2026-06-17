@@ -102,7 +102,7 @@ Full step-by-step instructions: [scs-health/README.md](../../scs-health/README.m
 
 ## Operational notes
 
-- The container runs as **root** so it can access the Docker socket; only `docker ps` is used (read-only socket mount).
+- The container runs as **root** so it can access the Docker socket; only `docker ps` is used (read-only socket mount). The image bundles a current static Docker CLI (not Debian `docker.io`) so the client API matches modern daemons.
 - Build artifacts (`node_modules/`, `.next/`) are gitignored; the image is built via `Dockerfile` (standalone Next.js output).
 - Submodule updates: change code in `scs-health`, commit/push there, then bump the submodule pointer in the deployment repo.
 

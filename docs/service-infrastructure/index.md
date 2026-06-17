@@ -135,7 +135,7 @@ Override files are copied from `00_custom_configs/<stack>/docker/` to each stack
 
 - Next.js health dashboard for operators: HTTPS checks against stack service domains and optional Docker container status via the host socket.
 - Container `scs--health`, submodule at `scs-health/`, Traefik host `SCS_HEALTH_DOMAIN`.
-- Auth: local credentials (`SCS_HEALTH_AUTH_*`) and optional Keycloak OIDC (`SCS_HEALTH_OIDC_*`). See [SCS Health dashboard](scs-health.md).
+- Auth: local credentials (`SCS_HEALTH_AUTH_*`) and optional Keycloak OIDC (`SCS_HEALTH_OIDC_*`). UI follows SODa corporate design (Inter, orange `#e68500`, menu-bar divider) aligned with `keycloak/keycloak/themes/scs` and `soda_scs_manager_theme`. See [SCS Health dashboard](scs-health.md).
 
 ## WissKI stacks (per-instance, via Portainer)
 
