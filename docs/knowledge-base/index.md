@@ -16,6 +16,10 @@ Comprehensive guide covering:
 
 Essential reading for understanding the `reverse-proxy` network configuration and IPv6 networking in Docker.
 
+### [SCS Manager user create and delete routines](../service-infrastructure/scs-manager-user-lifecycle.md)
+
+Technical reference for Keycloak user registration/approval, OIDC linking, Nextcloud credential attributes (`nextcloud_login_name`, `nextcloud_app_password`), and the `hook_user_delete` cleanup chain (Keycloak Admin API, Nextcloud OCS, MariaDB, OpenGDB).
+
 ---
 
 ## Related Documentation

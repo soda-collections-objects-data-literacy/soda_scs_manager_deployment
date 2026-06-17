@@ -18,3 +18,4 @@ settings:
     - openid
     - email
     - groups
+    - profile

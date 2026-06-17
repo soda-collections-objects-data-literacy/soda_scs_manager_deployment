@@ -106,6 +106,7 @@ Override files are copied from `00_custom_configs/<stack>/docker/` to each stack
 - Drupal application (and optionally Varnish in front). Image and mode from env (e.g. `scs-manager-image-development:latest`).
 - OpenID Connect client config is generated from `00_custom_configs/scs-manager-stack/openid/openid_connect.client.scs_sso.yml.tpl` into `scs-manager-stack/custom_configs/openid_connect.client.scs_sso.yml` during pre-install. Drupal uses this for Keycloak SSO.
 - Drupal settings (e.g. OpenID behaviour, reverse proxy) come from `00_custom_configs/scs-manager-stack/drupal/` (e.g. `openid-connect.settings.php`, `reverse-proxy.settings.php`).
+- **User lifecycle (create/delete):** [SCS Manager user create and delete routines](scs-manager-user-lifecycle.md) — Keycloak registration, OIDC linking, Nextcloud credential attributes, and `hook_user_delete` cleanup.
 - WissKI stacks are deployed via Portainer from `wisski-base-stack`. **Drupal reverse proxy addresses** in SCS Manager settings (`auto` by default) become `DRUPAL_PROXY_ADDRESSES` on the stack; the wisski-base-image syncs trusted proxy CIDRs into each instance `settings.php` on boot.
 - Varnish VCL is generated from `00_custom_configs/scs-manager-stack/varnish/default.vcl.tpl` during pre-install.
 - Connects to shared MariaDB (own database).

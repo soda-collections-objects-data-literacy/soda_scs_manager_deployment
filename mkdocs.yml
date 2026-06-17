@@ -17,6 +17,7 @@ nav:
   - Glossary: glossary.md
   - Service infrastructure:
     - Overview: service-infrastructure/index.md
+    - SCS Manager user lifecycle: service-infrastructure/scs-manager-user-lifecycle.md
   - Initial setup:
     - Overview: initial-setup/index.md
     - Prerequisites: initial-setup/prerequisites.md

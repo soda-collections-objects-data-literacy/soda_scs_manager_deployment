@@ -385,6 +385,21 @@
       "authenticationFlowBindingOverrides": {},
       "fullScopeAllowed": true,
       "nodeReRegistrationTimeout": -1,
+      "protocolMappers": [
+        {
+          "id": "c8f4a1b2-3d5e-4f6a-9b0c-1e2f3a4b5c6e",
+          "name": "audience-nextcloud",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "https://${NEXTCLOUD_NEXTCLOUD_DOMAIN}",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ],
       "defaultClientScopes": [
         "web-origins",
         "acr",
@@ -919,6 +934,19 @@
             "access.token.claim": "true",
             "claim.name": "birthdate",
             "jsonType.label": "String"
+          }
+        },
+        {
+          "id": "c8f4a1b2-3d5e-4f6a-9b0c-1e2f3a4b5c6d",
+          "name": "audience-nextcloud",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "https://${NEXTCLOUD_NEXTCLOUD_DOMAIN}",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true"
           }
         }
       ]
