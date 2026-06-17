@@ -25,3 +25,6 @@
 [submodule "scs-nextcloud-stack"]
 	path = scs-nextcloud-stack
 	url = git@github.com:soda-collections-objects-data-literacy/scs-nextcloud-stack.git
+[submodule "scs-health"]
+	path = scs-health
+	url = git@github.com:rnsrk/scs-health.git

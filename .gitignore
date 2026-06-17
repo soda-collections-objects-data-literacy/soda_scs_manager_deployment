@@ -1,17 +1,34 @@
-volumes
-helpers
+# IDE / editor
 .vscode
+.cursor
+
+# Secrets and local environment
 *.env
 *.env.local
-.cursor
-openrefine
+acme.json
+
+# Data, backups, archives
+volumes
+backups/
+**/*.tar.gz
+
+# Site-specific / generated
+helpers
 configure_man
+openrefine
+Openrefine
 lontod/data/ontologies
 ontology_resolver
 webprotege/.protegedata
-Openrefine
-**/*.tar.gz
-backups/
-acme.json
-/scs-health
-/scs-health/*
+
+# scs-health (Next.js) — local build output and dependencies
+# Source is tracked; see also scs-health/.gitignore
+scs-health/node_modules/
+scs-health/.next/
+scs-health/out/
+scs-health/*.tsbuildinfo
+scs-health/.env*
+scs-health/npm-debug.log*
+scs-health/yarn-debug.log*
+scs-health/yarn-error.log*
+scs-health/.pnpm-debug.log*
