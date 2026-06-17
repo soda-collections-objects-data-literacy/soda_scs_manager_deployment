@@ -88,7 +88,15 @@ Set `SCS_HEALTH_OIDC_CLIENT_ID` and either `SCS_HEALTH_OIDC_ISSUER` or rely on `
 https://<keycloak-host>/realms/<realm-name>
 ```
 
-Recreate `scs--health`. The login page shows **Sign in with Keycloak** when all OIDC variables are set. Local credentials remain available.
+Recreate `scs--health` after setting OIDC variables (rebuild required when app code changes):
+
+```bash
+docker compose up -d --build scs--health
+```
+
+The login page reads OIDC env vars at **request time**, not at image build time. If you add OIDC settings later, `--force-recreate` is enough; no rebuild needed unless you changed the app.
+
+The login page shows **Sign in with Keycloak** when all OIDC variables are set. Local credentials remain available.
 
 Full step-by-step instructions: [scs-health/README.md](../../scs-health/README.md#sso-setup-keycloak) in the submodule.
 
