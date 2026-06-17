@@ -26,7 +26,9 @@ services:
 
       # Proxy configuration for Traefik.
       KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "true"
       KC_PROXY_HEADERS: xforwarded
+      KC_PROXY_TRUSTED_ADDRESSES: 172.16.0.0/12,192.168.0.0/16
 
       # Use local cache for single-node deployment (eliminates JDBC ping warnings).
       KC_CACHE: local
@@ -37,9 +39,18 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
+      # Internal reverse-proxy traffic: no rate limit (higher priority than external router below).
+      - "traefik.http.routers.keycloak--keycloak-internal.rule=Host(`${KC_DOMAIN}`) && (ClientIP(`172.16.0.0/12`) || ClientIP(`192.168.0.0/16`) || ClientIP(`10.0.0.0/8`) || ClientIP(`127.0.0.1/32`) || ClientIP(`::1/128`) || ClientIP(`fd00::/8`))"
+      - "traefik.http.routers.keycloak--keycloak-internal.entrypoints=websecure"
+      - "traefik.http.routers.keycloak--keycloak-internal.priority=100"
+      - "traefik.http.routers.keycloak--keycloak-internal.tls=true"
+      - "traefik.http.routers.keycloak--keycloak-internal.tls.certresolver=le"
+      - "traefik.http.routers.keycloak--keycloak-internal.service=keycloak--keycloak"
+      # External traffic: rate limit (admin SPA needs high burst — many parallel JS chunks).
       - "traefik.http.routers.keycloak--keycloak.rule=Host(`${KC_DOMAIN}`)"
       - "traefik.http.routers.keycloak--keycloak.entrypoints=websecure"
-      - "traefik.http.routers.keycloak--keycloak.middlewares=rate-limit"
+      - "traefik.http.routers.keycloak--keycloak.priority=10"
+      - "traefik.http.routers.keycloak--keycloak.middlewares=rate-limit-keycloak"
       - "traefik.http.routers.keycloak--keycloak.tls=true"
       - "traefik.http.routers.keycloak--keycloak.tls.certresolver=le"
       - "traefik.http.services.keycloak--keycloak.loadbalancer.server.port=8080"

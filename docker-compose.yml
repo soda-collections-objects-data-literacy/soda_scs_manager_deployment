@@ -166,48 +166,6 @@ services:
       # passing X-Forwarded-Uri so mesosphere fork can detect /_oauth callbacks correctly.
       - "traefik.enable=false"
 
-  # # Stack health dashboard (Next.js) — source in scs-health/ (gitignored)
-  # scs--health:
-  #   build:
-  #     context: ./scs-health
-  #     dockerfile: Dockerfile
-  #   container_name: scs--health
-  #   restart: unless-stopped
-  #   user: root
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock:ro
-  #   environment:
-  #     SCS_MANAGER_DOMAIN: ${SCS_MANAGER_DOMAIN}
-  #     SCS_MANAGER_SECOND_DOMAIN: ${SCS_MANAGER_SECOND_DOMAIN}
-  #     KC_DOMAIN: ${KC_DOMAIN}
-  #     NEXTCLOUD_NEXTCLOUD_DOMAIN: ${NEXTCLOUD_NEXTCLOUD_DOMAIN}
-  #     NEXTCLOUD_ONLYOFFICE_DOMAIN: ${NEXTCLOUD_ONLYOFFICE_DOMAIN}
-  #     JUPYTERHUB_DOMAIN: ${JUPYTERHUB_DOMAIN}
-  #     OPEN_GDB_DOMAIN: ${OPEN_GDB_DOMAIN}
-  #     PROJECT_WEBSITE_DOMAIN: ${PROJECT_WEBSITE_DOMAIN}
-  #     WEBPROTEGE_WEBPROTEGE_DOMAIN: ${WEBPROTEGE_WEBPROTEGE_DOMAIN}
-  #     SCS_DBMS_DOMAIN: ${SCS_DBMS_DOMAIN:-dbms.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}}
-  #     SCS_PORTAINER_DOMAIN: ${SCS_PORTAINER_DOMAIN}
-  #     SCS_TRAEFIK_DOMAIN: ${SCS_TRAEFIK_DOMAIN:-reverse-proxy.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}}
-  #   depends_on:
-  #     - scs--reverse-proxy
-  #   networks:
-  #     - reverse-proxy
-  #   labels:
-  #     - "traefik.enable=true"
-  #     - "traefik.docker.network=reverse-proxy"
-  #     - "traefik.http.routers.scs--health.rule=Host(`${SCS_HEALTH_DOMAIN:-health.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}}`)"
-  #     - "traefik.http.routers.scs--health.entrypoints=websecure"
-  #     - "traefik.http.routers.scs--health.tls=true"
-  #     - "traefik.http.routers.scs--health.tls.certresolver=le"
-  #     - "traefik.http.services.scs--health.loadbalancer.server.port=3000"
-  #   healthcheck:
-  #     test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/status').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
-  #     interval: 30s
-  #     timeout: 10s
-  #     retries: 3
-  #     start_period: 40s
-
   # Whoami for debugging routing + proxy-header stuff
   scs--echo:
     image: traefik/whoami
@@ -257,6 +215,10 @@ services:
       - "traefik.http.middlewares.redirect-to-scs-manager--drupal.redirectregex.permanent=true"
 
       ## Bot protection (per source IP). Tuned for ~50 concurrent human users; each IP gets its own bucket.
+      ## Internal Docker traffic must bypass rate limits: add a second router per service with higher priority,
+      ## rule Host(`domain`) && ClientIP(docker/private CIDRs), and no rate-limit middleware.
+      ## External router keeps Host(`domain`) + rate-limit middleware with lower priority (e.g. 10).
+      ## Standard internal CIDRs: 172.16.0.0/12, 192.168.0.0/16, 10.0.0.0/8, 127.0.0.1/32, ::1/128, fd00::/8
       ## Web UIs / SPAs: ~3 req/s sustained with headroom for asset bursts on first paint
       ## To use: Add "rate-limit-high" to a service's middlewares list
       - "traefik.http.middlewares.rate-limit-high.ratelimit.average=180"
@@ -281,6 +243,10 @@ services:
       - "traefik.http.middlewares.rate-limit-onlyoffice.ratelimit.average=8000"
       - "traefik.http.middlewares.rate-limit-onlyoffice.ratelimit.period=1m"
       - "traefik.http.middlewares.rate-limit-onlyoffice.ratelimit.burst=3000"
+      ## Keycloak admin console: SPA loads 90+ JS chunks on first paint; generic rate-limit causes 429 and "error loading dynamically imported module"
+      - "traefik.http.middlewares.rate-limit-keycloak.ratelimit.average=5000"
+      - "traefik.http.middlewares.rate-limit-keycloak.ratelimit.period=1m"
+      - "traefik.http.middlewares.rate-limit-keycloak.ratelimit.burst=1200"
 
       ## Response compression (zstd > brotli > gzip, negotiated per Accept-Encoding).
       ## Big win for text/JS/CSS payloads — e.g. WebProtégé's 57 MB GWT bundle compresses to ~3.5 MB.

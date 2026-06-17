@@ -4,7 +4,7 @@
 #   docker compose --project-directory /path/to/soda_scs_manager_deployment …
 # Otherwise variables here are missing during parsing and you see "variable is not set" warnings.
 # Place overrides at the end of the list. See docs/service-infrastructure/index.md for more details.
-COMPOSE_FILE=docker-compose.yml:scs-manager-stack/docker-compose.yml:scs-nextcloud-stack/docker-compose.yml:jupyterhub/docker-compose.yml:keycloak/docker-compose.yml:open_gdb/docker-compose.yml:scs-manager-stack/docker-compose.yml:scs-nextcloud-stack/docker-compose.yml:scs-project-website-stack/docker-compose.yml:keycloak/docker-compose.yml
+COMPOSE_FILE=docker-compose.yml:jupyterhub/docker-compose.yml:00_custom_configs/jupyterhub/docker/docker-compose.override.yml:keycloak/docker-compose.yml:00_custom_configs/keycloak/docker/docker-compose.override.yml:open_gdb/docker-compose.yml:00_custom_configs/open_gdb/docker/docker-compose.override.yml:scs-manager-stack/docker-compose.yml:scs-manager-stack/docker-compose.override.yml:scs-nextcloud-stack/docker-compose.yml:00_custom_configs/scs-nextcloud-stack/docker/docker-compose.override.yml:scs-project-website-stack/docker-compose.yml:scs-project-website-stack/docker-compose.override.yml:webprotege/docker-compose.yml:00_custom_configs/webprotege/docker/docker-compose.override.yml:scs-health/docker-compose.yml:00_custom_configs/scs-health/docker/docker-compose.override.yml
 
 # General
 MODE=production
@@ -198,12 +198,25 @@ PROJECT_WEBSITE_VARNISH_PORT=80
 # Optional: dashboard hostname. If unset, defaults to reverse-proxy.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}
 # (e.g. reverse-proxy.scs.sammlungen.io when those match your DNS). Set explicitly only for a custom name.
 SCS_TRAEFIK_DOMAIN=reverse-proxy.scs.sammlungen.io
-SCS_HEALTH_DOMAIN=health.scs.sammlungen.io
 SCS_TRAEFIK_EMAIL=admin@example.com
 SCS_TRAEFIK_PASSWORD=
 SCS_TRAEFIK_HASHED_PASSWORD=
 SCS_TRAEFIK_USERNAME=admin
 SCS_TRAEFIK_SERVICE_NAME=reverse-proxy
+# Reference ClientIP() CIDRs for internal bypass routers (hardcoded in compose overrides; adjust if reverse-proxy subnet differs):
+# ClientIP(`172.16.0.0/12`) || ClientIP(`192.168.0.0/16`) || ClientIP(`10.0.0.0/8`) || ClientIP(`127.0.0.1/32`) || ClientIP(`::1/128`) || ClientIP(`fd00::/8`)
+
+# SCS Health.
+SCS_HEALTH_DOMAIN=health.scs.sammlungen.io
+# Session signing secret for scs-health login (generate: openssl rand -base64 32)
+SCS_HEALTH_AUTH_SECRET=
+# Local login credentials (defaults to SCS_TRAEFIK_USERNAME / SCS_TRAEFIK_PASSWORD)
+SCS_HEALTH_AUTH_USER=
+SCS_HEALTH_AUTH_PASSWORD=
+# Optional Keycloak OIDC (client must exist in realm; redirect: https://${SCS_HEALTH_DOMAIN}/api/auth/callback/keycloak)
+SCS_HEALTH_OIDC_CLIENT_ID=
+SCS_HEALTH_OIDC_CLIENT_SECRET=
+SCS_HEALTH_OIDC_ISSUER=
 
 # WebProtégé.
 WEBPROTEGE_WEBPROTEGE_DOMAIN=webprotege.scs.localhost

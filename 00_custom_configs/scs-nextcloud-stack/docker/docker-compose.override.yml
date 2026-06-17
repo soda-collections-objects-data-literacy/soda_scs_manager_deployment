@@ -65,8 +65,17 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
+      # Internal reverse-proxy traffic: no rate limit.
+      - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy-internal.rule=Host(`${NEXTCLOUD_ONLYOFFICE_DOMAIN}`) && (ClientIP(`172.16.0.0/12`) || ClientIP(`192.168.0.0/16`) || ClientIP(`10.0.0.0/8`) || ClientIP(`127.0.0.1/32`) || ClientIP(`::1/128`) || ClientIP(`fd00::/8`))"
+      - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy-internal.entrypoints=websecure"
+      - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy-internal.priority=100"
+      - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy-internal.tls=true"
+      - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy-internal.tls.certresolver=le"
+      - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy-internal.service=nextcloud--onlyoffice-reverse-proxy"
+      # External traffic: rate limit (editor loads many font shards in parallel).
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.rule=Host(`${NEXTCLOUD_ONLYOFFICE_DOMAIN}`)"
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.entrypoints=websecure"
+      - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.priority=10"
       # Middleware must be declared on a backend container Traefik discovers; labels on `scs--reverse-proxy` are ignored
       # (“middleware …@docker does not exist”), which breaks routing and yields 404 for office.*.
       - "traefik.http.middlewares.rate-limit-onlyoffice.ratelimit.average=8000"

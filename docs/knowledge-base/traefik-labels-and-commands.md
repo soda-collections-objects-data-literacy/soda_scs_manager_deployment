@@ -16,6 +16,7 @@ Labels use a dot-separated path: `traefik.<scope>.<resource-type>.<resource-name
 **traefik.http.services.<name>.loadbalancer.server.port** — Backend port inside the container (e.g. `80` for phpMyAdmin). Traefik forwards to this port.
 **traefik.http.routers.<name>.entrypoints** — Comma-separated list of entrypoints (e.g. `web`, `websecure`). The router only applies to requests that arrive on these entrypoints.
 **traefik.http.routers.<name>.middlewares** — Comma-separated list of middleware names (e.g. `rate-limit`). Applied in order before forwarding to the service.
+**traefik.http.routers.<name>.priority** — Router priority when multiple routers match the same request. Use a higher value (e.g. `100`) for internal bypass routers (`Host(...) && ClientIP(...)`) without rate limits, and a lower value (e.g. `10`) for the external router with rate-limit middleware. Internal CIDRs: `172.16.0.0/12`, `192.168.0.0/16`, `10.0.0.0/8`, `127.0.0.1/32`, `::1/128`, `fd00::/8`.
 **traefik.http.routers.<name>.tls** — Enable TLS for this router (`true`/`false`).
 **traefik.http.routers.<name>.tls.certresolver** — Name of the certificate resolver (e.g. `le` for Let’s Encrypt) used to get the certificate.
 **traefik.http.routers.<name>.service** — Links the router to the service name. If omitted, Traefik often infers it from the container/service name, but setting it explicitly is clearer (e.g. when one service has multiple routers).
