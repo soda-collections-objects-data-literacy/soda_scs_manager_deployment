@@ -1,0 +1,21 @@
+# Docker Compose Override for SCS Health Dashboard Integration
+# This file overrides the base docker-compose.yml to integrate with the main SCS deployment
+# It adds Traefik integration and reverse-proxy networking
+
+services:
+  scs--health:
+    build:
+      context: ${SCS_ROOT_PATH}/scs-health
+      dockerfile: Dockerfile
+    networks:
+      - reverse-proxy
+    depends_on:
+      - scs--reverse-proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy"
+      - "traefik.http.routers.scs--health.rule=Host(`${SCS_HEALTH_DOMAIN:-health.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}}`)"
+      - "traefik.http.routers.scs--health.entrypoints=websecure"
+      - "traefik.http.routers.scs--health.tls=true"
+      - "traefik.http.routers.scs--health.tls.certresolver=le"
+      - "traefik.http.services.scs--health.loadbalancer.server.port=3000"
