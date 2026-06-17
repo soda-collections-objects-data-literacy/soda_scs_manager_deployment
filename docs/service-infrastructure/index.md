@@ -7,7 +7,7 @@ This section describes what is in the SODa SCS Manager deployment and how the se
 The deployment is built from multiple Docker Compose files merged via the `COMPOSE_FILE` environment variable (see `example-env`). It includes:
 
 - A **main stack** (`docker-compose.yml`): Traefik reverse proxy, shared MariaDB, Portainer, phpMyAdmin, and an access-proxy helper.
-- **Submodule stacks**: SCS Manager (Drupal), Nextcloud, JupyterHub, Keycloak, OpenGDB, and the project website stack.
+- **Submodule stacks**: SCS Manager (Drupal), Nextcloud, JupyterHub, Keycloak, OpenGDB, the project website stack, and the SCS Health dashboard.
 
 All services that serve HTTP or need to be reached by Traefik attach to the same Docker network, `reverse-proxy`. The shared MariaDB instance is used by Keycloak, SCS Manager, Nextcloud, and the project website; each has its own database and user created by pre-install scripts.
 
@@ -130,6 +130,12 @@ Override files are copied from `00_custom_configs/<stack>/docker/` to each stack
 
 - Drupal plus Varnish and Redis. Database and user created by pre-install; Varnish VCL is generated from a template.
 - **Note:** The pre-install script lives in `01_scripts/scs-project-page/` and references `00_custom_configs/scs-project-website/varnish/default.vcl.tpl` in the script, but the template file is under `00_custom_configs/scs-project-page/varnish/default.vcl.tpl`. If the script fails, use the path under `scs-project-page`. `start.sh` lists the script as `01_scripts/scs-project-website/pre-install.bash`; the actual directory is `scs-project-page`. These path/naming inconsistencies may need to be fixed in a separate change.
+
+### SCS Health (`scs-health`)
+
+- Next.js health dashboard for operators: HTTPS checks against stack service domains and optional Docker container status via the host socket.
+- Container `scs--health`, submodule at `scs-health/`, Traefik host `SCS_HEALTH_DOMAIN`.
+- Auth: local credentials (`SCS_HEALTH_AUTH_*`) and optional Keycloak OIDC (`SCS_HEALTH_OIDC_*`). See [SCS Health dashboard](scs-health.md).
 
 ## WissKI stacks (per-instance, via Portainer)
 
