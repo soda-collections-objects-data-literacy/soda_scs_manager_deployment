@@ -98,6 +98,7 @@ Example mapper definition:
 |-----|---------|
 | **user_oidc** | Drive web login (**Anmelden mit SCS SSO Login**) + Bearer token validation for API requests |
 | **sociallogin** | Installed by post-install hook only to supply Keycloak client settings; **disabled** after `configure-user-oidc-bearer.sh` to avoid a second login button |
+| **ID4me** (in `user_oidc`) | Optional domain-based OIDC discovery — **disabled**; SCS uses a fixed Keycloak provider only |
 
 Install and configure (post-install hooks: `install-sociallogin.sh`, `install-user-oidc.sh`, then `configure-user-oidc-bearer.sh`):
 
@@ -109,9 +110,31 @@ docker exec nextcloud--nextcloud php /var/www/html/occ app:enable user_oidc
 docker exec nextcloud--nextcloud bash /docker-entrypoint-hooks.d/post-installation/configure-user-oidc-bearer.sh
 ```
 
-The bearer hook reads Keycloak client settings from sociallogin, registers a single `user_oidc` provider named **SCS SSO Login**, then disables sociallogin.
+The bearer hook reads Keycloak client settings from sociallogin, registers a single `user_oidc` provider named **SCS SSO Login**, disables ID4me, enforces SSO-only login (`hide_login_form`, `allow_multiple_user_backends=0`), then disables sociallogin.
 
-### 2.2 Drive Web Login (user_oidc)
+### 2.2 SSO-only login (no default password form)
+
+Drive web login is restricted to Keycloak SSO. The post-install hook `configure-user-oidc-bearer.sh` sets:
+
+| Setting | Value | Effect |
+|---------|-------|--------|
+| `hide_login_form` (system) | `true` | Hides username/password on `/login`; SSO button remains |
+| `allow_multiple_user_backends` (`user_oidc`) | `0` | With one provider, `/login` redirects straight to Keycloak |
+| `lost_password_link` (system) | `disabled` | No “forgot password” link (passwords are not used for web login) |
+
+**Admin emergency login** (local password still configured): `https://drive.example.com/login?direct=1`
+
+Manual apply on an existing instance:
+
+```bash
+docker exec nextcloud--nextcloud php /var/www/html/occ config:system:set hide_login_form --type=boolean --value=true
+docker exec nextcloud--nextcloud php /var/www/html/occ config:system:set lost_password_link --value=disabled
+docker exec nextcloud--nextcloud php /var/www/html/occ config:app:set user_oidc allow_multiple_user_backends --value=0
+```
+
+**Note:** `NEXTCLOUD_SOCIALLOGIN_HIDE_DEFAULT_LOGIN` in `.env` only affects the **sociallogin** app. Because sociallogin is disabled after setup, use **`hide_login_form`** (Nextcloud core) instead.
+
+### 2.3 Drive Web Login (user_oidc)
 
 One provider handles both browser login and Bearer validation:
 
@@ -120,13 +143,15 @@ One provider handles both browser login and Bearer validation:
 - **Client Secret**: Must match Keycloak
 - **Discovery**: `https://auth.example.com/realms/your-realm/.well-known/openid-configuration`
 
-### 2.3 user_oidc Provider (Web + Bearer)
+### 2.4 user_oidc Provider (Web + Bearer)
 
 ```bash
 docker exec nextcloud--nextcloud php /var/www/html/occ user_oidc:provider "SCS SSO Login" \
   --clientid "https://drive.example.com" \
   --clientsecret "YOUR_NEXTCLOUD_CLIENT_SECRET" \
   --discoveryuri "https://auth.example.com/realms/your-realm/.well-known/openid-configuration" \
+  --postlogouturi "https://drive.example.com/" \
+  --send-id-token-hint=1 \
   --check-bearer=1 \
   --bearer-provisioning=1 \
   --mapping-display-name=preferred_username \
@@ -139,10 +164,12 @@ Important flags:
 
 - `--check-bearer=1`: Validate Bearer tokens on API requests
 - `--bearer-provisioning=1`: Auto-provision users when Bearer token is valid
+- `--postlogouturi`: Where Keycloak redirects after federated logout (Drive home URL)
+- `--send-id-token-hint=1`: Pass the stored ID token to Keycloak's `end_session_endpoint` (recommended for RP-initiated logout)
 
 **Do not** add a second provider with identifier `Keycloak` — that creates a duplicate login button.
 
-### 2.4 config.php Settings
+### 2.5 config.php Settings
 
 Add to Nextcloud `config/config.php`:
 
@@ -173,9 +200,8 @@ The `azp` (authorized party) claim identifies who requested the token — always
 ### 3.1 Web Login
 
 1. Log out of Nextcloud.
-2. Open Nextcloud login page.
-3. Click the Keycloak/SSO login button.
-4. You should be redirected to Keycloak and back to Nextcloud without re-entering credentials (if already logged in elsewhere).
+2. Open `https://drive.example.com/login` — you should be redirected to Keycloak (or see only the SSO button if redirect is skipped).
+3. After Keycloak auth, you land back on Drive without using a local password.
 
 ### 3.2 Bearer Token Verification
 
@@ -184,12 +210,26 @@ While logged in via Keycloak, go to **Connected Accounts** (`/user/{id}/connecte
 - **Connected via SSO** — Bearer token (audience) is accepted by Nextcloud.
 - **Connected via app password** — Login Flow v2 credentials are stored (fallback when Bearer is not configured).
 
-### 3.3 Checklist
+### 3.3 Logout (Single Logout Service)
+
+When logging out of Drive while signed in via SSO, Nextcloud redirects through **`/apps/user_oidc/sls`** (Single Logout Service). That is expected: the app ends the local session and forwards the browser to Keycloak's `end_session_endpoint`, then back to the Drive home page.
+
+Quick check (unauthenticated request should redirect, not 404):
+
+```bash
+curl -sI 'https://drive.example.com/apps/user_oidc/sls' | grep -E '^(HTTP|location:)'
+# HTTP/2 303
+# location: https://auth.example.com/realms/.../protocol/openid-connect/logout?post_logout_redirect_uri=...
+```
+
+### 3.4 Checklist
 
 - [ ] Keycloak: audience mapper on profile scope **and** SCS Manager client (tokens must include Drive client ID in `aud`)
 - [ ] SCS Manager Drupal OIDC client requests `profile` scope
-- [ ] Nextcloud: `user_oidc` enabled, provider **SCS SSO Login** with `--check-bearer=1`
+- [ ] Nextcloud: `user_oidc` enabled, provider **SCS SSO Login** with `--check-bearer=1`, `--postlogouturi`, `--send-id-token-hint=1`
 - [ ] Nextcloud: `sociallogin` disabled (no duplicate login button)
+- [ ] Nextcloud: SSO-only login (`hide_login_form`, `allow_multiple_user_backends=0`, `lost_password_link=disabled`)
+- [ ] Nextcloud: `user_oidc` ID4me disabled (`id4me_enabled=0`)
 - [ ] config.php: `oidc_provider_bearer_validation` = true, `bearer_validation_azp_check` = false
 - [ ] User logged out and back in to SCS Manager after audience mapper changes (fresh access token)
 
@@ -204,7 +244,7 @@ While logged in via Keycloak, go to **Connected Accounts** (`/user/{id}/connecte
 **Checks**:
 
 1. **Audience**: Token `aud` must include the Nextcloud client ID. Add the audience mapper and ensure SCS Manager requests the `profile` scope.
-2. **azp check**: Disable `bearer_validation_azp_check` in config.php (see 2.4).
+2. **azp check**: Disable `bearer_validation_azp_check` in config.php (see §2.5).
 3. **Stale token**: Log out and log back in to SCS Manager to get a new access token with the correct `aud` (ID tokens are not used for Bearer checks).
 4. **user_oidc provider**: Verify `check_bearer=1` via `occ user_oidc:providers`.
 
@@ -220,16 +260,64 @@ While logged in via Keycloak, go to **Connected Accounts** (`/user/{id}/connecte
 
 ### Two SSO buttons on the Drive login page
 
-**Cause**: Both **sociallogin** and **user_oidc** were active — e.g. provider identifier `Keycloak` alongside sociallogin's *SCS SSO Login*.
+**Cause**: **sociallogin** and **user_oidc** were both active, **ID4me** was enabled in `user_oidc`, or a legacy provider identifier `Keycloak` exists alongside *SCS SSO Login*.
 
-**Fix**: Keep a single `user_oidc` provider named `SCS SSO Login`, delete any legacy `Keycloak` provider, disable sociallogin:
+**Fix**: Keep a single `user_oidc` provider named `SCS SSO Login`, delete any legacy `Keycloak` provider, disable ID4me and sociallogin:
 
 ```bash
+docker exec nextcloud--nextcloud php /var/www/html/occ config:app:set user_oidc id4me_enabled --value=0
 docker exec nextcloud--nextcloud php /var/www/html/occ user_oidc:provider:delete Keycloak --force -n
 docker exec nextcloud--nextcloud php /var/www/html/occ app:disable sociallogin -n
 ```
 
 Or re-run `configure-user-oidc-bearer.sh`.
+
+### 404 on `/apps/user_oidc/sls` during logout
+
+**Expected flow**: Logout → `/apps/user_oidc/sls` → Keycloak logout → `post_logout_redirect_uri` (Drive home).
+
+**Cause (common)**:
+
+1. **Missing post-logout URI** on the `user_oidc` provider — Keycloak may redirect to an invalid or disallowed URL.
+2. **Stale provider in session** after deleting/renaming a provider (e.g. legacy `Keycloak`) — `user_oidc` returns 404 *There is no such OpenID Connect provider*.
+3. **Bare nginx 404** (not the Nextcloud error page) — request did not reach PHP; check the Nextcloud reverse-proxy container and Traefik routing.
+
+**Fix**:
+
+```bash
+docker exec nextcloud--nextcloud php /var/www/html/occ user_oidc:provider "SCS SSO Login" \
+  --clientid "https://drive.example.com" \
+  --clientsecret "YOUR_NEXTCLOUD_CLIENT_SECRET" \
+  --discoveryuri "https://auth.example.com/realms/your-realm/.well-known/openid-configuration" \
+  --postlogouturi "https://drive.example.com/" \
+  --send-id-token-hint=1 \
+  --check-bearer=1 --bearer-provisioning=1 \
+  --mapping-display-name=preferred_username --unique-uid=0 -n
+```
+
+Keycloak Drive client: `post.logout.redirect.uris` must include `https://drive.example.com/*` (wildcard is fine in the realm template).
+
+After fixing, log in to Drive again (fresh SSO session) before testing logout.
+
+### „Zu viele Anfragen“ / HTTP 429 beim Logout
+
+**Symptom**: Beim Abmelden erscheint *Zu viele Anfragen aus deinem Netzwerk* (Nextcloud-Seite `core/templates/429.php`), oft auf `/apps/user_oidc/sls`.
+
+**Cause**: Nextcloud **Brute-Force-Schutz** (nicht Traefik). `user_oidc` markiert fehlgeschlagene OIDC-Login-/Logout-Antworten als „throttled“ (`userOidcLogin`, `userOidcCode`, `userOidcSingleLogout`). Nach dem Standard-Limit (10 Versuche pro Subnetz / 12 h, vollständige Sperre nach 10 in 30 min) blockiert Nextcloud weitere Anfragen von derselben IP/Subnetz — z. B. nach wiederholten Logout-Tests oder SSO-Fehlkonfiguration.
+
+**Sofort-Hilfe** (IP des betroffenen Clients ersetzen — aus Browser, Reverse-Proxy-Log oder `X-Forwarded-For`):
+
+```bash
+docker exec nextcloud--nextcloud php /var/www/html/occ security:bruteforce:attempts <CLIENT_IP> userOidcSingleLogout
+docker exec nextcloud--nextcloud php /var/www/html/occ security:bruteforce:reset <CLIENT_IP>
+```
+
+Danach Logout erneut testen. Alternativ **30 Minuten warten** (Sperre läuft ab).
+
+**Prävention** (bereits im Post-Install-Hook):
+
+- `auth.bruteforce.max-attempts` = `25` in `configure-nextcloud.sh` (etwas höher für NAT/Uni-Netze)
+- Provider korrekt konfigurieren (`postlogouturi`, kein Legacy-Provider) — erfolgreicher Logout zählt **nicht** als Fehlversuch
 
 ### Token claims for debugging
 
@@ -257,7 +345,7 @@ Re-run the `user_oidc:provider` command. Ensure the client secret matches Keyclo
 
 ### Login Flow v2 returns 403 / `user=` empty (Connect popup)
 
-**Cause**: Login Flow v2’s grant page does not show the Social Login (Keycloak) button when `hide_default_login=1`. New users cannot authenticate inside the SCS Manager popup.
+**Cause**: Login Flow v2’s grant page does not work on SSO-only Drive (`hide_login_form` / no password form). New users cannot authenticate inside the SCS Manager popup.
 
 **Recommended fix**: Enable **Use OIDC Bearer token for Nextcloud** in SCS Manager settings and ensure `user_oidc` Bearer validation is configured (see §2.3). The first-login wizard then verifies Drive via the existing Keycloak session — no popup.
 
