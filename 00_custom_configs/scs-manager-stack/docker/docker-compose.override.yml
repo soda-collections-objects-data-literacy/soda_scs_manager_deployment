@@ -18,12 +18,16 @@ services:
       - scs-manager--drupal-custom-modules:/opt/drupal/web/modules/custom
       - ./scs-manager-stack/custom_configs:/opt/drupal/custom_configs
       - ./scs-manager-stack/configs/php-fpm/zz-docker.conf:/usr/local/etc/php-fpm.d/zz-docker.conf:ro
+      # Xdebug debug overlay (scs-manager-stack/configs/php/zz-xdebug-debug.ini) is for
+      # local development only — do not mount in production (disables OPcache).
       - /srv/backups/scs-manager/snapshots:/var/scs-manager/snapshots
       # Workaround: Mount PHP-FPM config to fix socket issue until image is rebuilt
     networks: !override
       - default
       - reverse-proxy
     ports: !reset []  # Remove port binding, use Varnish with Traefik
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on: !override
       - scs--reverse-proxy
       - scs--database
