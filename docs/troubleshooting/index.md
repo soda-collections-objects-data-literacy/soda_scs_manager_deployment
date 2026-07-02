@@ -79,6 +79,22 @@ The `docs/troubleshooting/` directory contains test scripts to verify your deplo
 
 See [DBMS SSO redirect loop](dbms-sso-redirect-loop.md) when Keycloak SSO for phpMyAdmin causes infinite redirects.
 
+### DBMS/phpMyAdmin: login form instead of auto signon
+
+See [DBMS SSO redirect loop](dbms-sso-redirect-loop.md#phpmyadmin-login-form-instead-of-auto-signon) when Keycloak auth works but phpMyAdmin shows a manual login form.
+
 ### Nextcloud Warnings
 
 See [Nextcloud warnings](nextcloud-warnings.md) for common Nextcloud admin panel warnings and how to resolve them.
+
+### SCS Manager cannot connect to Drive
+
+See [Nextcloud Drive connection](nextcloud-drive-connect.md) when Bearer SSO fails, manual connect is required, or duplicate Nextcloud accounts (`keycloak-{sub}` vs raw UUID) block app-password validation.
+
+### WissKI Drupal package update times out
+
+See [WissKI package update failures](wisski-package-update.md) when package updates fail during the database backup step with Portainer `cURL error 28` on `/docker/exec/.../start`.
+
+### JupyterHub notebook server will not start (500)
+
+See [JupyterHub spawn failure](jupyterhub-spawn-failure.md) when the Hub returns *Unhandled error starting server* and logs mention `spawner_image` not found.

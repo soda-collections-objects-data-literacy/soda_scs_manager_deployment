@@ -77,10 +77,11 @@ Stored attributes (default names):
 1. Calls `ensureCredentials()` (validates stored Keycloak attributes or creates an app password via Bearer token).
 2. Returns `connected: true` only when credentials are actually ready for WissKI — not merely when the OIDC token validates.
 3. The co-working intro wizard skips the Connect slide only when this status check succeeds.
+4. When Bearer fails, the response includes `bearer_error` and the UI shows **Connect Drive manually** (Login Flow v2 popup). See [Nextcloud Drive connection troubleshooting](../troubleshooting/nextcloud-drive-connect.md).
 
 Enable in SCS Manager settings: **Nextcloud → Use OIDC Bearer token for Nextcloud** (`nextcloud.generalSettings.useBearerToken`).
 
-**Connect flow (Login Flow v2, legacy)** — `SodaScsNextcloudConnectController` when Bearer mode is disabled:
+**Connect flow (Login Flow v2, manual fallback)** — `SodaScsNextcloudConnectController` when Bearer mode is disabled or automatic SSO failed:
 
 1. `POST /index.php/login/v2` → user completes login in popup
 2. Poll returns `loginName` + `appPassword`
@@ -255,6 +256,21 @@ curl -X DELETE "${KC_URL}/admin/realms/${KC_REALM}/users/${KEYCLOAK_UUID}" \
 ```
 
 Prefer deleting the **Drupal user** in SCS Manager so Nextcloud, SQL, and SCS entities are cleaned up.
+
+---
+
+## Entity access control
+
+| Entity | View | Edit / delete | Create snapshot |
+|--------|------|----------------|-----------------|
+| Project | Owner or project member | Owner only | — |
+| Component | Any user with `view soda scs component` | Owner only (`owner` field) | Owner of the component only |
+| Stack | Any user with `view soda scs stack` | Owner only (`owner` field) | Owner of the stack only |
+| Snapshot | Owner only | Owner only | Via component/stack routes (owner of source entity) |
+
+Project members can use shared components and stacks (e.g. via the dashboard) but cannot change, remove, or snapshot entities they do not own. Edit, delete, and snapshot tabs, list operations, and form routes enforce this via the entity access handlers.
+
+Users with `soda scs manager admin` or the entity-specific `administer soda scs * entities` permissions bypass owner checks (full edit, delete, and snapshot access).
 
 ### Delete Nextcloud user
 

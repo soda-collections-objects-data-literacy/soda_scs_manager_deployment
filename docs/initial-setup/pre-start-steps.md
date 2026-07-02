@@ -83,3 +83,13 @@ All scripts expect `.env` to be loaded (they source it if present). They use `do
    (Ensure `COMPOSE_FILE` is set, e.g. from `.env` or `example-env`.)
 
 2. Follow the [Post-configuration checklist](../post-configuration/checklist.md) to configure Keycloak, SCS Manager, Nextcloud, JupyterHub, and other services.
+
+### JupyterHub spawner image (required before first notebook start)
+
+The user notebook image `spawner_image` is built locally and is not started as a running container. After `start.sh` (or before the first Hub login), build it once from the repo root:
+
+```bash
+docker compose build jupyterhub--image-builder
+```
+
+Rebuild after changes under `jupyterhub/spawner_image/`. See [JupyterHub spawn failure](../troubleshooting/jupyterhub-spawn-failure.md) if spawn returns HTTP 500.
