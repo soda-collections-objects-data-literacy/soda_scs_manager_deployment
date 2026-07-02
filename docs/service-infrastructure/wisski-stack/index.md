@@ -16,6 +16,20 @@ There is **no separate Nginx container** in front of Varnish. Nginx runs **insid
 
 Database and triplestore are **shared SCS services** (`scs--database`, OpenGDB/RDF4J), not part of the per-instance compose file.
 
+WissKI stacks receive **internal triplestore URLs** (`http://scs--authproxy:8000/repositories/…`) via Portainer env when SCS Manager → Triplestore → **Internal host (WissKI)** is set (default: `http://scs--authproxy:8000`). That avoids routing SPARQL through Traefik. On first install the entrypoint creates the SALZ adapter from `TS_READ_URL` / `TS_WRITE_URL`; changes on running instances are done in the WissKI/Drupal UI or via a one-off maintenance script.
+
+### Performance defaults (aligned with dedicated WissKI deployments)
+
+See also [Dedicated WissKI deployment (Uni Graz)](../../infrastruktur-uebersicht.md) for the reference stack these defaults were taken from.
+
+| Setting | Value | Where |
+|---------|-------|-------|
+| PHP-FPM `pm.max_children` | 15 | `wisski-base-image` (`config/php-fpm/zz-wisski-production.conf`) |
+| Varnish backend timeout | 600 s | `scs-varnish` / `scs-manager-stack/configs/varnish/default.vcl` |
+| Triplestore (WissKI) | Internal AuthProxy URL | SCS Manager triplestore settings → `internalHost` |
+
+After changing Varnish VCL or the `scs-varnish` image, recreate WissKI Varnish containers. Changing `internalHost` affects **new** stacks only; existing instances keep their SALZ adapter URLs until changed in the Drupal UI or via `01_scripts/wisski/apply-performance-tuning.bash`.
+
 ## Networks
 
 Each stack gets two Docker networks:
@@ -172,8 +186,8 @@ backend default {
     .host = "wisski-production--drupal";
     .port = "80";
     .connect_timeout = 5s;
-    .first_byte_timeout = 60s;
-    .between_bytes_timeout = 30s;
+    .first_byte_timeout = 600s;
+    .between_bytes_timeout = 600s;
     .max_connections = 800;
 }
 

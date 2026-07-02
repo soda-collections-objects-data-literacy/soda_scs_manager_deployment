@@ -44,6 +44,7 @@ nav:
   - Reference:
     - Reverse proxy backend config: reverse-proxy-backend-config-knowledge-base.md
     - Traefik labels and commands: traefik-labels-and-commands.md
+    - Dedicated WissKI deployment (Uni Graz): infrastruktur-uebersicht.md
 
 plugins:
   - search

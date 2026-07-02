@@ -20,6 +20,16 @@ Key maintenance tasks:
 
 Always back up before major changes. See the [Updates](updates.md) page for detailed procedures.
 
+### WissKI performance tuning
+
+After changing PHP-FPM, Varnish, or triplestore settings in the repos, apply to **running** stacks without waiting for image rebuilds:
+
+```bash
+01_scripts/wisski/apply-performance-tuning.bash
+```
+
+See [WissKI stack infrastructure](../service-infrastructure/wisski-stack/index.md#performance-defaults-aligned-with-dedicated-wisski-deployments) for defaults and configuration paths.
+
 ## Quick reference
 
 ### Nextcloud backup and restore
