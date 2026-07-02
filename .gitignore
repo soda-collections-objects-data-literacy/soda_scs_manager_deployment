@@ -11,6 +11,7 @@ acme.json
 volumes
 backups/
 **/*.tar.gz
+exports
 
 # Site-specific / generated
 helpers
