@@ -105,6 +105,7 @@ Use this checklist after the whole environment has started (`docker compose up -
   - `SCS_DBMS_CLIENT_SECRET` — Must match the phpMyAdmin client in Keycloak (client ID: `https://${SCS_DBMS_DOMAIN}`)
   - `SCS_DBMS_FORWARD_AUTH_SECRET` — Random string for cookie signing
   - `SCS_DBMS_FORWARD_AUTH_ENCRYPTION_KEY` — Exactly 32 characters (e.g. hex) for cookie encryption
+  - `COMPOSE_FILE` must include `00_custom_configs/phpmyadmin/docker/docker-compose.override.yml` (see `example-env`) so signon config files are mounted
   - Re-run Keycloak pre-install to add the phpMyAdmin client to the realm, or create the client manually with redirect URI `https://${SCS_DBMS_DOMAIN}/_oauth`
 
 - [ ] **phpMyAdmin signon (per-user Keycloak credentials)** — phpMyAdmin reads `preferred_username` and `mariadb_password` from the Keycloak JWT. Users get a MariaDB account when they create an SQL component or when they are added to a project that has SQL databases; the password is synced to Keycloak `mariadb_password`. Project members can log into phpMyAdmin via SSO and access databases connected to their projects.

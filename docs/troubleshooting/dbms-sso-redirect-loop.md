@@ -13,14 +13,14 @@ If logout redirects to `manager.localhost` or Keycloak uses `auth.localhost`, th
 **Cause:** `scs--phpmyadmin` is defined only in the **main** `docker-compose.yml` at the repo root. If that file is not in your `COMPOSE_FILE`, or you run from a different directory, the service may use a different compose definition without the env vars.
 
 **Fix:**
-1. Ensure `COMPOSE_FILE` has the main `docker-compose.yml` **first**:
+1. Ensure `COMPOSE_FILE` has the main `docker-compose.yml` **first** and includes the phpMyAdmin override:
    ```
-   COMPOSE_FILE=docker-compose.yml:jupyterhub/docker-compose.yml:...
+   COMPOSE_FILE=docker-compose.yml:...:00_custom_configs/phpmyadmin/docker/docker-compose.override.yml
    ```
 2. Run `docker compose` from the repo root (where the main `docker-compose.yml` lives).
-3. **Recreate** the container (restart does not pick up new env):
+3. **Recreate** the container (restart does not pick up new env or volume mounts):
    ```bash
-   docker compose up -d scs--phpmyadmin
+   docker compose up -d --force-recreate scs--phpmyadmin
    ```
 4. Verify env in the container:
    ```bash
@@ -28,6 +28,33 @@ If logout redirects to `manager.localhost` or Keycloak uses `auth.localhost`, th
    ```
 
 **Fallback:** The config derives the manager URL from `HTTP_HOST` (dbms.X → manager.X), so it should work even without env if you visit phpMyAdmin at the correct host (e.g. dbms.dev-scs.sammlungen.io).
+
+---
+
+## phpMyAdmin login form instead of auto signon
+
+Keycloak forward-auth succeeds (you reach phpMyAdmin without a Keycloak redirect loop), but phpMyAdmin shows a **username/password login form** and manual login fails.
+
+**Cause:** The signon config files are not mounted. The base `docker-compose.yml` references `./config/phpmyadmin/*.php`, but those paths are often **empty directories** (Docker creates them when the source file is missing). Without `config.user.inc.php`, phpMyAdmin uses `auth_type = cookie` instead of `signon`, so it never reads `mariadb_password` from the Keycloak JWT.
+
+**Check:**
+```bash
+docker exec scs--phpmyadmin ls -la /etc/phpmyadmin/config.user.inc.php /var/www/html/signon.php
+# Broken: both show as directories (drwxr-xr-x), not files (-rw-r--r--)
+```
+
+**Fix:**
+1. Add `00_custom_configs/phpmyadmin/docker/docker-compose.override.yml` to `COMPOSE_FILE` (see `example-env`).
+2. Recreate phpMyAdmin:
+   ```bash
+   docker compose up -d --force-recreate scs--phpmyadmin
+   ```
+3. Verify mounts point to `00_custom_configs/phpmyadmin/configs/`:
+   ```bash
+   docker inspect scs--phpmyadmin --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{"\n"}}{{end}}'
+   ```
+
+After the fix, visiting phpMyAdmin should redirect through `signon.php`, which reads `preferred_username` and `mariadb_password` from the JWT. If `mariadb_password` is empty, you see "No database access" — create an SQL component or join a project with SQL databases in SCS Manager.
 
 ---
 
