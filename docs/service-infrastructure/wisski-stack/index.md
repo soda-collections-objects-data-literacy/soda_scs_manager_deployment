@@ -10,7 +10,7 @@ This page describes the HTTP path, containers, networks, and how proxy headers r
 |-----------|-------|------|
 | `{SERVICE_NAME}--varnish` | `scs-varnish` | HTTP cache; public entry point for the instance domain |
 | `{SERVICE_NAME}--drupal` | `wisski-base-image-*` | Nginx + PHP-FPM + Drupal/WissKI in one container |
-| `{SERVICE_NAME}--redis` | `redis:7.4-alpine` | Cache/session backend for Drupal (internal network only) |
+| `{SERVICE_NAME}--redis` | `redis:${REDIS_IMAGE_VERSION:-8-alpine}` | Cache/session backend for Drupal (internal network only) |
 
 There is **no separate Nginx container** in front of Varnish. Nginx runs **inside** the Drupal container and terminates HTTP before PHP-FPM (Unix socket).
 
@@ -29,6 +29,32 @@ See also [Dedicated WissKI deployment (Uni Graz)](../../infrastruktur-uebersicht
 | Triplestore (WissKI) | Internal AuthProxy URL | SCS Manager triplestore settings → `internalHost` |
 
 After changing Varnish VCL or the `scs-varnish` image, recreate WissKI Varnish containers. Changing `internalHost` affects **new** stacks only; existing instances keep their SALZ adapter URLs until changed in the Drupal UI or via `01_scripts/wisski/apply-performance-tuning.bash`.
+
+### Bot and scanner protection
+
+Automated scanners often probe Drupal sites for WordPress paths (`/wp-includes/wlwmanifest.xml`, etc.). Protection is layered:
+
+| Layer | Where configured | What it does |
+|-------|------------------|--------------|
+| Traefik rate limit | `wisski-base-stack/docker-compose.yml` (labels on `varnish` + `drupal`) | `rate-limit-high@docker` on external routers; internal Docker CIDR bypass at priority 100 |
+| Varnish path block | `scs-manager-stack/configs/varnish/default.vcl` → `scs-varnish` image | Returns 403 for common scanner paths before PHP |
+| Nginx path block | `wisski-base-image/config/nginx/drupal.conf` | Same blocks on the `raw.*` bypass path (no Varnish) |
+
+**Rollout for existing instances:**
+
+1. Publish new `wisski-base-stack` and redeploy stacks via Portainer/SCS Manager (Traefik labels).
+2. Rebuild and publish `scs-varnish`, then recreate `{SERVICE_NAME}--varnish` containers.
+3. Rebuild and publish `wisski-base-image`, then recreate `{SERVICE_NAME}--drupal` containers.
+
+**Verify** (replace host with your instance):
+
+```bash
+curl -sI -H "Host: wisski-production.wisski.example" \
+  https://127.0.0.1/wordpress/wp-includes/wlwmanifest.xml
+# Expect 403 from Varnish/Nginx, not Drupal 404 in watchdog
+```
+
+SCS Manager uses the same Nginx blocks in `scs-manager-image` and Traefik rate limits in `00_custom_configs/scs-manager-stack/docker/docker-compose.override.yml` (Varnish is disabled there, so Nginx is the primary scanner filter).
 
 ## Networks
 
@@ -112,7 +138,7 @@ See [Reverse proxy settings](../configs/reverse-proxy.md) and the [reverse proxy
 
 ## Service configuration
 
-Examples below use the live instance **`wisski-production`** on this deployment (`dev-scs.sammlungen.io`). Source repos: [wisski-base-stack](https://github.com/soda-collections-objects-data-literacy/wisski-base-stack) (compose + Traefik labels), [wisski-base-image](https://github.com/soda-collections-objects-data-literacy/wisski-base-image) (Nginx + Drupal entrypoint), [scs-varnish](https://github.com/soda-collections-objects-data-literacy/scs-varnish) (VCL baked into image).
+Examples below use the live instance **`wisski-production`** on this deployment (`dev-scs.sammlungen.io`). Source repos: [wisski-base-stack](https://github.com/soda-collections-objects-data-literacy/wisski-base-stack) (compose + Traefik labels), [wisski-base-image](https://github.com/soda-collections-objects-data-literacy/wisski-base-image) (Nginx + Drupal entrypoint), [scs-varnish-image](https://github.com/soda-collections-objects-data-literacy/scs-varnish-image) (VCL baked into image; GHCR package `scs-varnish`).
 
 ### Traefik
 
@@ -135,26 +161,31 @@ command:
 **WissKI stack labels** (`wisski-base-stack/docker-compose.yml`, resolved for `wisski-production`):
 
 ```yaml
-# Public URL → Varnish (cached)
+# Public URL → Varnish (cached); external traffic rate-limited
 labels:
   - "traefik.enable=true"
   - "traefik.docker.network=reverse-proxy"
+  - "traefik.http.routers.wisski-production--varnish-internal.rule=Host(`wisski-production.wisski.dev-scs.sammlungen.io`) && (ClientIP(`172.16.0.0/12`) || ...)"
+  - "traefik.http.routers.wisski-production--varnish-internal.priority=100"
   - "traefik.http.routers.wisski-production--varnish.rule=Host(`wisski-production.wisski.dev-scs.sammlungen.io`)"
+  - "traefik.http.routers.wisski-production--varnish.priority=10"
+  - "traefik.http.routers.wisski-production--varnish.middlewares=rate-limit-high@docker"
   - "traefik.http.routers.wisski-production--varnish.entrypoints=websecure"
   - "traefik.http.routers.wisski-production--varnish.tls=true"
   - "traefik.http.routers.wisski-production--varnish.tls.certresolver=le"
   - "traefik.http.services.wisski-production--varnish.loadbalancer.server.port=80"
 
-# raw.* URL → Drupal/Nginx directly (bypass Varnish)
+# raw.* URL → Drupal/Nginx directly (bypass Varnish); same rate-limit pattern
 labels:
-  - "traefik.enable=true"
-  - "traefik.docker.network=reverse-proxy"
+  - "traefik.http.routers.wisski-production-drupal-internal.rule=Host(`raw.wisski-production.wisski.dev-scs.sammlungen.io`) && (ClientIP(`172.16.0.0/12`) || ...)"
+  - "traefik.http.routers.wisski-production-drupal-internal.priority=100"
   - "traefik.http.routers.wisski-production-drupal.rule=Host(`raw.wisski-production.wisski.dev-scs.sammlungen.io`)"
-  - "traefik.http.routers.wisski-production-drupal.entrypoints=websecure"
-  - "traefik.http.routers.wisski-production-drupal.tls=true"
-  - "traefik.http.routers.wisski-production-drupal.tls.certresolver=le"
+  - "traefik.http.routers.wisski-production-drupal.priority=10"
+  - "traefik.http.routers.wisski-production-drupal.middlewares=rate-limit-high@docker"
   - "traefik.http.services.wisski-production-drupal.loadbalancer.server.port=80"
 ```
+
+The `rate-limit-high@docker` middleware is defined on `scs--reverse-proxy` (180 req/min sustained, burst 90 per source IP). Internal Docker CIDRs use a bypass router at priority 100 so health checks and stack-to-stack traffic are not throttled.
 
 Traefik terminates TLS on `websecure` (:443), obtains certificates via resolver `le`, and forwards plain HTTP to the backend with `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, and `X-Forwarded-Port`.
 
@@ -295,6 +326,7 @@ DRUPAL_PRIVATE_FILES_DIR=/opt/drupal/private-files
 DRUPAL_PROXY_ADDRESSES=auto
 REDIS_HOST=redis
 REDIS_PORT=6379
+REDIS_IMAGE_VERSION=8-alpine
 DB_HOST=scs--database
 DB_NAME=sql-production
 ```
@@ -363,6 +395,21 @@ For local development with [dockerWissKI](https://github.com/soda-collections-ob
 - No TLS termination; Drupal uses direct `Host` and `http` scheme
 
 The same `wisski-base-image` supports both modes; only env and compose routing differ.
+
+## Redis upgrade (7.x → 8)
+
+`wisski-base-stack` defaults to `redis:8-alpine` (`REDIS_IMAGE_VERSION`). Existing Portainer stacks on `7.4-alpine` pick up the new image when the stack is redeployed from an updated `wisski-base-stack` tag/branch.
+
+1. Update the stack source in Portainer (or bump the component version in SCS Manager).
+2. Recreate only the Redis container (AOF data on `{SERVICE_NAME}--redis-data` is preserved):
+
+```bash
+docker compose up -d --force-recreate {SERVICE_NAME}--redis
+```
+
+3. Confirm health: `docker exec {SERVICE_NAME}--redis redis-cli ping` → `PONG`, then load a WissKI page and check Drupal logs for Redis errors.
+
+No Drupal or `wisski-base-image` change is required; PhpRedis 6.x speaks Redis 8.
 
 ## Related documentation
 

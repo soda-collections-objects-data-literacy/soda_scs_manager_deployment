@@ -84,6 +84,7 @@ Override files are copied from `00_custom_configs/<stack>/docker/` to each stack
 - Listens on ports 80 (HTTP) and 443 (HTTPS).
 - Uses Let’s Encrypt for TLS (certificate resolver `le`).
 - Middlewares: `rate-limit`, `rate-limit-high`, `rate-limit-strict`, and redirects (e.g. SCS Manager second domain).
+- Drupal-facing services (SCS Manager, WissKI instances via Portainer, project website) use `rate-limit-high@docker` on external routers with an internal bypass router for Docker CIDRs. See [WissKI stack — bot protection](wisski-stack/index.md#bot-and-scanner-protection).
 - Each service that should be reachable gets Traefik labels for router rule, entrypoints, TLS, and service port.
 
 ### Database

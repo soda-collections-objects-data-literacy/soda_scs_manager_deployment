@@ -40,8 +40,18 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
+      # Internal reverse-proxy traffic: no rate limit (higher priority than external router below).
+      - "traefik.http.routers.scs-manager--drupal-internal.rule=Host(`${SCS_MANAGER_DOMAIN}`) && (ClientIP(`172.16.0.0/12`) || ClientIP(`192.168.0.0/16`) || ClientIP(`10.0.0.0/8`) || ClientIP(`127.0.0.1/32`) || ClientIP(`::1/128`) || ClientIP(`fd00::/8`))"
+      - "traefik.http.routers.scs-manager--drupal-internal.entrypoints=websecure"
+      - "traefik.http.routers.scs-manager--drupal-internal.priority=100"
+      - "traefik.http.routers.scs-manager--drupal-internal.tls=true"
+      - "traefik.http.routers.scs-manager--drupal-internal.tls.certresolver=le"
+      - "traefik.http.routers.scs-manager--drupal-internal.service=scs-manager--drupal"
+      # External traffic: rate limit to slow scripted scanners and brute-force probes.
       - "traefik.http.routers.scs-manager--drupal.rule=Host(`${SCS_MANAGER_DOMAIN}`)"
       - "traefik.http.routers.scs-manager--drupal.entrypoints=websecure"
+      - "traefik.http.routers.scs-manager--drupal.priority=10"
+      - "traefik.http.routers.scs-manager--drupal.middlewares=rate-limit-high@docker"
       - "traefik.http.routers.scs-manager--drupal.tls=true"
       - "traefik.http.routers.scs-manager--drupal.tls.certresolver=le"
       - "traefik.http.services.scs-manager--drupal.loadbalancer.server.port=80"
