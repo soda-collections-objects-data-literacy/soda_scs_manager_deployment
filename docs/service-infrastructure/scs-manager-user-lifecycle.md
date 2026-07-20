@@ -10,12 +10,12 @@ Implementation lives in the `scs-manager-stack` submodule under `volumes/drupal/
 |-------|------------|--------------|
 | Keycloak | UUID (`sub` claim) | Keycloak user record |
 | Drupal ↔ Keycloak | Same UUID | `authmap` table (`openid_connect.<client_id>`) |
-| Nextcloud (OIDC) | `keycloak-{sub}` | Nextcloud user backend (`user_oidc` / Social Login) |
+| Nextcloud (OIDC) | Keycloak `sub` (raw UUID) | Nextcloud user backend (`user_oidc`) |
 | Keycloak user attributes | `nextcloud_login_name`, `nextcloud_app_password`, `mariadb_password`, … | Keycloak user `attributes` |
 
 `SodaScsProjectHelpers::getUserSsoUuid()` reads the Keycloak UUID from Drupal’s `authmap` after the user has logged in via OpenID Connect.
 
-Nextcloud usernames for OIDC users follow the pattern configured in SCS Manager settings (`oidcUsernamePrefix`, default `keycloak-`) plus the raw Keycloak `sub`, e.g. `keycloak-4e25a3ff-b955-4731-9c56-9e67a858828d`.
+Nextcloud usernames for OIDC users are the Keycloak `sub` (raw UUID), e.g. `4e25a3ff-b955-4731-9c56-9e67a858828d`. SCS Manager setting `oidcUsernamePrefix` may prepend a string when non-empty — use the sentinel `{empty}` in config when no prefix is needed (a bare empty string is rejected as “not set”). It must match how `user_oidc` provisions accounts. Legacy installs may still have prefixed accounts (`keycloak-{sub}`) from the old **sociallogin** stack; see [Nextcloud Drive connection troubleshooting](../troubleshooting/nextcloud-drive-connect.md).
 
 JupyterHub reads `nextcloud_login_name` and `nextcloud_app_password` from Keycloak **userinfo** (protocol mappers on the JupyterHub client). It does not derive the Nextcloud account from `sub` directly.
 
@@ -58,10 +58,10 @@ Nextcloud accounts are **not** created by the Keycloak approval step. They appea
 
 | Path | Mechanism | Resulting NC username |
 |------|-----------|------------------------|
-| Web login (Drive UI) | Social Login → Keycloak | `keycloak-{sub}` (auto-provision) |
-| SCS Manager first-login wizard (recommended) | OIDC Bearer + `user_oidc` bearer-provisioning | `keycloak-{sub}` |
-| SCS Manager Connect popup (legacy) | Login Flow v2 → poll | Account user logs into in the popup |
-| Bearer / API | `user_oidc` with `--bearer-provisioning=1` | `keycloak-{sub}` |
+| Web login (Drive UI) | `user_oidc` → Keycloak | Raw Keycloak `sub` (auto-provision) |
+| SCS Manager first-login wizard (recommended) | OIDC Bearer + `user_oidc` bearer-provisioning | Same raw `sub` |
+| SCS Manager Connect popup (manual fallback) | Login Flow v2 → poll | `loginName` from the Drive account logged into in the popup |
+| Bearer / API | `user_oidc` with `--bearer-provisioning=1` | Same raw `sub` |
 
 The skeleton directory (`SCS-Share`, `Welcome.md`, …) is applied on **first** Nextcloud user creation via Nextcloud’s `skeletondirectory` config (see post-install hook).
 
@@ -86,7 +86,7 @@ Enable in SCS Manager settings: **Nextcloud → Use OIDC Bearer token for Nextcl
 1. `POST /index.php/login/v2` → user completes login in popup
 2. Poll returns `loginName` + `appPassword`
 3. Values are written to Keycloak via `setKeycloakUserAttributes()`
-4. **Validation:** `loginName` must match `keycloak-{sub}` for the current Drupal user; otherwise the connect is rejected (HTTP 400).
+4. **Validation:** `loginName` must match the Keycloak `sub` (or `oidcUsernamePrefix` + `sub` when that prefix is configured) for the current Drupal user; otherwise the connect is rejected (HTTP 400).
 
 **Bearer auto-provision** — `SodaScsNextcloudHelpers::ensureCredentials()` (when `useBearerToken` is enabled):
 
@@ -96,7 +96,7 @@ Enable in SCS Manager settings: **Nextcloud → Use OIDC Bearer token for Nextcl
 
 **Validation on read** — `getValidatedStoredNextcloudCredentials()`:
 
-- Stored username must equal `keycloak-{sub}`
+- Stored username must match the Keycloak `sub` (with optional `oidcUsernamePrefix`; legacy `keycloak-{sub}` accounts are also accepted when the prefix was used historically)
 - App password must still work against Nextcloud
 - On mismatch or invalid password → attributes are **cleared** (user must reconnect)
 
@@ -203,7 +203,7 @@ Token URL and realm come from the same Keycloak settings block (`initKeycloakGen
 | Keycloak → Admin username / password | Admin API token for create/delete user |
 | Keycloak → Users → delete URL | Path segment for `DELETE` (usually `/{userId}`) |
 | Nextcloud → Base URL | OCS API base |
-| Nextcloud → OIDC username prefix | Must match Nextcloud `user_oidc` provider (default `keycloak-`) |
+| Nextcloud → OIDC username prefix | Must match `user_oidc` provisioning (`{empty}` = raw Keycloak `sub` on this deployment) |
 | Nextcloud → Admin username / password | Optional; required for automatic NC user delete on Drupal user delete |
 | Nextcloud → Keycloak attribute names | Defaults: `nextcloud_login_name`, `nextcloud_app_password` |
 | JupyterHub → Notebook container name prefix | Default `jupyter-`; must match DockerSpawner naming (`jupyter-{drupalAccountName}`) |
@@ -220,7 +220,7 @@ If a Keycloak user is deleted or recreated **outside** SCS Manager (Admin UI, im
 - Nextcloud may retain old `keycloak-{old-sub}` accounts
 - Keycloak attributes (`nextcloud_login_name`, …) may reference the **wrong** Nextcloud account
 
-**Symptom:** User sees correct files in Nextcloud web UI but JupyterHub (or other services reading Keycloak userinfo) sync to a different Nextcloud account.
+**Symptom:** User sees correct files in Nextcloud web UI but JupyterHub (or other services reading Keycloak userinfo) sync to a different Nextcloud account. Common when a legacy `keycloak-{sub}` account coexists with the current `user_oidc` account (raw `sub`), or when the Jupyter single-user server was spawned before Keycloak credentials were updated (respawn from the Hub after reconnecting Drive).
 
 **Mitigation (module behaviour):**
 

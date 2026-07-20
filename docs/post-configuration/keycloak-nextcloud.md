@@ -189,6 +189,25 @@ $config['user_oidc'] = [
 | `oidc_provider_bearer_validation` | `true` | Enable Bearer token validation |
 | `bearer_validation_azp_check` | `false` | Allow tokens where `azp` is SCS Manager (cross-client) |
 
+### 2.6 SCS Manager `oidcUsernamePrefix`
+
+In **SCS Manager → Settings → Nextcloud**, **OIDC username prefix** must match the Drive account id that `user_oidc` provisions:
+
+| Value | Drive account id |
+|-------|------------------|
+| `{empty}` | Raw Keycloak `sub` (current `user_oidc` with `--unique-uid=0`) |
+| `keycloak-` | Legacy `keycloak-{sub}` (old **sociallogin** installs) |
+
+The module stores `{empty}` in config and resolves it to no prefix at runtime — a bare empty string in `drush config:set` is rejected as “not set”.
+
+```bash
+docker compose exec -T scs-manager--drupal drush config:set soda_scs_manager.settings nextcloud.generalSettings.oidcUsernamePrefix '{empty}' -y
+```
+
+Bearer connect and manual Login Flow v2 both persist the `cloud/user` id to Keycloak; JupyterHub reads those attributes at spawn time.
+
+---
+
 **Why disable `bearer_validation_azp_check`?**
 
 The `azp` (authorized party) claim identifies who requested the token — always the SCS Manager client. Nextcloud would reject these tokens if it required `azp` to match its own client ID. The `aud` (audience) check, enforced via the Keycloak audience mapper, already ensures the token is intended for Nextcloud.
@@ -256,7 +275,7 @@ curl -sI 'https://drive.example.com/apps/user_oidc/sls' | grep -E '^(HTTP|locati
 
 1. Portainer/docker-exec from SCS Manager must reach `nextcloud--nextcloud`.
 2. Drupal log: `Nextcloud SSO occ app password failed` — inspect occ output.
-3. Legacy sociallogin users may have Drive id = raw Keycloak `sub` (no `keycloak-` prefix); stored credentials must use that id for Basic auth.
+3. Legacy sociallogin users may have Drive id = `keycloak-{sub}`; current `user_oidc` users use the raw Keycloak `sub`. Stored credentials and `oidcUsernamePrefix` in SCS Manager must match the account id used for WebDAV/Basic auth.
 
 ### Two SSO buttons on the Drive login page
 
@@ -357,7 +376,7 @@ Re-run the `user_oidc:provider` command. Ensure the client secret matches Keyclo
 
 **Solution**:
 
-- With **Bearer mode** and `--bearer-provisioning=1`: the first successful status check or API call from SCS Manager auto-provisions `keycloak-{sub}` — no separate Drive web login required.
+- With **Bearer mode** and `--bearer-provisioning=1`: the first successful status check or API call from SCS Manager auto-provisions the Drive user with the Keycloak `sub` (raw UUID when `oidcUsernamePrefix` is empty) — no separate Drive web login required.
 - Otherwise: log into Drive via Social Login once, then retry.
 
 **Verify bearer-provisioning**:

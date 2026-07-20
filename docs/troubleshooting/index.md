@@ -89,7 +89,11 @@ See [Nextcloud warnings](nextcloud-warnings.md) for common Nextcloud admin panel
 
 ### SCS Manager cannot connect to Drive
 
-See [Nextcloud Drive connection](nextcloud-drive-connect.md) when Bearer SSO fails, manual connect is required, or duplicate Nextcloud accounts (`keycloak-{sub}` vs raw UUID) block app-password validation.
+See [Nextcloud Drive connection](nextcloud-drive-connect.md) when Bearer SSO fails, manual connect is required, or duplicate Nextcloud accounts (legacy `keycloak-{sub}` vs current raw `sub` from `user_oidc`) cause JupyterHub sync or app-password validation issues.
+
+### Drive ↔ Jupyter connection renewal (runbook)
+
+See [SCS Drive ↔ Jupyter connection](scs-drive-jupyter-connection.md) for a full runbook: what users vs admins do, how to renew credentials in SCS Manager / Keycloak / Drive / Jupyter, what to respawn vs restart, and verification commands.
 
 ### WissKI Drupal package update times out
 
