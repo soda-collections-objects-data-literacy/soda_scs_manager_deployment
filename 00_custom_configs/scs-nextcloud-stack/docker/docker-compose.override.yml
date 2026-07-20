@@ -11,7 +11,8 @@ services:
       - MYSQL_HOST=scs--database
     volumes: !override
       - ${SCS_ROOT_PATH}/scs-nextcloud-stack/hooks/post-installation:/docker-entrypoint-hooks.d/post-installation
-      - ${SCS_ROOT_PATH}/scs-nextcloud-stack/skeleton:/var/www/html/skeleton:ro
+      # Outside /var/www/html so Nextcloud upgrade rsync can replace core files in the data volume.
+      - ${SCS_ROOT_PATH}/scs-nextcloud-stack/skeleton:/scs-skeleton:ro
       - nextcloud-data:/var/www/html
 
     networks:
