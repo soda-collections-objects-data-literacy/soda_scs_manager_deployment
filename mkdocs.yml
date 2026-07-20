@@ -36,6 +36,7 @@ nav:
     - Updates: maintenance/updates.md
   - Troubleshooting:
     - Overview: troubleshooting/index.md
+    - SCS Manager clean URLs: troubleshooting/scs-manager-clean-urls.md
     - DBMS SSO redirect loop: troubleshooting/dbms-sso-redirect-loop.md
     - Nextcloud Drive connection: troubleshooting/nextcloud-drive-connect.md
     - SCS Drive Jupyter connection: troubleshooting/scs-drive-jupyter-connection.md
