@@ -6,6 +6,7 @@ services:
       - mongodb-data:/data/db
   webprotege:
     image: webprotege:scs
+    pull_policy: never
     build:
       context: ${SCS_ROOT_PATH}/webprotege
       dockerfile: Dockerfile
