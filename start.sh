@@ -71,6 +71,21 @@ set +a
 echo "Environment variables loaded"
 echo ""
 
+# Shared bind for Nextcloud FUSE mounts must be rshared before Docker starts
+# consumers (see 01_scripts/global/setup-nextcloud-mounts.sh).
+NEXTCLOUD_MOUNTS_ROOT="${NEXTCLOUD_MOUNTS_ROOT:-/var/lib/scs/nextcloud-mounts}"
+echo "Checking Nextcloud mounts root propagation at ${NEXTCLOUD_MOUNTS_ROOT}..."
+mount_target="$(findmnt -n -o TARGET --target "${NEXTCLOUD_MOUNTS_ROOT}" 2>/dev/null | head -1 || true)"
+propagation="$(findmnt -n -o PROPAGATION --target "${NEXTCLOUD_MOUNTS_ROOT}" 2>/dev/null | head -1 || true)"
+if [[ "${mount_target}" != "${NEXTCLOUD_MOUNTS_ROOT}" || "${propagation}" != *shared* ]]; then
+  echo "Error: ${NEXTCLOUD_MOUNTS_ROOT} must be a self-bound shared mount (got target='${mount_target}', prop='${propagation}')."
+  echo "Run: bash 01_scripts/global/setup-nextcloud-mounts.sh"
+  echo "Or enable: sudo cp 01_scripts/global/scs-nextcloud-mounts.service /etc/systemd/system/ && sudo systemctl enable --now scs-nextcloud-mounts.service"
+  exit 1
+fi
+echo "Nextcloud mounts root propagation OK (${propagation})"
+echo ""
+
 # Step 2: Update git repositories and submodules
 echo "Step 2: Updating git repositories and submodules..."
 echo "----------------------------------------"

@@ -14,6 +14,8 @@ services:
       # Outside /var/www/html so Nextcloud upgrade rsync can replace core files in the data volume.
       - ${SCS_ROOT_PATH}/scs-nextcloud-stack/skeleton:/scs-skeleton:ro
       - nextcloud-data:/var/www/html
+      # Nested bind after data volume so it is not shadowed by the named volume.
+      - ${SCS_ROOT_PATH}/scs-nextcloud-stack/apps/scs_manager_integration:/var/www/html/custom_apps/scs_manager_integration
 
     networks:
       - default

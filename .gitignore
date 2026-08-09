@@ -34,4 +34,10 @@ scs-health/yarn-debug.log*
 scs-health/yarn-error.log*
 scs-health/.pnpm-debug.log*
 
+# AI 
 roBot_rules
+plans
+
+# Images
+repos/
+

@@ -318,6 +318,55 @@ services:
       - --api.dashboard=true
 
 
+  # Nextcloud FUSE mounter sidecar (rclone rcd). SYS_ADMIN + /dev/fuse live only here.
+  # rc-API is reachable solely via nextcloud-mounter-net (internal). reverse-proxy
+  # attachment is for WebDAV egress to Nextcloud; no ports are published.
+  nextcloud-mounter:
+    image: rclone/rclone:1.68
+    container_name: nextcloud-mounter
+    restart: unless-stopped
+    command:
+      - rcd
+      - --rc-addr=:5572
+      - --rc-user=${NEXTCLOUD_MOUNTER_RC_USER}
+      - --rc-pass=${NEXTCLOUD_MOUNTER_RC_PASS}
+      - --cache-dir=/cache
+      - --log-level=INFO
+    cap_add:
+      - SYS_ADMIN
+    devices:
+      - /dev/fuse:/dev/fuse
+    security_opt:
+      - apparmor:unconfined
+      - no-new-privileges:true
+    read_only: true
+    volumes:
+      - type: bind
+        source: ${NEXTCLOUD_MOUNTS_ROOT:-/var/lib/scs/nextcloud-mounts}
+        target: /mnt/nextcloud
+        bind:
+          propagation: rshared
+      - nextcloud-mounter-cache:/cache
+    tmpfs:
+      - /tmp
+    networks:
+      - nextcloud-mounter-net
+      - reverse-proxy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "rclone",
+          "rc",
+          "--rc-addr=localhost:5572",
+          "--rc-user=${NEXTCLOUD_MOUNTER_RC_USER}",
+          "--rc-pass=${NEXTCLOUD_MOUNTER_RC_PASS}",
+          "core/pid",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
 volumes:
   scs--database-data:
     name: scs--database-data
@@ -327,6 +376,8 @@ volumes:
     name: scs--reverse-proxy-certificates
   scs--shared-data:
     name: ${SCS_SHARED_DATA}
+  nextcloud-mounter-cache:
+    name: nextcloud-mounter-cache
 
 networks:
   reverse-proxy:
@@ -335,3 +386,7 @@ networks:
     # enable_ipv6: true
     driver: bridge
     external: true
+  nextcloud-mounter-net:
+    name: nextcloud-mounter-net
+    driver: bridge
+    internal: true

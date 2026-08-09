@@ -56,8 +56,14 @@ staging="$(mktemp -d)"
 ln -sf "$volumes_dir" "$staging/volumes"
 ln -sf "$repo_path" "$staging/repo"
 
+# Exclude live Nextcloud FUSE mounts (WebDAV source of truth is Nextcloud).
+NEXTCLOUD_MOUNTS_ROOT="${NEXTCLOUD_MOUNTS_ROOT:-/var/lib/scs/nextcloud-mounts}"
+
 tmp_tar="$(mktemp /tmp/backup-XXXXXX.tar.gz)"
-tar -czf "$tmp_tar" --dereference -C "$staging" volumes repo
+tar -czf "$tmp_tar" --dereference \
+  --exclude="${NEXTCLOUD_MOUNTS_ROOT#/}" \
+  --exclude="*${NEXTCLOUD_MOUNTS_ROOT}" \
+  -C "$staging" volumes repo
 rm -rf "$staging"
 
 mv "$tmp_tar" "$dest_path"

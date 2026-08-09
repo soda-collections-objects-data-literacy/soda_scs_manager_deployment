@@ -125,6 +125,14 @@ NEXTCLOUD_NEXTCLOUD_MAIL_FROM_ADDRESS=noreply
 # Domain part of from address (e.g., yourdomain.com results in noreply@yourdomain.com).
 NEXTCLOUD_NEXTCLOUD_MAIL_DOMAIN=
 
+# --- Nextcloud mounter sidecar (rclone rcd / FUSE mounts) ---
+# Host directory must be a self-bound rshared mount before starting Docker
+# consumers (see 01_scripts/global/setup-nextcloud-mounts.sh).
+NEXTCLOUD_MOUNTS_ROOT=/var/lib/scs/nextcloud-mounts
+NEXTCLOUD_MOUNTER_RC_USER=scs-manager
+# Generate with: openssl rand -hex 32
+NEXTCLOUD_MOUNTER_RC_PASS=
+
 # Portainer
 SCS_PORTAINER_DOMAIN=deployments.scs.localhost
 SCS_PORTAINER_EDGE_DOMAIN=edge.scs.localhost

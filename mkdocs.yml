@@ -20,6 +20,7 @@ nav:
     - PHP debugging (Xdebug): service-infrastructure/php-xdebug.md
     - SCS Health dashboard: service-infrastructure/scs-health.md
     - SCS Manager user lifecycle: service-infrastructure/scs-manager-user-lifecycle.md
+    - Nextcloud mount sidecar: service-infrastructure/nextcloud-mount-sidecar.md
   - Initial setup:
     - Overview: initial-setup/index.md
     - Prerequisites: initial-setup/prerequisites.md

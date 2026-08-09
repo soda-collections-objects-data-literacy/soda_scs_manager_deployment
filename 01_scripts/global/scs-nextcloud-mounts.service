@@ -1,0 +1,14 @@
+[Unit]
+Description=Shared bind mount for SCS Nextcloud FUSE mounts
+Before=docker.service
+After=local-fs.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment=NEXTCLOUD_MOUNTS_ROOT=/var/lib/scs/nextcloud-mounts
+ExecStart=/bin/bash -c 'mkdir -p "$NEXTCLOUD_MOUNTS_ROOT/_disabled"; if [ "$(findmnt -n -o TARGET --target "$NEXTCLOUD_MOUNTS_ROOT" | head -1)" != "$NEXTCLOUD_MOUNTS_ROOT" ]; then mount --bind "$NEXTCLOUD_MOUNTS_ROOT" "$NEXTCLOUD_MOUNTS_ROOT"; fi; mount --make-rshared "$NEXTCLOUD_MOUNTS_ROOT"'
+ExecStop=/bin/bash -c 'if [ "$(findmnt -n -o TARGET --target "$NEXTCLOUD_MOUNTS_ROOT" | head -1)" = "$NEXTCLOUD_MOUNTS_ROOT" ]; then umount "$NEXTCLOUD_MOUNTS_ROOT"; fi'
+
+[Install]
+WantedBy=multi-user.target
