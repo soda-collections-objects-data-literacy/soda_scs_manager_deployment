@@ -92,7 +92,8 @@ Do **not** rely on only restarting the Docker container from the host — use th
 
 New Team Folders are **not** hot-plugged into a running Lab. In SCS Manager:
 
-1. Use the warning link or menu **Restart Jupyter** → confirm (warns that **unsaved notebook work will be lost**).
+1. Use the warning link or the **Restart Jupyter** button on the JupyterHub
+   dashboard card → confirm (warns that **unsaved notebook work will be lost**).
 2. That **stops** the notebook server only.
 3. Open JupyterHub → **Start My Server**.
 
