@@ -80,13 +80,23 @@ Do these steps **in order** when Drive or Jupyter sync stops working.
 
 ### 2. JupyterHub — respawn the notebook server
 
-Credentials are injected **only at spawn**.
+Credentials and **project Team Folder mounts** are applied **only at spawn**.
 
 1. Open JupyterHub → **File → Hub Control Panel** (or Hub home).
 2. **Stop My Server**, then **Start My Server**.
-3. Open JupyterLab → use the **cloud icon** in the file browser toolbar to sync `SCS-Share`.
+3. Open JupyterLab → use the **cloud icon** in the file browser toolbar to sync `SCS-Share` (optional; Team Folders under `/home/jovyan/nextcloud/` come from the FUSE bind, not bisync).
 
-Do **not** rely on only restarting the Docker container from the host — use the Hub **Stop / Start** so a new spawn picks up Keycloak userinfo.
+Do **not** rely on only restarting the Docker container from the host — use the Hub **Stop / Start** so a new spawn picks up Keycloak userinfo and project mounts.
+
+#### After creating or joining a project
+
+New Team Folders are **not** hot-plugged into a running Lab. In SCS Manager:
+
+1. Use the warning link or menu **Restart Jupyter** → confirm (warns that **unsaved notebook work will be lost**).
+2. That **stops** the notebook server only.
+3. Open JupyterHub → **Start My Server**.
+
+See [Nextcloud mount sidecar — Respawn after project create / join](../service-infrastructure/nextcloud-mount-sidecar.md#respawn-after-project-create--join-not-hot).
 
 ### 3. Nextcloud Drive — refresh SSO session (if Connect popup fails)
 

@@ -150,6 +150,20 @@ bind-mounts the mounts root (`rslave`) so existence checks see the host FUSE
 tree. If no project folder is available, `_disabled` is bound to
 `/home/jovyan/nextcloud`.
 
+#### Respawn after project create / join (not hot)
+
+Mounts are fixed when the notebook container is **spawned**. Creating a project
+or accepting a membership does **not** add folders to a running Lab.
+
+1. In SCS Manager, users see a warning with a link to **Restart Jupyter**
+   (`/soda-scs-manager/jupyter/restart-notebook`), also in the main menu.
+2. The confirm form **stops** the notebook server and warns that **unsaved
+   notebook work will be lost** (home volume and Nextcloud files are kept).
+3. The user opens JupyterHub and chooses **Start My Server** so the Hub
+   re-reads Keycloak project groups and binds the new Team Folders.
+
+Stopping alone does not remount; a Hub spawn is required.
+
 ## Secret rotation
 
 1. Set a new `NEXTCLOUD_MOUNTER_RC_PASS` in `.env`.
