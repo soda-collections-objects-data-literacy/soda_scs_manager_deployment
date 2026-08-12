@@ -40,8 +40,10 @@ Use this checklist after the whole environment has started (`docker compose up -
 
 - [ ] **Host rshared bind** — `/var/lib/scs/nextcloud-mounts` exists and `findmnt -o PROPAGATION --target /var/lib/scs/nextcloud-mounts` contains `shared`. Prefer `systemctl enable --now scs-nextcloud-mounts.service` (unit file under `01_scripts/global/`). See [Nextcloud mount sidecar](../service-infrastructure/nextcloud-mount-sidecar.md).
 - [ ] **Sidecar healthy** — `docker compose ps nextcloud-mounter` is healthy; no host port for `:5572`.
-- [ ] **rc-API from Manager only** — `scs-manager--drupal` can call `http://nextcloud-mounter:5572/core/pid` with `NEXTCLOUD_MOUNTER_RC_*`; WissKI containers cannot reach that host.
+- [ ] **Manager wiring** — `scs-manager--drupal` is on `nextcloud-mounter-net`, has `NEXTCLOUD_MOUNTER_RC_*` / `NEXTCLOUD_MOUNTS_ROOT`, and binds mounts root → `/mnt/nextcloud-mounts` (`rslave`). Override lives in `00_custom_configs/scs-manager-stack/docker/`.
+- [ ] **rc-API from Manager only** — `scs-drush scs:nextcloud-status` (or `curl` to `http://nextcloud-mounter:5572/core/pid`); WissKI containers cannot reach that host.
 - [ ] **Secrets** — `NEXTCLOUD_MOUNTER_RC_PASS` set in `.env` (not empty); rotate by changing `.env` and recreating sidecar + Manager.
+- [ ] **WissKI external mode** — New stacks get `NEXTCLOUD_MOUNT_MODE=external` and `NEXTCLOUD_USER_MOUNT_SOURCE=…/<owner>/<project-label>`; legacy sync stacks re-deployed after migration.
 
 ## Nextcloud
 

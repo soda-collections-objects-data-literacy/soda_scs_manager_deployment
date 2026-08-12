@@ -16,6 +16,17 @@ There is **no separate Nginx container** in front of Varnish. Nginx runs **insid
 
 Database and triplestore are **shared SCS services** (`scs--database`, OpenGDB/RDF4J), not part of the per-instance compose file.
 
+### Nextcloud external mount
+
+SCS Manager deploys stacks with a host bind of the **project Team Folder** only (not the owner’s whole Drive):
+
+| Host (`NEXTCLOUD_USER_MOUNT_SOURCE`) | Container |
+|---|---|
+| `/var/lib/scs/nextcloud-mounts/<owner>/<project-label>` | `/opt/drupal/private-files/nextcloud` (`private://nextcloud`) |
+| `/var/lib/scs/nextcloud-mounts/_disabled` (default/fallback) | same path, empty |
+
+Propagation is `rslave`. `NEXTCLOUD_MOUNT_MODE=external` makes the image enable `nextcloud_webdav_mount` in passive external mode (no in-container rclone or app passwords). FUSE lives only in the deployment sidecar — see [Nextcloud mount sidecar](../nextcloud-mount-sidecar.md).
+
 WissKI stacks receive **internal triplestore URLs** (`http://scs--authproxy:8000/repositories/…`) via Portainer env when SCS Manager → Triplestore → **Internal host (WissKI)** is set (default: `http://scs--authproxy:8000`). That avoids routing SPARQL through Traefik. On first install the entrypoint creates the SALZ adapter from `TS_READ_URL` / `TS_WRITE_URL`; changes on running instances are done in the WissKI/Drupal UI or via a one-off maintenance script.
 
 ### Performance defaults (aligned with dedicated WissKI deployments)

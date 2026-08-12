@@ -6,7 +6,7 @@ This section describes what is in the SODa SCS Manager deployment and how the se
 
 The deployment is built from multiple Docker Compose files merged via the `COMPOSE_FILE` environment variable (see `example-env`). It includes:
 
-- A **main stack** (`docker-compose.yml`): Traefik reverse proxy, shared MariaDB, Portainer, phpMyAdmin, and an access-proxy helper.
+- A **main stack** (`docker-compose.yml`): Traefik reverse proxy, shared MariaDB, Portainer, phpMyAdmin, access-proxy helper, and the **Nextcloud FUSE mounter** sidecar (`nextcloud-mounter`).
 - **Submodule stacks**: SCS Manager (Drupal), Nextcloud, JupyterHub, Keycloak, OpenGDB, the project website stack, and the SCS Health dashboard.
 
 All services that serve HTTP or need to be reached by Traefik attach to the same Docker network, `reverse-proxy`. The shared MariaDB instance is used by Keycloak, SCS Manager, Nextcloud, and the project website; each has its own database and user created by pre-install scripts.
@@ -66,6 +66,7 @@ flowchart LR
 - **scs--portainer** — Portainer CE for container management; used by SCS Manager for WissKI stack operations.
 - **scs--phpmyadmin** — phpMyAdmin for database access (optional).
 - **scs--access-proxy** — Helper container for file management and snapshot paths.
+- **nextcloud-mounter** — rclone `rcd` sidecar for per-user Nextcloud WebDAV/FUSE mounts. See [Nextcloud mount sidecar](nextcloud-mount-sidecar.md).
 
 ## Compose file aggregation
 
@@ -110,6 +111,7 @@ Override files are copied from `00_custom_configs/<stack>/docker/` to each stack
 - **Nginx / clean URLs:** `scs-manager-stack/configs/nginx/drupal.conf` is mounted into `scs-manager--drupal` so Drupal generates paths without `/index.php`. See [SCS Manager clean URLs](../troubleshooting/scs-manager-clean-urls.md) if links still show `index.php`.
 - **PHP / OPcache:** Production must not mount `scs-manager-stack/configs/php/zz-xdebug-debug.ini` (that overlay disables OPcache and enables Xdebug). For local debugging, add the volume mount back in a dev-only compose override; see [PHP debugging (Xdebug)](php-xdebug.md).
 - **User lifecycle (create/delete):** [SCS Manager user create and delete routines](scs-manager-user-lifecycle.md) — Keycloak registration, OIDC linking, Nextcloud credential attributes, and `hook_user_delete` cleanup.
+- **Nextcloud mounts:** On `nextcloud-mounter-net`; owns mount lifecycle via `NextcloudMountManager` / Drush `scs:nextcloud-*`. See [Nextcloud mount sidecar](nextcloud-mount-sidecar.md).
 - WissKI stacks are deployed via Portainer from `wisski-base-stack`. **Drupal reverse proxy addresses** in SCS Manager settings (`auto` by default) become `DRUPAL_PROXY_ADDRESSES` on the stack; the wisski-base-image syncs trusted proxy CIDRs into each instance `settings.php` on boot.
 - Varnish VCL is generated from `00_custom_configs/scs-manager-stack/varnish/default.vcl.tpl` during pre-install.
 - Connects to shared MariaDB (own database).
@@ -123,6 +125,7 @@ Override files are copied from `00_custom_configs/<stack>/docker/` to each stack
 
 - Generic OAuthenticator pointing at Keycloak (client ID, secret, authorize/token/userinfo URLs from env).
 - Group and GID handling in `jupyterhub/jupyterhub/jupyterhub_config.py`: `auth_state_groups_key` reads `groups` and `gids` from the OAuth userinfo; spawner uses `group_map.json` and gids for Linux group membership in the notebook container.
+- Spawner binds Keycloak **project Team Folders** only (`${NEXTCLOUD_MOUNTS_ROOT}/<user>/<project-label>` → `/home/jovyan/nextcloud/<project-label>`, `rslave`, GID `33`). See [Nextcloud mount sidecar](nextcloud-mount-sidecar.md).
 - Spawner image can include tools (e.g. wisski_py, OpenRefine). JupyterHub needs the Keycloak “groups” (and optionally “gids”) scope on its client for group-based access and spawner gids to work (see [Post-configuration checklist](post-configuration/checklist.md)).
 
 ### OpenGDB
@@ -145,4 +148,5 @@ Override files are copied from `00_custom_configs/<stack>/docker/` to each stack
 WissKI is not merged into the root `COMPOSE_FILE`. Each catalogue instance is a separate stack (`wisski-base-stack`) managed by SCS Manager through Portainer.
 
 - **Infrastructure:** [WissKI stack](wisski-stack/index.md) — Traefik → Varnish → Nginx + PHP-FPM, networks, headers, `raw.*` bypass
+- **Nextcloud:** Project Team Folder via sidecar (`NEXTCLOUD_MOUNT_MODE=external`) — [WissKI Nextcloud mount](wisski-stack/index.md#nextcloud-external-mount) and [sidecar](nextcloud-mount-sidecar.md)
 - **Drupal `settings.php` snippets:** [configs/](configs/index.md) — trusted hosts, private files, Redis, reverse proxy

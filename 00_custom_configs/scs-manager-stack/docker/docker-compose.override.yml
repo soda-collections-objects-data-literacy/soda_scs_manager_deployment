@@ -13,6 +13,11 @@ services:
       # Pass through Drupal configuration
       DRUPAL_TRUSTED_HOSTS: ${SCS_MANAGER_DRUPAL_TRUSTED_HOSTS}
       DRUPAL_PROXY_ADDRESSES: ${SCS_MANAGER_DRUPAL_PROXY_ADDRESSES}
+      # Nextcloud mounter sidecar (rclone rc-API)
+      NEXTCLOUD_MOUNTER_RC_URL: "http://nextcloud-mounter:5572"
+      NEXTCLOUD_MOUNTER_RC_USER: "${NEXTCLOUD_MOUNTER_RC_USER}"
+      NEXTCLOUD_MOUNTER_RC_PASS: "${NEXTCLOUD_MOUNTER_RC_PASS}"
+      NEXTCLOUD_MOUNTS_ROOT: "${NEXTCLOUD_MOUNTS_ROOT:-/var/lib/scs/nextcloud-mounts}"
     volumes: !override
       - scs-manager--drupal-sites:/opt/drupal/web/sites
       - scs-manager--drupal-custom-modules:/opt/drupal/web/modules/custom
@@ -22,16 +27,23 @@ services:
       # Xdebug debug overlay (scs-manager-stack/configs/php/zz-xdebug-debug.ini) is for
       # local development only — do not mount in production (disables OPcache).
       - /srv/backups/scs-manager/snapshots:/var/scs-manager/snapshots
+      - type: bind
+        source: ${NEXTCLOUD_MOUNTS_ROOT:-/var/lib/scs/nextcloud-mounts}
+        target: /mnt/nextcloud-mounts
+        bind:
+          propagation: rslave
       # Workaround: Mount PHP-FPM config to fix socket issue until image is rebuilt
     networks: !override
       - default
       - reverse-proxy
+      - nextcloud-mounter-net
     ports: !reset []  # Remove port binding, use Varnish with Traefik
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on: !override
       - scs--reverse-proxy
       - scs--database
+      - nextcloud-mounter
     healthcheck:
       test: ["CMD", "curl", "-f", "-H", "Host: ${SCS_MANAGER_DOMAIN}", "http://localhost/health"]
       interval: 15s
@@ -81,6 +93,11 @@ networks:
   default:
     name: scs-manager
     driver: bridge
+  # Declared in root docker-compose.yml (internal rc-API net).
+  nextcloud-mounter-net:
+    name: nextcloud-mounter-net
+    driver: bridge
+    internal: true
 
 volumes:
   scs-manager--drupal-sites:

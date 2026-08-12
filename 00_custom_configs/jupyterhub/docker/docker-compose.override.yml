@@ -19,6 +19,18 @@ services:
       NC_URL: ${NEXTCLOUD_URL}
       # Host root for per-user Nextcloud FUSE mounts (sidecar / Plan 01)
       NEXTCLOUD_MOUNTS_ROOT: ${NEXTCLOUD_MOUNTS_ROOT:-/var/lib/scs/nextcloud-mounts}
+      # Resolve Keycloak project group id → Team Folder label at spawn
+      KC_URL: ${KC_URL}
+      KC_REALM: ${KC_REALM}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD}
+    volumes:
+      # Need host FUSE tree visible to Hub for existence checks before bind.
+      - type: bind
+        source: ${NEXTCLOUD_MOUNTS_ROOT:-/var/lib/scs/nextcloud-mounts}
+        target: ${NEXTCLOUD_MOUNTS_ROOT:-/var/lib/scs/nextcloud-mounts}
+        bind:
+          propagation: rslave
     networks: !override
       - reverse-proxy
     labels:
