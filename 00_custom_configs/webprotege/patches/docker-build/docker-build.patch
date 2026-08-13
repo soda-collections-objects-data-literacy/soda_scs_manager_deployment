@@ -1,0 +1,45 @@
+diff --git a/Dockerfile b/Dockerfile
+index c95eb5b0b..0cbbaf851 100644
+--- a/Dockerfile
++++ b/Dockerfile
+@@ -1,15 +1,18 @@
+-FROM maven:3.6.0-jdk-11-slim AS build
++FROM maven:3.8.6-eclipse-temurin-11 AS build
+ 
+-RUN apt-get update && \
+-    apt-get install -y git mongodb
++# Removed MongoDB, cause it has own container.
+ 
+ COPY . /webprotege
+ 
+ WORKDIR /webprotege
+ 
+-RUN mkdir -p /data/db \
+-    && mongod --fork --syslog \
+-    && mvn clean package
++# Docker build compiles and packages the WAR. Use maven.test.skip so tests
++# are neither compiled nor run (-DskipTests still runs testCompile).
++# Database-backed checks belong in CI or local dev (Testcontainers, compose
++# stack, etc.), not inside every docker build.
++# @todo Use Testcontainers for that.
++
++RUN mvn -B -Dmaven.test.skip=true clean package
+ 
+ FROM tomcat:8-jre11-slim
+ 
+@@ -19,11 +22,11 @@ RUN rm -rf /usr/local/tomcat/webapps/* \
+ 
+ WORKDIR /usr/local/tomcat/webapps/ROOT
+ 
+-# Here WEBPROTEGE_VERSION is coming from the custom build args WEBPROTEGE_VERSION=$DOCKER_TAG hooks/build script.
+-# Ref: https://docs.docker.com/docker-hub/builds/advanced/
+-ARG WEBPROTEGE_VERSION
++# WEBPROTEGE_VERSION must match the project's version in the parent pom (currently 5.0.0-SNAPSHOT).
++# Set default value, so we can override it in the docker-compose.yml file.
++ARG WEBPROTEGE_VERSION=5.0.0-SNAPSHOT
+ 
+-ENV WEBPROTEGE_VERSION $WEBPROTEGE_VERSION
++ENV WEBPROTEGE_VERSION=$WEBPROTEGE_VERSION
+ COPY --from=build /webprotege/webprotege-cli/target/webprotege-cli-${WEBPROTEGE_VERSION}.jar /webprotege-cli.jar
+ COPY --from=build /webprotege/webprotege-server/target/webprotege-server-${WEBPROTEGE_VERSION}.war ./webprotege.war
+ RUN unzip webprotege.war \

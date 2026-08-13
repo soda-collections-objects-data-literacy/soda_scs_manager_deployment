@@ -1,0 +1,1461 @@
+diff --git a/readme.md b/readme.md
+index ecb91eb58..d547d42ee 100644
+--- a/readme.md
++++ b/readme.md
+@@ -95,3 +95,34 @@ Sharing the volumes used by the WebProtégé app and MongoDB allow to keep persi
+ * MongoDB will store its data in the source code folder at `./.protegedata/mongodb` where you run `docker-compose`
+ 
+ > Path to the shared volumes can be changed in the `docker-compose.yml` file.
++
++OIDC (OpenID Connect SSO)
++-------------------------
++
++WebProtégé can delegate sign-in to any OIDC-compatible identity provider (for example Keycloak) using the **authorization code flow**. The server loads `{issuer}/.well-known/openid-configuration`, redirects users to the provider, exchanges the code for tokens, validates the ID token, then provisions or matches a **local** WebProtégé user and starts a normal session.
++
++OIDC is **not** configured in `webprotege.properties`. Set **environment variables** on the JVM process (or equivalent JVM `-D` system properties; environment wins over `-D`).
++
++**Required** (all three must be set; if any is missing, OIDC stays disabled and local login works as usual):
++
++| Variable | Purpose |
++|----------|---------|
++| `WEBPROTEGE_OIDC_ISSUER_URI` | Issuer base URL, e.g. `https://auth.example.com/realms/myrealm` (used to discover authorization, token, and JWKS endpoints). |
++| `WEBPROTEGE_OIDC_CLIENT_ID` | OIDC client id registered at the provider. |
++| `WEBPROTEGE_OIDC_CLIENT_SECRET` | Client secret for a **confidential** client. |
++
++**Optional**:
++
++| Variable | Default / behavior |
++|----------|-------------------|
++| `WEBPROTEGE_OIDC_REDIRECT_URI` | If unset, the callback URL is derived from the incoming HTTP request. For reverse proxies, ensure the public URL the browser sees matches what you register at the IdP. Callback path is always `…/webprotege/oidc/callback`. |
++| `WEBPROTEGE_OIDC_SCOPES` | `openid profile email` |
++| `WEBPROTEGE_OIDC_USERNAME_CLAIM` | `preferred_username` — used to **link** OIDC accounts to local users; must match an existing username or a new local user is created on first login. |
++| `WEBPROTEGE_OIDC_HIDE_LOCAL_LOGIN` | When `true`, the username/password form is hidden and users rely on OIDC (login URL: `…/webprotege/oidc/login`). |
++
++**IdP registration**: Register a redirect URI of the form `https://<your-public-host><context>/webprotege/oidc/callback` (same scheme/host as end users use).
++
++**JVM equivalents** (if you prefer `-D` instead of env): `webprotege.oidc.issuer.uri`, `webprotege.oidc.client.id`, `webprotege.oidc.client.secret`, `webprotege.oidc.redirect.uri`, `webprotege.oidc.scopes`, `webprotege.oidc.username.claim`, `webprotege.oidc.hide.local.login`.
++
++In Docker Compose, add variables under the `webprotege` service `environment:` list (same names as above).
++
+diff --git a/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/Messages.java b/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/Messages.java
+index b3aa0d240..c48ecca6a 100644
+--- a/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/Messages.java
++++ b/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/Messages.java
+@@ -917,6 +917,16 @@ public interface Messages extends com.google.gwt.i18n.client.Messages {
+     String signInToContinue();
+ 
+     
++    @DefaultMessage("Sign in with Keycloak")
++    @Key("signInWithKeycloak")
++    String signInWithKeycloak();
++
++    
++    @DefaultMessage("Single sign-on failed. Try again or use username and password.")
++    @Key("login_oidc_failed")
++    String login_oidc_failed();
++
++    
+     @DefaultMessage("Sign Out")
+     @Key("signOut")
+     String signOut();
+diff --git a/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/auth/ClientOidcConfig.java b/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/auth/ClientOidcConfig.java
+new file mode 100644
+index 000000000..592aeb036
+--- /dev/null
++++ b/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/auth/ClientOidcConfig.java
+@@ -0,0 +1,52 @@
++package edu.stanford.bmir.protege.web.client.auth;
++
++import com.google.gwt.user.client.Window;
++
++/**
++ * Reads OIDC bootstrap values set in {@code WebProtege.jsp} from environment-driven server configuration.
++ */
++public final class ClientOidcConfig {
++
++    private ClientOidcConfig() {
++    }
++
++    public static boolean isOidcSsoEnabled() {
++        return readSsoEnabled();
++    }
++
++    public static boolean isOidcHideLocalLogin() {
++        return readHideLocalLogin();
++    }
++
++    private static native boolean readSsoEnabled() /*-{
++        return !!$wnd.webprotegeOidcSsoEnabled;
++    }-*/;
++
++    private static native boolean readHideLocalLogin() /*-{
++        return !!$wnd.webprotegeOidcHideLocalLogin;
++    }-*/;
++
++    public static String getOidcLoginUrl() {
++        String url = readLoginUrl();
++        if (url == null || url.isEmpty()) {
++            return fallbackLoginUrl();
++        }
++        return url;
++    }
++
++    private static String fallbackLoginUrl() {
++        String path = Window.Location.getPath();
++        if (path.endsWith("/")) {
++            path = path.substring(0, path.length() - 1);
++        }
++        if (path.endsWith("/WebProtege.jsp")) {
++            path = path.substring(0, path.length() - "/WebProtege.jsp".length());
++        }
++        return path + "/webprotege/oidc/login";
++    }
++
++    private static native String readLoginUrl() /*-{
++        var u = $wnd.webprotegeOidcLoginUrl;
++        return u == null ? null : String(u);
++    }-*/;
++}
+diff --git a/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/login/LoginPresenter.java b/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/login/LoginPresenter.java
+index 4806f3915..3ad04bf52 100644
+--- a/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/login/LoginPresenter.java
++++ b/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/login/LoginPresenter.java
+@@ -1,5 +1,7 @@
+ package edu.stanford.bmir.protege.web.client.login;
+ 
++import com.google.gwt.user.client.Window;
++import edu.stanford.bmir.protege.web.client.auth.ClientOidcConfig;
+ import com.google.gwt.place.shared.Place;
+ import com.google.gwt.place.shared.PlaceController;
+ import com.google.gwt.user.client.ui.AcceptsOneWidget;
+@@ -72,6 +74,13 @@ public class LoginPresenter implements Presenter {
+     public void start(@Nonnull AcceptsOneWidget container, @Nonnull EventBus eventBus) {
+         view.clearView();
+         view.hideErrorMessages();
++        if (ClientOidcConfig.isOidcSsoEnabled()) {
++            view.configureOidcLogin(ClientOidcConfig.getOidcLoginUrl(), ClientOidcConfig.isOidcHideLocalLogin());
++        }
++        String oidcError = Window.Location.getParameter("oidc_error");
++        if (oidcError != null && !oidcError.isEmpty()) {
++            view.showOidcLoginFailedMessage();
++        }
+         boolean canCreateUser = loggedInUserManager.isAllowedApplicationAction(CREATE_ACCOUNT);
+         view.setSignUpForAccountVisible(canCreateUser);
+         container.setWidget(view);
+diff --git a/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/login/LoginView.java b/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/login/LoginView.java
+index 333a648ca..a669027a2 100644
+--- a/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/login/LoginView.java
++++ b/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/login/LoginView.java
+@@ -51,4 +51,8 @@ public interface LoginView extends IsWidget, RequiresResize, ProvidesResize {
+     void setSignUpForAccountHandler(@Nonnull SignUpForAccountHandler handler);
+ 
+     void setSignUpForAccountVisible(boolean visible);
++
++    void configureOidcLogin(@Nonnull String loginUrl, boolean hideLocalLogin);
++
++    void showOidcLoginFailedMessage();
+ }
+diff --git a/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/login/LoginViewImpl.java b/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/login/LoginViewImpl.java
+index b31e59ad1..3876b6688 100644
+--- a/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/login/LoginViewImpl.java
++++ b/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/login/LoginViewImpl.java
+@@ -33,6 +33,12 @@ public class LoginViewImpl extends Composite implements LoginView {
+ 
+     private static LoginViewImplUiBinder ourUiBinder = GWT.create(LoginViewImplUiBinder.class);
+ 
++    @UiField
++    protected Anchor oidcLoginAnchor;
++
++    @UiField
++    protected HTMLPanel localLoginFieldsPanel;
++
+     @UiField
+     protected TextBox userNameField;
+ 
+@@ -121,6 +127,9 @@ public class LoginViewImpl extends Composite implements LoginView {
+         userNameField.setText("");
+         passwordField.setText("");
+         hideErrorMessages();
++        oidcLoginAnchor.setVisible(false);
++        oidcLoginAnchor.setHref("#");
++        localLoginFieldsPanel.setVisible(true);
+     }
+ 
+     @Override
+@@ -163,6 +172,20 @@ public class LoginViewImpl extends Composite implements LoginView {
+         signUpForAccountButton.setVisible(visible);
+     }
+ 
++    @Override
++    public void configureOidcLogin(@Nonnull String loginUrl, boolean hideLocalLogin) {
++        oidcLoginAnchor.setHref(loginUrl);
++        oidcLoginAnchor.setText(MESSAGES.signInWithKeycloak());
++        oidcLoginAnchor.setTarget("_self");
++        oidcLoginAnchor.setVisible(true);
++        localLoginFieldsPanel.setVisible(!hideLocalLogin);
++    }
++
++    @Override
++    public void showOidcLoginFailedMessage() {
++        messageBox.showAlert(MESSAGES.login_oidc_failed());
++    }
++
+     @Override
+     public void onResize() {
+ 
+diff --git a/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/login/LoginViewImpl.ui.xml b/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/login/LoginViewImpl.ui.xml
+index 224c2f2ab..636dc1ce8 100644
+--- a/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/login/LoginViewImpl.ui.xml
++++ b/webprotege-client/src/main/java/edu/stanford/bmir/protege/web/client/login/LoginViewImpl.ui.xml
+@@ -74,7 +74,11 @@
+ 
+         <g:Label text="{msg.signInToContinue}" addStyleNames="{wp.login.loginMessage} {style.message}"/>
+ 
+-        <g:HTMLPanel addStyleNames="{style.login-form} {wp.login.loginForm}">
++        <g:Anchor ui:field="oidcLoginAnchor" visible="false"
++                  addStyleNames="{wp.buttons.button} {wp.buttons.pageButton} {wp.buttons.primaryButton}"
++                  href="#"/>
++
++        <g:HTMLPanel ui:field="localLoginFieldsPanel" addStyleNames="{style.login-form} {wp.login.loginForm}">
+             <g:Label text="{msg.userName}" addStyleNames="{wp.style.formLabel}"/>
+             <g:TextBox ui:field="userNameField" visibleLength="30"/>
+             <div style="height: 10px;"/>
+diff --git a/webprotege-server-core/pom.xml b/webprotege-server-core/pom.xml
+index 6c2d14ca6..7b2aa2090 100644
+--- a/webprotege-server-core/pom.xml
++++ b/webprotege-server-core/pom.xml
+@@ -28,6 +28,12 @@
+             <version>${project.version}</version>
+         </dependency>
+ 
++        <dependency>
++            <groupId>javax.servlet</groupId>
++            <artifactId>javax.servlet-api</artifactId>
++            <scope>provided</scope>
++        </dependency>
++
+         <dependency>
+             <groupId>org.hamcrest</groupId>
+             <artifactId>hamcrest-all</artifactId>
+@@ -208,6 +214,12 @@
+             <version>${jackson.version}</version>
+         </dependency>
+ 
++        <dependency>
++            <groupId>com.nimbusds</groupId>
++            <artifactId>nimbus-jose-jwt</artifactId>
++            <version>9.37.3</version>
++        </dependency>
++
+         <dependency>
+             <groupId>com.atlassian.commonmark</groupId>
+             <artifactId>commonmark</artifactId>
+diff --git a/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcAuthCoordinator.java b/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcAuthCoordinator.java
+new file mode 100644
+index 000000000..61f6e7c91
+--- /dev/null
++++ b/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcAuthCoordinator.java
+@@ -0,0 +1,123 @@
++package edu.stanford.bmir.protege.web.server.auth.oidc;
++
++import com.nimbusds.jose.JOSEException;
++import com.nimbusds.jose.proc.BadJOSEException;
++import com.nimbusds.jwt.JWTClaimsSet;
++import edu.stanford.bmir.protege.web.shared.user.UserId;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import javax.annotation.Nonnull;
++import javax.inject.Inject;
++import javax.servlet.http.HttpSession;
++import java.io.IOException;
++import java.net.URLEncoder;
++import java.nio.charset.StandardCharsets;
++import java.security.SecureRandom;
++import java.text.ParseException;
++import java.util.Base64;
++
++/**
++ * Builds the Keycloak/OIDC authorization redirect and completes the code exchange.
++ */
++public class OidcAuthCoordinator {
++
++    private static final Logger logger = LoggerFactory.getLogger(OidcAuthCoordinator.class);
++
++    public static final String SESSION_STATE = "webprotege.oidc.state";
++
++    public static final String SESSION_NONCE = "webprotege.oidc.nonce";
++
++    public static final String SESSION_REDIRECT_URI = "webprotege.oidc.redirect_uri";
++
++    private static final SecureRandom RANDOM = new SecureRandom();
++
++    private final OidcRuntimeConfig config;
++
++    private final OidcDiscoveryCache discoveryCache;
++
++    private final OidcHttpTokenClient tokenClient;
++
++    private final OidcSsoUserProvisioner userProvisioner;
++
++    @Inject
++    public OidcAuthCoordinator(@Nonnull OidcRuntimeConfig config,
++                               @Nonnull OidcDiscoveryCache discoveryCache,
++                               @Nonnull OidcHttpTokenClient tokenClient,
++                               @Nonnull OidcSsoUserProvisioner userProvisioner) {
++        this.config = config;
++        this.discoveryCache = discoveryCache;
++        this.tokenClient = tokenClient;
++        this.userProvisioner = userProvisioner;
++    }
++
++    public boolean isEnabled() {
++        return config.isEnabled();
++    }
++
++    @Nonnull
++    public String buildAuthorizationRedirectUrl(@Nonnull HttpSession session,
++                                                @Nonnull String redirectUriForCallback) throws IOException {
++        OidcDiscoveryDocument discovery = discoveryCache.get(config.getIssuerUri());
++        String state = randomUrlSafe(24);
++        String nonce = randomUrlSafe(24);
++        session.setAttribute(SESSION_STATE, state);
++        session.setAttribute(SESSION_NONCE, nonce);
++        session.setAttribute(SESSION_REDIRECT_URI, redirectUriForCallback);
++        String scope = URLEncoder.encode(config.getScopes(), StandardCharsets.UTF_8);
++        String redirectEnc = URLEncoder.encode(redirectUriForCallback, StandardCharsets.UTF_8);
++        return discovery.getAuthorizationEndpoint()
++                + "?response_type=code"
++                + "&client_id=" + URLEncoder.encode(config.getClientId(), StandardCharsets.UTF_8)
++                + "&redirect_uri=" + redirectEnc
++                + "&scope=" + scope
++                + "&state=" + URLEncoder.encode(state, StandardCharsets.UTF_8)
++                + "&nonce=" + URLEncoder.encode(nonce, StandardCharsets.UTF_8);
++    }
++
++    @Nonnull
++    public UserId completeLogin(@Nonnull HttpSession session,
++                                @Nonnull String code,
++                                @Nonnull String state) throws IOException, ParseException, BadJOSEException, JOSEException {
++        Object expectedState = session.getAttribute(SESSION_STATE);
++        Object expectedNonce = session.getAttribute(SESSION_NONCE);
++        Object redirectUriObj = session.getAttribute(SESSION_REDIRECT_URI);
++        if (!(expectedState instanceof String) || !(expectedNonce instanceof String) || !(redirectUriObj instanceof String)) {
++            throw new IOException("Missing OIDC session state; restart sign-in from WebProtege.");
++        }
++        if (!((String) expectedState).equals(state)) {
++            throw new IOException("Invalid OIDC state parameter");
++        }
++        String redirectUri = (String) redirectUriObj;
++        String nonce = (String) expectedNonce;
++        OidcDiscoveryDocument discovery = discoveryCache.get(config.getIssuerUri());
++        OidcTokenResponse tokenResponse = tokenClient.exchangeAuthorizationCode(
++                discovery.getTokenEndpoint(),
++                code,
++                redirectUri,
++                config.getClientId(),
++                config.getClientSecret());
++        JWTClaimsSet claims = OidcIdTokenValidator.validateAndParseClaims(
++                tokenResponse.getIdToken(),
++                discovery.getIssuer(),
++                discovery.getJwksUri(),
++                config.getClientId());
++        String tokenNonce = claims.getStringClaim("nonce");
++        if (tokenNonce == null || !tokenNonce.equals(nonce)) {
++            throw new IOException("Invalid OIDC nonce in ID token");
++        }
++        UserId userId = userProvisioner.resolveOrProvisionUser(claims, config.getUsernameClaim());
++        session.removeAttribute(SESSION_STATE);
++        session.removeAttribute(SESSION_NONCE);
++        session.removeAttribute(SESSION_REDIRECT_URI);
++        logger.info("OIDC login successful for WebProtege user {}", userId.getUserName());
++        return userId;
++    }
++
++    @Nonnull
++    private static String randomUrlSafe(int numBytes) {
++        byte[] b = new byte[numBytes];
++        RANDOM.nextBytes(b);
++        return Base64.getUrlEncoder().withoutPadding().encodeToString(b);
++    }
++}
+diff --git a/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcDiscoveryCache.java b/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcDiscoveryCache.java
+new file mode 100644
+index 000000000..34859de34
+--- /dev/null
++++ b/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcDiscoveryCache.java
+@@ -0,0 +1,59 @@
++package edu.stanford.bmir.protege.web.server.auth.oidc;
++
++import com.fasterxml.jackson.databind.ObjectMapper;
++import com.google.common.annotations.VisibleForTesting;
++
++import javax.annotation.Nonnull;
++import javax.inject.Inject;
++import java.io.IOException;
++import java.util.concurrent.locks.ReentrantLock;
++
++/**
++ * Simple in-memory cache for the OIDC discovery document.
++ */
++public class OidcDiscoveryCache {
++
++    private final ObjectMapper objectMapper;
++
++    private final ReentrantLock lock = new ReentrantLock();
++
++    private volatile OidcDiscoveryDocument cached;
++
++    @Inject
++    public OidcDiscoveryCache(@Nonnull ObjectMapper objectMapper) {
++        this.objectMapper = objectMapper;
++    }
++
++    @Nonnull
++    public OidcDiscoveryDocument get(@Nonnull String issuerUri) throws IOException {
++        OidcDiscoveryDocument doc = cached;
++        if (doc != null && !doc.isStale(OidcDiscoveryDocument.defaultMaxCacheAgeMillis())) {
++            doc.assertIssuerCompatible(issuerUri);
++            return doc;
++        }
++        lock.lock();
++        try {
++            doc = cached;
++            if (doc != null && !doc.isStale(OidcDiscoveryDocument.defaultMaxCacheAgeMillis())) {
++                doc.assertIssuerCompatible(issuerUri);
++                return doc;
++            }
++            OidcDiscoveryDocument fresh = OidcDiscoveryDocument.fetch(issuerUri, objectMapper);
++            fresh.assertIssuerCompatible(issuerUri);
++            cached = fresh;
++            return fresh;
++        } finally {
++            lock.unlock();
++        }
++    }
++
++    @VisibleForTesting
++    void clearForTests() {
++        lock.lock();
++        try {
++            cached = null;
++        } finally {
++            lock.unlock();
++        }
++    }
++}
+diff --git a/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcDiscoveryDocument.java b/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcDiscoveryDocument.java
+new file mode 100644
+index 000000000..0013c89d0
+--- /dev/null
++++ b/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcDiscoveryDocument.java
+@@ -0,0 +1,129 @@
++package edu.stanford.bmir.protege.web.server.auth.oidc;
++
++import com.fasterxml.jackson.databind.JsonNode;
++import com.fasterxml.jackson.databind.ObjectMapper;
++import org.apache.http.client.methods.CloseableHttpResponse;
++import org.apache.http.client.methods.HttpGet;
++import org.apache.http.impl.client.CloseableHttpClient;
++import org.apache.http.impl.client.HttpClients;
++import org.apache.http.util.EntityUtils;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import javax.annotation.Nonnull;
++import java.io.IOException;
++import java.net.URL;
++import java.nio.charset.StandardCharsets;
++import java.util.concurrent.TimeUnit;
++
++/**
++ * Fetches and parses OpenID Provider Metadata from {@code {issuer}/.well-known/openid-configuration}.
++ */
++public final class OidcDiscoveryDocument {
++
++    private static final Logger logger = LoggerFactory.getLogger(OidcDiscoveryDocument.class);
++
++    private final long fetchedAtMillis;
++
++    @Nonnull
++    private final String issuer;
++
++    @Nonnull
++    private final String authorizationEndpoint;
++
++    @Nonnull
++    private final String tokenEndpoint;
++
++    @Nonnull
++    private final String jwksUri;
++
++    private OidcDiscoveryDocument(long fetchedAtMillis,
++                                  @Nonnull String issuer,
++                                  @Nonnull String authorizationEndpoint,
++                                  @Nonnull String tokenEndpoint,
++                                  @Nonnull String jwksUri) {
++        this.fetchedAtMillis = fetchedAtMillis;
++        this.issuer = issuer;
++        this.authorizationEndpoint = authorizationEndpoint;
++        this.tokenEndpoint = tokenEndpoint;
++        this.jwksUri = jwksUri;
++    }
++
++    public boolean isStale(long maxAgeMillis) {
++        return System.currentTimeMillis() - fetchedAtMillis > maxAgeMillis;
++    }
++
++    @Nonnull
++    public String getIssuer() {
++        return issuer;
++    }
++
++    @Nonnull
++    public String getAuthorizationEndpoint() {
++        return authorizationEndpoint;
++    }
++
++    @Nonnull
++    public String getTokenEndpoint() {
++        return tokenEndpoint;
++    }
++
++    @Nonnull
++    public String getJwksUri() {
++        return jwksUri;
++    }
++
++    @Nonnull
++    public static OidcDiscoveryDocument fetch(@Nonnull String issuerUri, @Nonnull ObjectMapper objectMapper) throws IOException {
++        String wellKnown = issuerUri + "/.well-known/openid-configuration";
++        logger.debug("Fetching OIDC discovery document from {}", wellKnown);
++        HttpGet get = new HttpGet(wellKnown);
++        try (CloseableHttpClient client = HttpClients.createSystem();
++             CloseableHttpResponse response = client.execute(get)) {
++            int code = response.getStatusLine().getStatusCode();
++            if (code < 200 || code >= 300) {
++                throw new IOException("Discovery request failed: HTTP " + code + " for " + wellKnown);
++            }
++            String body = EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
++            JsonNode root = objectMapper.readTree(body);
++            String issuer = textRequired(root, "issuer");
++            String authz = textRequired(root, "authorization_endpoint");
++            String token = textRequired(root, "token_endpoint");
++            String jwks = textRequired(root, "jwks_uri");
++            return new OidcDiscoveryDocument(System.currentTimeMillis(), issuer, authz, token, jwks);
++        }
++    }
++
++    @Nonnull
++    private static String textRequired(JsonNode root, String field) throws IOException {
++        JsonNode n = root.get(field);
++        if (n == null || !n.isTextual() || n.asText().isEmpty()) {
++            throw new IOException("Discovery document missing field: " + field);
++        }
++        return n.asText();
++    }
++
++    public static long defaultMaxCacheAgeMillis() {
++        return TimeUnit.HOURS.toMillis(1);
++    }
++
++    /**
++     * Validates that discovery issuer matches configured issuer (ignoring trailing slash).
++     */
++    public void assertIssuerCompatible(@Nonnull String configuredIssuer) throws IOException {
++        String a = trimTrailingSlash(configuredIssuer);
++        String b = trimTrailingSlash(issuer);
++        if (!a.equals(b)) {
++            throw new IOException("Discovery issuer mismatch: expected " + a + " but document has " + b);
++        }
++    }
++
++    @Nonnull
++    private static String trimTrailingSlash(@Nonnull String s) {
++        String t = s;
++        while (t.endsWith("/")) {
++            t = t.substring(0, t.length() - 1);
++        }
++        return t;
++    }
++}
+diff --git a/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcHttpTokenClient.java b/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcHttpTokenClient.java
+new file mode 100644
+index 000000000..a10f6e7d7
+--- /dev/null
++++ b/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcHttpTokenClient.java
+@@ -0,0 +1,53 @@
++package edu.stanford.bmir.protege.web.server.auth.oidc;
++
++import com.fasterxml.jackson.databind.ObjectMapper;
++import org.apache.http.NameValuePair;
++import org.apache.http.client.entity.UrlEncodedFormEntity;
++import org.apache.http.client.methods.CloseableHttpResponse;
++import org.apache.http.client.methods.HttpPost;
++import org.apache.http.impl.client.CloseableHttpClient;
++import org.apache.http.impl.client.HttpClients;
++import org.apache.http.message.BasicNameValuePair;
++import org.apache.http.util.EntityUtils;
++
++import javax.annotation.Nonnull;
++import javax.inject.Inject;
++import java.io.IOException;
++import java.nio.charset.StandardCharsets;
++import java.util.ArrayList;
++import java.util.List;
++
++public class OidcHttpTokenClient {
++
++    private final ObjectMapper objectMapper;
++
++    @Inject
++    public OidcHttpTokenClient(@Nonnull ObjectMapper objectMapper) {
++        this.objectMapper = objectMapper;
++    }
++
++    @Nonnull
++    public OidcTokenResponse exchangeAuthorizationCode(@Nonnull String tokenEndpoint,
++                                                       @Nonnull String code,
++                                                       @Nonnull String redirectUri,
++                                                       @Nonnull String clientId,
++                                                       @Nonnull String clientSecret) throws IOException {
++        HttpPost post = new HttpPost(tokenEndpoint);
++        List<NameValuePair> form = new ArrayList<>();
++        form.add(new BasicNameValuePair("grant_type", "authorization_code"));
++        form.add(new BasicNameValuePair("code", code));
++        form.add(new BasicNameValuePair("redirect_uri", redirectUri));
++        form.add(new BasicNameValuePair("client_id", clientId));
++        form.add(new BasicNameValuePair("client_secret", clientSecret));
++        post.setEntity(new UrlEncodedFormEntity(form, StandardCharsets.UTF_8));
++        try (CloseableHttpClient client = HttpClients.createSystem();
++             CloseableHttpResponse response = client.execute(post)) {
++            int status = response.getStatusLine().getStatusCode();
++            String body = response.getEntity() == null ? "" : EntityUtils.toString(response.getEntity(), StandardCharsets.UTF_8);
++            if (status < 200 || status >= 300) {
++                throw new IOException("Token endpoint returned HTTP " + status + ": " + body);
++            }
++            return OidcTokenResponse.parse(body, objectMapper);
++        }
++    }
++}
+diff --git a/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcIdTokenValidator.java b/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcIdTokenValidator.java
+new file mode 100644
+index 000000000..d0a88c711
+--- /dev/null
++++ b/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcIdTokenValidator.java
+@@ -0,0 +1,67 @@
++package edu.stanford.bmir.protege.web.server.auth.oidc;
++
++import com.nimbusds.jose.JOSEException;
++import com.nimbusds.jose.JWSAlgorithm;
++import com.nimbusds.jose.jwk.source.JWKSource;
++import com.nimbusds.jose.jwk.source.RemoteJWKSet;
++import com.nimbusds.jose.proc.BadJOSEException;
++import com.nimbusds.jose.proc.JWSKeySelector;
++import com.nimbusds.jose.proc.JWSVerificationKeySelector;
++import com.nimbusds.jose.proc.SecurityContext;
++import com.nimbusds.jwt.JWTClaimsSet;
++import com.nimbusds.jwt.SignedJWT;
++import com.nimbusds.jwt.proc.ConfigurableJWTProcessor;
++import com.nimbusds.jwt.proc.DefaultJWTProcessor;
++
++import javax.annotation.Nonnull;
++import java.net.MalformedURLException;
++import java.net.URL;
++import java.text.ParseException;
++import java.util.List;
++
++/**
++ * Validates an OIDC ID token signature and core claims against the provider JWKS.
++ */
++public final class OidcIdTokenValidator {
++
++    private OidcIdTokenValidator() {
++    }
++
++    @Nonnull
++    public static JWTClaimsSet validateAndParseClaims(@Nonnull String idTokenString,
++                                                      @Nonnull String expectedIssuer,
++                                                      @Nonnull String jwksUri,
++                                                      @Nonnull String clientId) throws ParseException, BadJOSEException, JOSEException, MalformedURLException {
++        SignedJWT signedJWT = SignedJWT.parse(idTokenString);
++        JWSAlgorithm alg = signedJWT.getHeader().getAlgorithm();
++        if (alg == null) {
++            throw new JOSEException("Missing JWS algorithm in ID token header");
++        }
++        URL jwksUrl = new URL(jwksUri);
++        JWKSource<SecurityContext> keySource = new RemoteJWKSet<>(jwksUrl);
++        ConfigurableJWTProcessor<SecurityContext> processor = new DefaultJWTProcessor<>();
++        JWSKeySelector<SecurityContext> keySelector = new JWSVerificationKeySelector<>(alg, keySource);
++        processor.setJWSKeySelector(keySelector);
++        JWTClaimsSet claims = processor.process(signedJWT, null);
++        if (!expectedIssuer.equals(claims.getIssuer())) {
++            throw new BadJOSEException("ID token issuer mismatch");
++        }
++        if (!audienceAcceptsClient(claims, clientId)) {
++            throw new BadJOSEException("ID token audience mismatch for client_id=" + clientId);
++        }
++        return claims;
++    }
++
++    private static boolean audienceAcceptsClient(@Nonnull JWTClaimsSet claims, @Nonnull String clientId) throws ParseException {
++        List<String> aud = claims.getAudience();
++        if (aud != null) {
++            for (String a : aud) {
++                if (clientId.equals(a)) {
++                    return true;
++                }
++            }
++        }
++        String azp = claims.getStringClaim("azp");
++        return clientId.equals(azp);
++    }
++}
+diff --git a/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcRuntimeConfig.java b/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcRuntimeConfig.java
+new file mode 100644
+index 000000000..5fa95a753
+--- /dev/null
++++ b/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcRuntimeConfig.java
+@@ -0,0 +1,121 @@
++package edu.stanford.bmir.protege.web.server.auth.oidc;
++
++import javax.annotation.Nonnull;
++import java.util.Optional;
++
++import static com.google.common.base.Preconditions.checkNotNull;
++
++/**
++ * Resolved OpenID Connect settings for Keycloak (or any OIDC provider). See
++ * {@link OidcRuntimeConfigLoader} for the supported configuration keys.
++ */
++public final class OidcRuntimeConfig {
++
++    public static final OidcRuntimeConfig DISABLED = new OidcRuntimeConfig(false, "", "", "", Optional.empty(),
++            "openid profile email", "preferred_username", false);
++
++    private final boolean enabled;
++
++    @Nonnull
++    private final String issuerUri;
++
++    @Nonnull
++    private final String clientId;
++
++    @Nonnull
++    private final String clientSecret;
++
++    @Nonnull
++    private final Optional<String> redirectUriOverride;
++
++    @Nonnull
++    private final String scopes;
++
++    @Nonnull
++    private final String usernameClaim;
++
++    private final boolean hideLocalLogin;
++
++    private OidcRuntimeConfig(boolean enabled,
++                              @Nonnull String issuerUri,
++                              @Nonnull String clientId,
++                              @Nonnull String clientSecret,
++                              @Nonnull Optional<String> redirectUriOverride,
++                              @Nonnull String scopes,
++                              @Nonnull String usernameClaim,
++                              boolean hideLocalLogin) {
++        this.enabled = enabled;
++        this.issuerUri = issuerUri;
++        this.clientId = clientId;
++        this.clientSecret = clientSecret;
++        this.redirectUriOverride = redirectUriOverride;
++        this.scopes = scopes;
++        this.usernameClaim = usernameClaim;
++        this.hideLocalLogin = hideLocalLogin;
++    }
++
++    @Nonnull
++    public static OidcRuntimeConfig enabled(@Nonnull String issuerUri,
++                                            @Nonnull String clientId,
++                                            @Nonnull String clientSecret,
++                                            @Nonnull Optional<String> redirectUriOverride,
++                                            @Nonnull String scopes,
++                                            @Nonnull String usernameClaim,
++                                            boolean hideLocalLogin) {
++        return new OidcRuntimeConfig(true,
++                normalizeIssuer(checkNotNull(issuerUri)),
++                checkNotNull(clientId),
++                checkNotNull(clientSecret),
++                checkNotNull(redirectUriOverride),
++                scopes.isEmpty() ? "openid profile email" : scopes,
++                usernameClaim.isEmpty() ? "preferred_username" : usernameClaim,
++                hideLocalLogin);
++    }
++
++    @Nonnull
++    private static String normalizeIssuer(@Nonnull String issuer) {
++        String trimmed = issuer.trim();
++        while (trimmed.endsWith("/")) {
++            trimmed = trimmed.substring(0, trimmed.length() - 1);
++        }
++        return trimmed;
++    }
++
++    public boolean isEnabled() {
++        return enabled;
++    }
++
++    @Nonnull
++    public String getIssuerUri() {
++        return issuerUri;
++    }
++
++    @Nonnull
++    public String getClientId() {
++        return clientId;
++    }
++
++    @Nonnull
++    public String getClientSecret() {
++        return clientSecret;
++    }
++
++    @Nonnull
++    public Optional<String> getRedirectUriOverride() {
++        return redirectUriOverride;
++    }
++
++    @Nonnull
++    public String getScopes() {
++        return scopes;
++    }
++
++    @Nonnull
++    public String getUsernameClaim() {
++        return usernameClaim;
++    }
++
++    public boolean isHideLocalLogin() {
++        return hideLocalLogin;
++    }
++}
+diff --git a/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcRuntimeConfigLoader.java b/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcRuntimeConfigLoader.java
+new file mode 100644
+index 000000000..ca2cf9517
+--- /dev/null
++++ b/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcRuntimeConfigLoader.java
+@@ -0,0 +1,95 @@
++package edu.stanford.bmir.protege.web.server.auth.oidc;
++
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import javax.annotation.Nonnull;
++import java.util.Optional;
++
++/**
++ * Loads {@link OidcRuntimeConfig} from the process environment or JVM system properties.
++ *
++ * <p>For each setting two equivalent keys are accepted (env wins over system property):</p>
++ * <table>
++ *   <tr><th>Setting</th><th>Environment variable</th><th>JVM system property (-D)</th></tr>
++ *   <tr><td>Issuer URI (required)</td><td>{@code WEBPROTEGE_OIDC_ISSUER_URI}</td><td>{@code webprotege.oidc.issuer.uri}</td></tr>
++ *   <tr><td>Client ID (required)</td><td>{@code WEBPROTEGE_OIDC_CLIENT_ID}</td><td>{@code webprotege.oidc.client.id}</td></tr>
++ *   <tr><td>Client secret (required)</td><td>{@code WEBPROTEGE_OIDC_CLIENT_SECRET}</td><td>{@code webprotege.oidc.client.secret}</td></tr>
++ *   <tr><td>Redirect URI (optional)</td><td>{@code WEBPROTEGE_OIDC_REDIRECT_URI}</td><td>{@code webprotege.oidc.redirect.uri}</td></tr>
++ *   <tr><td>Scopes (optional)</td><td>{@code WEBPROTEGE_OIDC_SCOPES}</td><td>{@code webprotege.oidc.scopes}</td></tr>
++ *   <tr><td>Username claim (optional)</td><td>{@code WEBPROTEGE_OIDC_USERNAME_CLAIM}</td><td>{@code webprotege.oidc.username.claim}</td></tr>
++ *   <tr><td>Hide local login (optional)</td><td>{@code WEBPROTEGE_OIDC_HIDE_LOCAL_LOGIN}</td><td>{@code webprotege.oidc.hide.local.login}</td></tr>
++ * </table>
++ *
++ * <p>OIDC identities are always linked to a local user record by {@code preferred_username}
++ * (or whatever {@code WEBPROTEGE_OIDC_USERNAME_CLAIM} is set to). Email is never used to pick an
++ * existing account.</p>
++ */
++public final class OidcRuntimeConfigLoader {
++
++    private static final Logger logger = LoggerFactory.getLogger(OidcRuntimeConfigLoader.class);
++
++    private OidcRuntimeConfigLoader() {
++    }
++
++    @Nonnull
++    public static OidcRuntimeConfig load() {
++        String issuer = read("WEBPROTEGE_OIDC_ISSUER_URI", "webprotege.oidc.issuer.uri");
++        String clientId = read("WEBPROTEGE_OIDC_CLIENT_ID", "webprotege.oidc.client.id");
++        String clientSecret = read("WEBPROTEGE_OIDC_CLIENT_SECRET", "webprotege.oidc.client.secret");
++        if (isBlank(issuer) || isBlank(clientId) || isBlank(clientSecret)) {
++            logger.info("OIDC SSO is disabled (set WEBPROTEGE_OIDC_ISSUER_URI, WEBPROTEGE_OIDC_CLIENT_ID and WEBPROTEGE_OIDC_CLIENT_SECRET to enable).");
++            return OidcRuntimeConfig.DISABLED;
++        }
++        Optional<String> redirect = optional(read("WEBPROTEGE_OIDC_REDIRECT_URI", "webprotege.oidc.redirect.uri"));
++        String scopes = nullSafeTrim(read("WEBPROTEGE_OIDC_SCOPES", "webprotege.oidc.scopes"));
++        String usernameClaim = nullSafeTrim(read("WEBPROTEGE_OIDC_USERNAME_CLAIM", "webprotege.oidc.username.claim"));
++        boolean hideLocal = parseBoolean(read("WEBPROTEGE_OIDC_HIDE_LOCAL_LOGIN", "webprotege.oidc.hide.local.login"));
++        logger.info("OIDC SSO enabled (issuer={}, clientId={}, hideLocalLogin={})", issuer.trim(), clientId.trim(), hideLocal);
++        return OidcRuntimeConfig.enabled(issuer.trim(), clientId.trim(), clientSecret.trim(), redirect, scopes, usernameClaim, hideLocal);
++    }
++
++    private static String read(String envKey, String sysPropKey) {
++        String v = getenv(envKey);
++        if (!isBlank(v)) {
++            return v;
++        }
++        return getSysProp(sysPropKey);
++    }
++
++    private static Optional<String> optional(String value) {
++        return isBlank(value) ? Optional.empty() : Optional.of(value.trim());
++    }
++
++    private static String nullSafeTrim(String value) {
++        return value == null ? "" : value.trim();
++    }
++
++    private static boolean parseBoolean(String raw) {
++        if (isBlank(raw)) {
++            return false;
++        }
++        String t = raw.trim();
++        return "true".equalsIgnoreCase(t) || "1".equals(t) || "yes".equalsIgnoreCase(t);
++    }
++
++    private static String getenv(String key) {
++        try {
++            return System.getenv(key);
++        } catch (SecurityException e) {
++            return null;
++        }
++    }
++
++    private static String getSysProp(String key) {
++        try {
++            return System.getProperty(key, null);
++        } catch (SecurityException e) {
++            return null;
++        }
++    }
++
++    private static boolean isBlank(String s) {
++        return s == null || s.trim().isEmpty();
++    }
++}
+diff --git a/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcSsoUserProvisioner.java b/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcSsoUserProvisioner.java
+new file mode 100644
+index 000000000..6caab8592
+--- /dev/null
++++ b/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcSsoUserProvisioner.java
+@@ -0,0 +1,163 @@
++package edu.stanford.bmir.protege.web.server.auth.oidc;
++
++import com.google.common.io.BaseEncoding;
++import com.nimbusds.jwt.JWTClaimsSet;
++import edu.stanford.bmir.protege.web.server.auth.AuthenticationManager;
++import edu.stanford.bmir.protege.web.server.user.UserRecord;
++import edu.stanford.bmir.protege.web.server.user.UserRecordRepository;
++import edu.stanford.bmir.protege.web.shared.auth.Salt;
++import edu.stanford.bmir.protege.web.shared.auth.SaltedPasswordDigest;
++import edu.stanford.bmir.protege.web.shared.user.EmailAddress;
++import edu.stanford.bmir.protege.web.shared.user.UserEmailAlreadyExistsException;
++import edu.stanford.bmir.protege.web.shared.user.UserId;
++import edu.stanford.bmir.protege.web.shared.user.UserRegistrationException;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import javax.annotation.Nonnull;
++import javax.inject.Inject;
++import java.security.SecureRandom;
++import java.text.ParseException;
++import java.util.Locale;
++import java.util.Optional;
++
++import static com.google.common.base.Preconditions.checkNotNull;
++
++/**
++ * Maps OIDC claims to a {@link UserId}, optionally creating a local account with an unusable password digest
++ * (SSO-only users cannot complete the CHAP password login path).
++ */
++public class OidcSsoUserProvisioner {
++
++    private static final Logger logger = LoggerFactory.getLogger(OidcSsoUserProvisioner.class);
++
++    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
++
++    private final UserRecordRepository userRecordRepository;
++
++    private final AuthenticationManager authenticationManager;
++
++    @Inject
++    public OidcSsoUserProvisioner(@Nonnull UserRecordRepository userRecordRepository,
++                                @Nonnull AuthenticationManager authenticationManager) {
++        this.userRecordRepository = checkNotNull(userRecordRepository);
++        this.authenticationManager = checkNotNull(authenticationManager);
++    }
++
++    @Nonnull
++    public UserId resolveOrProvisionUser(@Nonnull JWTClaimsSet claims,
++                                         @Nonnull String usernameClaimName) throws ParseException {
++        Optional<String> email = Optional.ofNullable(claims.getStringClaim("email"))
++                .map(String::trim)
++                .filter(s -> !s.isEmpty());
++        boolean emailVerified = Boolean.TRUE.equals(claims.getBooleanClaim("email_verified"));
++        String sub = Optional.ofNullable(claims.getSubject()).orElse("").trim();
++        String rawUsername = claims.getStringClaim(usernameClaimName);
++        if (rawUsername == null || rawUsername.trim().isEmpty()) {
++            rawUsername = sub;
++        }
++        String candidate = sanitizeUserName(rawUsername);
++        if (candidate.isEmpty()) {
++            candidate = "u_" + shortHash(sub);
++        }
++        if ("guest".equalsIgnoreCase(candidate)) {
++            candidate = "u_" + shortHash(sub);
++        }
++
++        Optional<UserRecord> byUsername = userRecordRepository.findOne(UserId.getUserId(candidate));
++        if (byUsername.isPresent()) {
++            logger.info("OIDC login matched existing user by username {} (sub={})", candidate, sub);
++            return byUsername.get().getUserId();
++        }
++
++        return createAccountIfMissing(UserId.getUserId(candidate), email, emailVerified, sub);
++    }
++
++    @Nonnull
++    private UserId createAccountIfMissing(@Nonnull UserId userId,
++                                          @Nonnull Optional<String> email,
++                                          boolean emailVerified,
++                                          @Nonnull String subKey) {
++        if (userRecordRepository.findOne(userId).isPresent()) {
++            return userId;
++        }
++        String emailStr = (email.isPresent() && emailVerified) ? email.get() : "";
++        Salt salt = randomSalt();
++        SaltedPasswordDigest digest = randomDigest();
++        try {
++            authenticationManager.registerUser(userId, new EmailAddress(emailStr), digest, salt);
++            logger.info("Provisioned WebProtege user {} from OIDC (sub={}, emailVerified={})",
++                    userId.getUserName(), subKey, emailVerified);
++            return userId;
++        } catch (UserRegistrationException e) {
++            if (e instanceof UserEmailAlreadyExistsException && !emailStr.isEmpty()) {
++                UserId fallback = UserId.getUserId(userId.getUserName() + "_" + shortHash(subKey));
++                try {
++                    authenticationManager.registerUser(fallback, new EmailAddress(""), randomDigest(), randomSalt());
++                } catch (UserRegistrationException e2) {
++                    logger.error("Could not provision OIDC user after email conflict", e2);
++                    throw e2;
++                }
++                logger.info("Provisioned WebProtege user {} from OIDC after email conflict on {} (sub={})",
++                        fallback.getUserName(), emailStr, subKey);
++                return fallback;
++            }
++            UserId fallback = UserId.getUserId(userId.getUserName() + "_" + shortHash(subKey));
++            if (userRecordRepository.findOne(fallback).isPresent()) {
++                return fallback;
++            }
++            try {
++                authenticationManager.registerUser(fallback, new EmailAddress(emailStr), randomDigest(), randomSalt());
++            } catch (UserRegistrationException e2) {
++                logger.error("Could not provision OIDC user after conflict resolution", e2);
++                throw e2;
++            }
++            logger.info("Provisioned WebProtege user {} from OIDC after registration conflict (sub={})", fallback.getUserName(), subKey);
++            return fallback;
++        }
++    }
++
++    @Nonnull
++    private static Salt randomSalt() {
++        byte[] b = new byte[16];
++        SECURE_RANDOM.nextBytes(b);
++        return new Salt(b);
++    }
++
++    @Nonnull
++    private static SaltedPasswordDigest randomDigest() {
++        byte[] b = new byte[16];
++        SECURE_RANDOM.nextBytes(b);
++        return new SaltedPasswordDigest(b);
++    }
++
++    @Nonnull
++    private static String shortHash(@Nonnull String s) {
++        int h = s.hashCode();
++        byte[] b = new byte[]{(byte) (h >> 24), (byte) (h >> 16), (byte) (h >> 8), (byte) h};
++        return BaseEncoding.base16().lowerCase().encode(b);
++    }
++
++    @Nonnull
++    private static String sanitizeUserName(@Nonnull String raw) {
++        String trimmed = raw.trim().toLowerCase(Locale.ROOT);
++        if (trimmed.isEmpty()) {
++            return "";
++        }
++        StringBuilder sb = new StringBuilder(trimmed.length());
++        for (int i = 0; i < trimmed.length(); i++) {
++            char c = trimmed.charAt(i);
++            if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_' || c == '-' || c == '.') {
++                sb.append(c);
++            }
++            else {
++                sb.append('_');
++            }
++        }
++        String s = sb.toString();
++        if (s.length() > 200) {
++            s = s.substring(0, 200);
++        }
++        return s;
++    }
++}
+diff --git a/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcTokenResponse.java b/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcTokenResponse.java
+new file mode 100644
+index 000000000..201d2429c
+--- /dev/null
++++ b/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcTokenResponse.java
+@@ -0,0 +1,32 @@
++package edu.stanford.bmir.protege.web.server.auth.oidc;
++
++import com.fasterxml.jackson.databind.JsonNode;
++import com.fasterxml.jackson.databind.ObjectMapper;
++
++import javax.annotation.Nonnull;
++import java.io.IOException;
++
++final class OidcTokenResponse {
++
++    @Nonnull
++    private final String idToken;
++
++    private OidcTokenResponse(@Nonnull String idToken) {
++        this.idToken = idToken;
++    }
++
++    @Nonnull
++    String getIdToken() {
++        return idToken;
++    }
++
++    @Nonnull
++    static OidcTokenResponse parse(@Nonnull String json, @Nonnull ObjectMapper mapper) throws IOException {
++        JsonNode root = mapper.readTree(json);
++        JsonNode id = root.get("id_token");
++        if (id == null || !id.isTextual() || id.asText().isEmpty()) {
++            throw new IOException("Token response missing id_token");
++        }
++        return new OidcTokenResponse(id.asText());
++    }
++}
+diff --git a/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/inject/ApplicationModule.java b/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/inject/ApplicationModule.java
+index 1e403c731..59faf47cb 100644
+--- a/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/inject/ApplicationModule.java
++++ b/webprotege-server-core/src/main/java/edu/stanford/bmir/protege/web/server/inject/ApplicationModule.java
+@@ -16,6 +16,8 @@ import edu.stanford.bmir.protege.web.server.app.ApplicationSettingsManager;
+ import edu.stanford.bmir.protege.web.server.app.WebProtegeProperties;
+ import edu.stanford.bmir.protege.web.server.auth.AuthenticationManager;
+ import edu.stanford.bmir.protege.web.server.auth.AuthenticationManagerImpl;
++import edu.stanford.bmir.protege.web.server.auth.oidc.OidcRuntimeConfig;
++import edu.stanford.bmir.protege.web.server.auth.oidc.OidcRuntimeConfigLoader;
+ import edu.stanford.bmir.protege.web.server.change.OntologyChangeRecordTranslator;
+ import edu.stanford.bmir.protege.web.server.change.OntologyChangeRecordTranslatorImpl;
+ import edu.stanford.bmir.protege.web.server.collection.CollectionItemDataRepository;
+@@ -172,6 +174,7 @@ public class ApplicationModule {
+         return dataFactory;
+     }
+ 
++    @Provides
+     @ApplicationSingleton
+     public UserActivityManager provideUserActivityManager(UserActivityManagerProvider provider) {
+         return provider.get();
+@@ -183,6 +186,12 @@ public class ApplicationModule {
+         return povider.get();
+     }
+ 
++    @Provides
++    @ApplicationSingleton
++    public OidcRuntimeConfig provideOidcRuntimeConfig() {
++        return OidcRuntimeConfigLoader.load();
++    }
++
+     @Provides
+     @MailProperties
+     @ApplicationSingleton
+diff --git a/webprotege-server-core/src/main/resources/webprotege.properties b/webprotege-server-core/src/main/resources/webprotege.properties
+index b6a41bbdc..bc54fe013 100644
+--- a/webprotege-server-core/src/main/resources/webprotege.properties
++++ b/webprotege-server-core/src/main/resources/webprotege.properties
+@@ -41,3 +41,17 @@ application.version=${version}
+ 
+ # --------
+ project.dormant.time=180000
++
++# OIDC / Keycloak SSO is configured ONLY via environment variables or JVM -D options,
++# not via this file. Supported environment variables (env wins over -D):
++#   WEBPROTEGE_OIDC_ISSUER_URI         (required, e.g. https://auth.example.com/realms/myrealm)
++#   WEBPROTEGE_OIDC_CLIENT_ID          (required, Keycloak client id)
++#   WEBPROTEGE_OIDC_CLIENT_SECRET      (required for confidential clients)
++#   WEBPROTEGE_OIDC_REDIRECT_URI       (optional; auto-derived from request when unset)
++#   WEBPROTEGE_OIDC_SCOPES             (optional; defaults to "openid profile email")
++#   WEBPROTEGE_OIDC_USERNAME_CLAIM     (optional; defaults to "preferred_username")
++#   WEBPROTEGE_OIDC_HIDE_LOCAL_LOGIN   (optional; "true" hides the username/password form)
++#
++# OIDC identities are always linked by preferred_username (or WEBPROTEGE_OIDC_USERNAME_CLAIM).
++# If no local user with that username exists, one is created on first login.
++# Equivalent JVM properties: -Dwebprotege.oidc.issuer.uri=... etc.
+diff --git a/webprotege-server/src/main/java/edu/stanford/bmir/protege/web/server/app/ServerComponent.java b/webprotege-server/src/main/java/edu/stanford/bmir/protege/web/server/app/ServerComponent.java
+index 231971348..328d55868 100644
+--- a/webprotege-server/src/main/java/edu/stanford/bmir/protege/web/server/app/ServerComponent.java
++++ b/webprotege-server/src/main/java/edu/stanford/bmir/protege/web/server/app/ServerComponent.java
+@@ -10,6 +10,8 @@ import edu.stanford.bmir.protege.web.server.inject.project.ProjectModule;
+ import edu.stanford.bmir.protege.web.server.project.ProjectCacheManager;
+ import edu.stanford.bmir.protege.web.server.project.ProjectDisposablesManager;
+ import edu.stanford.bmir.protege.web.server.upload.FileUploadServlet;
++import edu.stanford.bmir.protege.web.server.auth.oidc.OidcAuthServlet;
++import edu.stanford.bmir.protege.web.server.auth.oidc.OidcRuntimeConfig;
+ import edu.stanford.bmir.protege.web.server.user.UserDetailsManager;
+ import edu.stanford.bmir.protege.web.server.util.DisposableObjectManager;
+ import edu.stanford.bmir.protege.web.shared.inject.ApplicationSingleton;
+@@ -61,4 +63,7 @@ public interface ServerComponent {
+ 
+     ProjectCacheManager getProjectCacheManager();
+ 
++    OidcAuthServlet getOidcAuthServlet();
++
++    OidcRuntimeConfig getOidcRuntimeConfig();
+ }
+diff --git a/webprotege-server/src/main/java/edu/stanford/bmir/protege/web/server/app/WebProtegeServletContextListener.java b/webprotege-server/src/main/java/edu/stanford/bmir/protege/web/server/app/WebProtegeServletContextListener.java
+index 44245e9ad..f46a45578 100644
+--- a/webprotege-server/src/main/java/edu/stanford/bmir/protege/web/server/app/WebProtegeServletContextListener.java
++++ b/webprotege-server/src/main/java/edu/stanford/bmir/protege/web/server/app/WebProtegeServletContextListener.java
+@@ -45,6 +45,9 @@ public class WebProtegeServletContextListener implements ServletContextListener
+             servletContext.addServlet("JerseyContainerServlet", serverComponent.getJerseyServletContainer())
+                           .addMapping("/data/*");
+ 
++            servletContext.addServlet("OidcAuthServlet", serverComponent.getOidcAuthServlet())
++                          .addMapping("/webprotege/oidc/login", "/webprotege/oidc/callback");
++
+             servletContext.addListener(serverComponent.getSessionListener());
+             serverComponent.getWebProtegeConfigurationChecker().performConfiguration();
+             serverComponent.getProjectCacheManager().start();
+diff --git a/webprotege-server/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcAuthServlet.java b/webprotege-server/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcAuthServlet.java
+new file mode 100644
+index 000000000..90edb9980
+--- /dev/null
++++ b/webprotege-server/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcAuthServlet.java
+@@ -0,0 +1,114 @@
++package edu.stanford.bmir.protege.web.server.auth.oidc;
++
++import com.nimbusds.jose.JOSEException;
++import com.nimbusds.jose.proc.BadJOSEException;
++import edu.stanford.bmir.protege.web.server.session.WebProtegeSession;
++import edu.stanford.bmir.protege.web.server.session.WebProtegeSessionImpl;
++import edu.stanford.bmir.protege.web.server.user.UserActivityManager;
++import edu.stanford.bmir.protege.web.shared.inject.ApplicationSingleton;
++import edu.stanford.bmir.protege.web.shared.user.UserId;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++
++import javax.annotation.Nonnull;
++import javax.inject.Inject;
++import javax.servlet.http.HttpServlet;
++import javax.servlet.http.HttpServletRequest;
++import javax.servlet.http.HttpServletResponse;
++import java.io.IOException;
++import java.text.ParseException;
++
++/**
++ * OIDC authorization code flow entry points for Keycloak (or compatible IdPs).
++ * <ul>
++ *     <li>{@code GET /webprotege/oidc/login} — redirects the browser to the IdP</li>
++ *     <li>{@code GET /webprotege/oidc/callback} — handles the redirect back, establishes the session</li>
++ * </ul>
++ */
++@ApplicationSingleton
++public class OidcAuthServlet extends HttpServlet {
++
++    private static final Logger logger = LoggerFactory.getLogger(OidcAuthServlet.class);
++
++    @Nonnull
++    private final OidcRuntimeConfig config;
++
++    @Nonnull
++    private final OidcAuthCoordinator coordinator;
++
++    @Nonnull
++    private final UserActivityManager activityManager;
++
++    @Inject
++    public OidcAuthServlet(@Nonnull OidcRuntimeConfig config,
++                           @Nonnull OidcAuthCoordinator coordinator,
++                           @Nonnull UserActivityManager activityManager) {
++        this.config = config;
++        this.coordinator = coordinator;
++        this.activityManager = activityManager;
++    }
++
++    @Override
++    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
++        if (!config.isEnabled() || !coordinator.isEnabled()) {
++            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
++            return;
++        }
++        String servletPath = req.getServletPath();
++        if (servletPath.endsWith("/login")) {
++            handleLogin(req, resp);
++        }
++        else if (servletPath.endsWith("/callback")) {
++            handleCallback(req, resp);
++        }
++        else {
++            resp.sendError(HttpServletResponse.SC_NOT_FOUND);
++        }
++    }
++
++    private void handleLogin(HttpServletRequest req, HttpServletResponse resp) throws IOException {
++        String callbackUrl = OidcRedirectUriResolver.callbackUrl(req, config);
++        try {
++            String location = coordinator.buildAuthorizationRedirectUrl(req.getSession(), callbackUrl);
++            resp.sendRedirect(location);
++        } catch (Exception e) {
++            logger.error("OIDC login redirect failed: {}", e.getMessage(), e);
++            resp.sendRedirect(errorLanding(req, "start"));
++        }
++    }
++
++    private void handleCallback(HttpServletRequest req, HttpServletResponse resp) throws IOException {
++        String code = req.getParameter("code");
++        String state = req.getParameter("state");
++        String error = req.getParameter("error");
++        if (error != null) {
++            logger.warn("OIDC provider returned error: {} / {}", error, req.getParameter("error_description"));
++            resp.sendRedirect(errorLanding(req, "provider"));
++            return;
++        }
++        if (code == null || state == null) {
++            resp.sendRedirect(errorLanding(req, "missing"));
++            return;
++        }
++        try {
++            UserId userId = coordinator.completeLogin(req.getSession(), code, state);
++            WebProtegeSession webSession = new WebProtegeSessionImpl(req.getSession());
++            webSession.setUserInSession(userId);
++            activityManager.setLastLogin(userId, System.currentTimeMillis());
++            resp.sendRedirect(successLanding(req));
++        } catch (IOException | ParseException | BadJOSEException | JOSEException e) {
++            logger.error("OIDC callback failed: {}", e.getMessage(), e);
++            resp.sendRedirect(errorLanding(req, "token"));
++        }
++    }
++
++    @Nonnull
++    private static String successLanding(HttpServletRequest req) {
++        return req.getContextPath() + "/WebProtege.jsp";
++    }
++
++    @Nonnull
++    private static String errorLanding(HttpServletRequest req, String code) {
++        return req.getContextPath() + "/WebProtege.jsp?oidc_error=" + code;
++    }
++}
+diff --git a/webprotege-server/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcRedirectUriResolver.java b/webprotege-server/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcRedirectUriResolver.java
+new file mode 100644
+index 000000000..4d37b63d6
+--- /dev/null
++++ b/webprotege-server/src/main/java/edu/stanford/bmir/protege/web/server/auth/oidc/OidcRedirectUriResolver.java
+@@ -0,0 +1,36 @@
++package edu.stanford.bmir.protege.web.server.auth.oidc;
++
++import javax.annotation.Nonnull;
++import javax.servlet.http.HttpServletRequest;
++
++/**
++ * Builds the public callback URL registered with the OIDC client (Keycloak).
++ */
++public final class OidcRedirectUriResolver {
++
++    private OidcRedirectUriResolver() {
++    }
++
++    @Nonnull
++    public static String callbackUrl(@Nonnull HttpServletRequest req, @Nonnull OidcRuntimeConfig config) {
++        if (config.getRedirectUriOverride().isPresent()) {
++            return config.getRedirectUriOverride().get();
++        }
++        String scheme = firstNonBlank(req.getHeader("X-Forwarded-Proto"), req.getScheme());
++        String host = firstNonBlank(req.getHeader("X-Forwarded-Host"), req.getHeader("Host"));
++        if (host == null || host.isEmpty()) {
++            int port = req.getServerPort();
++            String defaultPort = "http".equalsIgnoreCase(scheme) ? "80" : "443";
++            host = req.getServerName() + (String.valueOf(port).equals(defaultPort) ? "" : ":" + port);
++        }
++        String context = req.getContextPath() == null ? "" : req.getContextPath();
++        return scheme + "://" + host + context + "/webprotege/oidc/callback";
++    }
++
++    private static String firstNonBlank(String a, String b) {
++        if (a != null && !a.trim().isEmpty()) {
++            return a.trim();
++        }
++        return b == null ? "" : b.trim();
++    }
++}
+diff --git a/webprotege-server/src/main/webapp/WebProtege.jsp b/webprotege-server/src/main/webapp/WebProtege.jsp
+index d3888be3c..4c04f08de 100644
+--- a/webprotege-server/src/main/webapp/WebProtege.jsp
++++ b/webprotege-server/src/main/webapp/WebProtege.jsp
+@@ -17,6 +17,8 @@
+ <%@ page import="java.util.Set" %>
+ <%@ page import="edu.stanford.bmir.protege.web.server.app.ApplicationSettingsChecker" %>
+ <%@ page import="edu.stanford.bmir.protege.web.server.app.ServerComponent" %>
++<%@ page import="edu.stanford.bmir.protege.web.server.auth.oidc.OidcRuntimeConfig" %>
++<%@ page import="javax.servlet.http.HttpServletRequest" %>
+ <!DOCTYPE html>
+ 
+ <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+@@ -44,12 +46,13 @@
+ 
+     <script src="https://unpkg.com/popper.js@1.14.4/dist/umd/popper.js"></script>
+     <script src="https://unpkg.com/tooltip.js@1.3.0/dist/umd/tooltip.js"></script>
+-    <script src="https://unpkg.com/uuid@latest/dist/umd/uuidv4.min.js"></script>
++    <script src="https://unpkg.com/uuid@8.3.2/dist/umd/uuidv4.min.js"></script>
+ 
+ 
+ 
+     <script>
+         <%
++            writeOidcBootstrap(out, request);
+             writeUserInSession(session, out);
+         %>
+     </script>
+@@ -135,6 +138,31 @@
+         return styleCustomizationFileManager.getStyleCustomization();
+     }
+ 
++    private void writeOidcBootstrap(JspWriter out, HttpServletRequest request) throws IOException {
++        try {
++            ServerComponent component = getServerComponent();
++            OidcRuntimeConfig oidc = component.getOidcRuntimeConfig();
++            boolean enabled = oidc.isEnabled();
++            boolean hideLocal = oidc.isHideLocalLogin();
++            String ctx = request.getContextPath();
++            if (ctx == null) {
++                ctx = "";
++            }
++            String login = ctx + "/webprotege/oidc/login";
++            out.println("window.webprotegeOidcSsoEnabled = " + enabled + ";");
++            out.println("window.webprotegeOidcHideLocalLogin = " + hideLocal + ";");
++            out.println("window.webprotegeOidcLoginUrl = \"" + escapeForJsString(login) + "\";");
++        } catch (Throwable t) {
++            out.println("window.webprotegeOidcSsoEnabled = false;");
++            out.println("window.webprotegeOidcHideLocalLogin = false;");
++            out.println("window.webprotegeOidcLoginUrl = \"\";");
++        }
++    }
++
++    private String escapeForJsString(String s) {
++        return s.replace("\\", "\\\\").replace("\"", "\\\"");
++    }
++
+     private void writeUserInSession(HttpSession session, JspWriter out) {
+         WebProtegeSession webProtegeSession = new WebProtegeSessionImpl(session);
+         UserId userId = webProtegeSession.getUserInSession();
