@@ -19,8 +19,12 @@ Issues bitte mit diesem Formular einreichen.
   - [ ] Logge Dich mit Single Sign-On (SODa SCS Client) in das WissKI ein
 
 ### 3. Dashboard erkunden
-- [ ] **Übersicht**: Öffne das Dashboard und überprüfe Deine deployten Anwendungen
-- [ ] **Status prüfen**: Überprüfe den Healthcheck-Status aller Anwendungen
+- [ ] **Übersicht**: Öffne das Dashboard und überprüfe Deine Projekte
+- [ ] **Projekt öffnen**: Öffne ein Projekt und prüfe die Anwendungen (inkl. JupyterHub, Nextcloud, WebProtégé)
+- [ ] **Status prüfen**: Überprüfe den Healthcheck-Status der Anwendungen
+- [ ] **Starten / Stoppen / Neu starten**: Bei WissKI, MariaDB, Triplestore und Jupyter (Notebook) das Status-Icon auf der Karte hovern (am Telefon antippen). Bei „Läuft“ erscheinen Stoppen und Neu starten; bei „Gestoppt“ erscheint Starten. Nextcloud und WebProtégé haben diese Steuerung nicht (gemeinsame Dienste).
+- [ ] **JupyterHub-Projektordner**: Die JupyterHub-Karte im Projekt öffnet den Team-Folder unter `nextcloud/<Projektname>`
+- [ ] **Nextcloud-Aktivitäten**: Die Nextcloud-Karte im Projekt zeigt die letzten Aktivitäten im Projektordner (scs_manager_integration-Feed)
 - [ ] **Anwendungsdetails**: Öffne die Detailansicht einer Anwendung
 - [ ] **Bearbeitung**: Bearbeite eine Anwendung (z.B. Label oder Projektzuordnung ändern)
 
@@ -28,8 +32,10 @@ Issues bitte mit diesem Formular einreichen.
 
 ### 4. Weitere Anwendungen deployen
 - [ ] **Nextcloud**:
+  - [ ] Öffne Nextcloud über die Karte auf der Projektseite (Team-Folder des Projekts)
   - [ ] Logge Dich in Nextcloud ein
 - [ ] **JupyterLab**:
+  - [ ] Öffne JupyterHub über die Karte auf der Projektseite (Projektordner in Lab)
   - [ ] Logge Dich in Jupyter ein
 - [ ] **MariaDB**:
   - [ ] Erstelle eine Datenbank
