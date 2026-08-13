@@ -7,11 +7,11 @@ This section describes what is in the SODa SCS Manager deployment and how the se
 The deployment is built from multiple Docker Compose files merged via the `COMPOSE_FILE` environment variable (see `example-env`). It includes:
 
 - A **main stack** (`docker-compose.yml`): Traefik reverse proxy, shared MariaDB, Portainer, phpMyAdmin, access-proxy helper, and the **Nextcloud FUSE mounter** sidecar (`nextcloud-mounter`).
-- **Submodule stacks**: SCS Manager (Drupal), Nextcloud, JupyterHub, Keycloak, OpenGDB, the project website stack, and the SCS Health dashboard.
+- **Submodule stacks**: SCS Manager (Drupal), Nextcloud, JupyterHub, Keycloak, OpenGDB, WebProtégé, the project website stack, and the SCS Health dashboard.
 
 All services that serve HTTP or need to be reached by Traefik attach to the same Docker network, `reverse-proxy`. The shared MariaDB instance is used by Keycloak, SCS Manager, Nextcloud, and the project website; each has its own database and user created by pre-install scripts.
 
-Keycloak is the central identity provider (IdP): SCS Manager, Nextcloud, and JupyterHub use OpenID Connect to authenticate users against Keycloak.
+Keycloak is the central identity provider (IdP): SCS Manager, Nextcloud, JupyterHub, and WebProtégé use OpenID Connect to authenticate users against Keycloak.
 
 ## Architecture diagram
 
@@ -32,6 +32,7 @@ flowchart LR
     Nextcloud[Nextcloud]
     JupyterHub[JupyterHub]
     OpenGDB[OpenGDB]
+    WebProtege[WebProtégé]
     ProjectPage[Project Website]
   end
 
@@ -47,6 +48,7 @@ flowchart LR
   WebSecure --> Nextcloud
   WebSecure --> JupyterHub
   WebSecure --> OpenGDB
+  WebSecure --> WebProtege
   WebSecure --> ProjectPage
 
   Keycloak --> DB
@@ -57,6 +59,7 @@ flowchart LR
   SCSManager -.->|OIDC| Keycloak
   Nextcloud -.->|OIDC| Keycloak
   JupyterHub -.->|OIDC| Keycloak
+  WebProtege -.->|OIDC| Keycloak
 ```
 
 ## Main stack (`docker-compose.yml`)
@@ -73,7 +76,7 @@ flowchart LR
 The `COMPOSE_FILE` in `example-env` lists, in order:
 
 - Main: `docker-compose.yml`
-- Stacks: `scs-manager-stack/docker-compose.yml`, `scs-nextcloud-stack/docker-compose.yml`, `jupyterhub/docker-compose.yml`, `keycloak/docker-compose.yml`, `open_gdb/docker-compose.yml`, `scs-project-website-stack/docker-compose.yml`
+- Stacks: `scs-manager-stack/docker-compose.yml`, `scs-nextcloud-stack/docker-compose.yml`, `jupyterhub/docker-compose.yml`, `keycloak/docker-compose.yml`, `open_gdb/docker-compose.yml`, `webprotege/docker-compose.yml`, `scs-project-website-stack/docker-compose.yml`, `scs-health/docker-compose.yml`
 - Overrides: the corresponding `docker-compose.override.yml` files for each stack.
 
 Override files are copied from `00_custom_configs/<stack>/docker/` to each stack directory by `start.sh` (see [Pre-start steps](initial-setup/pre-start-steps.md)).
@@ -99,7 +102,7 @@ Override files are copied from `00_custom_configs/<stack>/docker/` to each stack
 ### Keycloak
 
 - Realm is generated from `00_custom_configs/keycloak/templates/realm/scs-realm.json.tpl` (pre-install) and imported at startup.
-- Clients: JupyterHub (by `JUPYTERHUB_DOMAIN`), Nextcloud (by `NEXTCLOUD_NEXTCLOUD_DOMAIN`), SCS Manager (by `SCS_MANAGER_DOMAIN`), phpMyAdmin/DBMS (by `SCS_DBMS_DOMAIN`), DIDMOS. Each has a client secret from `.env`.
+- Clients: JupyterHub (by `JUPYTERHUB_DOMAIN`), Nextcloud (by `NEXTCLOUD_NEXTCLOUD_DOMAIN`), SCS Manager (by `SCS_MANAGER_DOMAIN`), phpMyAdmin/DBMS (by `SCS_DBMS_DOMAIN`), WebProtégé, DIDMOS. Each has a client secret from `.env`.
 - Uses the shared MariaDB for persistence.
 - Exposed via Traefik on the Keycloak domain (e.g. `auth.scs.localhost`).
 
@@ -127,6 +130,28 @@ Override files are copied from `00_custom_configs/<stack>/docker/` to each stack
 - Group and GID handling in `jupyterhub/jupyterhub/jupyterhub_config.py`: `auth_state_groups_key` reads `groups` and `gids` from the OAuth userinfo; spawner uses `group_map.json` and gids for Linux group membership in the notebook container.
 - Spawner binds Keycloak **project Team Folders** only (`${NEXTCLOUD_MOUNTS_ROOT}/<user>/<project-label>` → `/home/jovyan/nextcloud/<project-label>`, `rslave`, GID `33`). See [Nextcloud mount sidecar](nextcloud-mount-sidecar.md).
 - Spawner image can include tools (e.g. wisski_py, OpenRefine). JupyterHub needs the Keycloak “groups” (and optionally “gids”) scope on its client for group-based access and spawner gids to work (see [Post-configuration checklist](post-configuration/checklist.md)).
+
+### WebProtégé
+
+- Shared instance (`webprotege` + `webprotege-mongodb`), not a container per SCS project. Image `webprotege:scs` is built from the `webprotege/` submodule (`00_custom_configs/webprotege/docker/docker-compose.override.yml`).
+- Deltas vs [protegeproject/webprotege](https://github.com/protegeproject/webprotege) (not a fork) live in [WebProtégé patches](../../00_custom_configs/webprotege/patches/README.md): OIDC SSO, project REST (owner permissions, collaborators, trash), and the Docker build.
+- Users sign in with Keycloak OIDC (`preferred_username`, sanitised to `[a-z0-9_.-]`). SCS Manager stores the ontology-project UUID on the Drupal project field `webprotegeProjectId`.
+- Creating an SCS project calls `POST /data/projects` with `Authorization: apikey <key>` and then grants `EDIT` to members (`PUT /data/projects/{id}/collaborators/{user}`). The project-page WebProtégé card deep-links to `#projects/{uuid}/perspectives/69df8fa8-4f84-499e-9341-28eb5085c40b`. The dashboard card stays on `#projects/list`.
+- **API key (once per environment):** rebuild/recreate `webprotege` after Java changes, then generate a key for a user with `CREATE_EMPTY_PROJECT`:
+
+  ```bash
+  docker compose up -d --force-recreate --build webprotege
+  docker exec -it webprotege java -jar /webprotege-cli.jar generate-api-key
+  ```
+
+  Store the key in SCS Manager settings (WebProtégé → API key), not in git. Optional **API base URL** `http://webprotege:8080` for Docker-internal REST. Run `drush updb` for field `webprotegeProjectId` (update 11028) and rebuild caches. Then backfill existing SCS projects (owners + member EDIT):
+
+  ```bash
+  scs-drush soda_scs_manager:backfill-webprotege-projects --dry-run --all
+  scs-drush soda_scs_manager:backfill-webprotege-projects --all
+  ```
+
+  The same Drush command is the migration on scs-prime once that environment has the API key and update 11028.
 
 ### OpenGDB
 

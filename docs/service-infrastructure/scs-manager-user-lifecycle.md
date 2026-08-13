@@ -1,6 +1,6 @@
 # SCS Manager — user create and delete routines
 
-Technical reference for how the SCS Manager (`soda_scs_manager` Drupal module) provisions and tears down users across Keycloak, Nextcloud, MariaDB, OpenGDB, and related SCS entities.
+Technical reference for how the SCS Manager (`soda_scs_manager` Drupal module) provisions and tears down users across Keycloak, Nextcloud, MariaDB, OpenGDB, WebProtégé, and related SCS entities.
 
 Implementation lives in the `scs-manager-stack` submodule under `volumes/drupal/web/modules/custom/soda_scs_manager/`.
 
@@ -11,6 +11,7 @@ Implementation lives in the `scs-manager-stack` submodule under `volumes/drupal/
 | Keycloak | UUID (`sub` claim) | Keycloak user record |
 | Drupal ↔ Keycloak | Same UUID | `authmap` table (`openid_connect.<client_id>`) |
 | Nextcloud (OIDC) | Keycloak `sub` (raw UUID) | Nextcloud user backend (`user_oidc`) |
+| WebProtégé (OIDC) | Sanitised Drupal/Keycloak account name (`[a-z0-9_.-]`, lowercase) | WebProtégé `UserId` string |
 | Keycloak user attributes | `nextcloud_login_name`, `nextcloud_app_password`, `mariadb_password`, … | Keycloak user `attributes` |
 
 `SodaScsProjectHelpers::getUserSsoUuid()` reads the Keycloak UUID from Drupal’s `authmap` after the user has logged in via OpenID Connect.
@@ -118,6 +119,22 @@ phpMyAdmin SSO reads `preferred_username` and `mariadb_password` from the JWT. S
 | OpenGDB / triplestore user | Triplestore component | Component delete or user delete |
 | WissKI stack | WissKI component via Portainer | Component/stack delete |
 | Keycloak groups/clients | WissKI component setup | WissKI component delete |
+| WebProtégé ontology project | SCS project create (REST `POST /data/projects`) | SCS project delete (REST `DELETE /data/projects/{id}` → trash) |
+
+The WebProtégé **application** remains a single shared instance (`soda_scs_webprotege_component` per user). Only the ontology project UUID is stored on the SCS project (`webprotegeProjectId`). Members receive `EDIT` when a membership request is approved; leave/remove revokes that access (the owner is never revoked). Failures are logged and shown in the messenger; they do not block SCS project create.
+
+**Backfill existing projects** (this environment and later scs-prime), after the API key is set and `drush updb` has installed `webprotegeProjectId` (update 11028):
+
+```bash
+scs-drush soda_scs_manager:backfill-webprotege-projects --dry-run --all
+scs-drush soda_scs_manager:backfill-webprotege-projects --all
+```
+
+Idempotent: already linked projects only re-grant member `EDIT`. Owner is set as `projectOwner` on create (`CAN_MANAGE`); members get `EDIT`. Do not run this from `hook_update_N` — it needs a live WebProtégé and the service API key.
+
+The project-page WebProtégé card deep-links with `?project=` to `#projects/{uuid}/perspectives/69df8fa8-4f84-499e-9341-28eb5085c40b`. The dashboard card has no project context and opens `#projects/list`.
+
+API key and optional Docker-internal API base URL live in SCS Manager settings (WebProtégé tab). Generate the key with `docker exec -it webprotege java -jar /webprotege-cli.jar generate-api-key`; do not commit it.
 
 ---
 
@@ -207,6 +224,9 @@ Token URL and realm come from the same Keycloak settings block (`initKeycloakGen
 | Nextcloud → Admin username / password | Optional; required for automatic NC user delete on Drupal user delete |
 | Nextcloud → Keycloak attribute names | Defaults: `nextcloud_login_name`, `nextcloud_app_password` |
 | JupyterHub → Notebook container name prefix | Default `jupyter-`; must match DockerSpawner naming (`jupyter-{drupalAccountName}`) |
+| WebProtégé → Host | Public WebProtégé URL |
+| WebProtégé → API base URL | Optional Docker-internal origin (`http://webprotege:8080`); falls back to host |
+| WebProtégé → API key | Service-account key with `CREATE_EMPTY_PROJECT`; leave blank on save to keep the current value |
 
 ---
 

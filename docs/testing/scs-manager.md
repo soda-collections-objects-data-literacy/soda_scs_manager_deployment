@@ -24,6 +24,7 @@ Issues bitte mit diesem Formular einreichen.
 - [ ] **Status prüfen**: Überprüfe den Healthcheck-Status der Anwendungen
 - [ ] **Starten / Stoppen / Neu starten**: Bei WissKI, MariaDB, Triplestore und Jupyter (Notebook) das Status-Icon auf der Karte hovern (am Telefon antippen). Bei „Läuft“ erscheinen Stoppen und Neu starten; bei „Gestoppt“ erscheint Starten. Nextcloud und WebProtégé haben diese Steuerung nicht (gemeinsame Dienste).
 - [ ] **JupyterHub-Projektordner**: Die JupyterHub-Karte im Projekt öffnet den Team-Folder unter `nextcloud/<Projektname>`
+- [ ] **WebProtégé-Ontologie**: Die WebProtégé-Karte im Projekt öffnet das zum SCS-Projekt gehörende Ontologie-Projekt (nicht die Projektliste)
 - [ ] **Nextcloud-Aktivitäten**: Die Nextcloud-Karte im Projekt zeigt die letzten Aktivitäten im Projektordner (scs_manager_integration-Feed)
 - [ ] **Anwendungsdetails**: Öffne die Detailansicht einer Anwendung
 - [ ] **Bearbeitung**: Bearbeite eine Anwendung (z.B. Label oder Projektzuordnung ändern)
@@ -48,16 +49,21 @@ Issues bitte mit diesem Formular einreichen.
   - [ ] Deploye einen Shared Folder
   - [ ] Teste den Zugriff von verschiedenen Anwendungen
   - [ ] Teste den Zugriff auf fremde Ordner
-- [ ] **Webprotégé**:
-  - [ ] Erstelle einen Account in Webprotege und logge Dich ein
+- [ ] **WebProtégé**:
+  - [ ] Öffne WebProtégé über die Karte auf der Projektseite (Ontologie-Projekt des SCS-Projekts)
+  - [ ] Logge Dich per SSO ein und prüfe, dass Du das Ontologie-Projekt bearbeiten kannst
+  - [ ] Die Dashboard-Karte öffnet die WebProtégé-Projektliste (ohne Projektkontext)
 
 ### 5. Projekte verwalten
 - [ ] **Standard-Projekt**: Überprüfe Dein automatisch erstelltes Standard-Projekt
+  - [ ] Nach dem WebProtégé-Backfill (`drush soda_scs_manager:backfill-webprotege-projects --all`) öffnet die Karte das Ontologie-Projekt; der Owner kann es bearbeiten
 - [ ] **Neues Projekt erstellen**:
   - [ ] Navigiere zu Deinen Projekten
   - [ ] Erstelle ein neues Projekt mit Namen und Beschreibung
+  - [ ] Öffne die WebProtégé-Karte auf der Projektseite: sie führt in das neu angelegte Ontologie-Projekt
 - [ ] **Projektmitglieder hinzufügen**:
   - [ ] Füge eine andere Person zu Deinem Projekt hinzu
+  - [ ] Die andere Person öffnet die WebProtégé-Karte im gemeinsamen Projekt und sieht das Ontologie-Projekt (EDIT)
 - [ ] **Anwendung zu Projekt zuordnen**:
   - [ ] Ordne eine bestehende Anwendung einem Projekt zu
 
