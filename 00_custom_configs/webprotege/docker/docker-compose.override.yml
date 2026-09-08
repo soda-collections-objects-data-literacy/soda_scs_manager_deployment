@@ -1,10 +1,21 @@
+# Wave H5: {scope}--{service}--{function}.
+# Aliases keep Today DNS: webprotege (Manager apiBaseUrl), wpmongo /
+# webprotege-mongodb (Java mongodb.host). Traefik router/service label IDs lag.
+# Volume Docker names stay: webprotege-data, mongodb-data. Network name: webprotege.
+
 services:
-  wpmongo:
+  webprotege--mongodb--db:
+    container_name: webprotege--mongodb--db
     networks:
-      - webprotege
+      webprotege:
+        aliases:
+          - wpmongo
+          - webprotege-mongodb
     volumes: !override
       - mongodb-data:/data/db
-  webprotege:
+
+  webprotege--webprotege--app:
+    container_name: webprotege--webprotege--app
     image: webprotege:scs
     pull_policy: never
     build:
@@ -61,8 +72,12 @@ services:
       - WEBPROTEGE_OIDC_USERNAME_CLAIM=${WEBPROTEGE_OIDC_USERNAME_CLAIM:-}
       - WEBPROTEGE_OIDC_HIDE_LOCAL_LOGIN=${WEBPROTEGE_OIDC_HIDE_LOCAL_LOGIN:-}
     networks:
-      - reverse-proxy
-      - webprotege
+      reverse-proxy:
+        aliases:
+          - webprotege
+      webprotege:
+        aliases:
+          - webprotege
     ports: !reset []
     volumes: !override
       - webprotege-data:/srv/webprotege

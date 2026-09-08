@@ -2,6 +2,9 @@
 
 set -euo pipefail
 
+# Docker DNS names from .env (naming migration).
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../global/scs-container-names.bash"
+
 # Get the script directory and repo root.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -44,19 +47,19 @@ sudo chmod -R 775 "${SNAPSHOT_HOST_DIR}"
 
 # Create Database.
 echo "Creating SCS Manager database..."
-docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS ${SCS_MANAGER_DB_NAME};"
+docker exec "${SCS_CONTAINER_DATABASE}" mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "CREATE DATABASE IF NOT EXISTS ${SCS_MANAGER_DB_NAME};"
 echo "SCS Manager database created successfully."
 
 echo "Creating SCS Manager user..."
-docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "CREATE USER IF NOT EXISTS '${SCS_MANAGER_DB_USER}'@'%' IDENTIFIED BY '${SCS_MANAGER_DB_PASSWORD}';"
+docker exec "${SCS_CONTAINER_DATABASE}" mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "CREATE USER IF NOT EXISTS '${SCS_MANAGER_DB_USER}'@'%' IDENTIFIED BY '${SCS_MANAGER_DB_PASSWORD}';"
 echo "SCS Manager user created successfully."
 
 echo "Granting privileges..."
-docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "GRANT ALL PRIVILEGES ON ${SCS_MANAGER_DB_NAME}.* TO '${SCS_MANAGER_DB_USER}'@'%';"
+docker exec "${SCS_CONTAINER_DATABASE}" mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "GRANT ALL PRIVILEGES ON ${SCS_MANAGER_DB_NAME}.* TO '${SCS_MANAGER_DB_USER}'@'%';"
 echo "Privileges granted successfully."
 
 echo "Flushing privileges..."
-docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;"
+docker exec "${SCS_CONTAINER_DATABASE}" mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;"
 echo "Privileges flushed successfully."
 
 echo "SCS Manager database and user created successfully."
@@ -67,10 +70,10 @@ echo "SCS Manager database and user created successfully."
 # phpMyAdmin configuration storage (pmadb) — database + control user for bookmarks, history, etc.
 if [ -n "${SCS_DBMS_PMA_PASSWORD:-}" ]; then
     echo "Creating phpMyAdmin configuration storage (pmadb)..."
-    docker exec -i scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" < "${REPO_ROOT}/config/phpmyadmin/create_tables.sql"
-    docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "CREATE USER IF NOT EXISTS 'pma'@'%' IDENTIFIED BY '${SCS_DBMS_PMA_PASSWORD}';"
-    docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "GRANT SELECT, INSERT, UPDATE, DELETE, ALTER ON phpmyadmin.* TO 'pma'@'%';"
-    docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;"
+    docker exec -i "${SCS_CONTAINER_DATABASE}" mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" < "${REPO_ROOT}/config/phpmyadmin/create_tables.sql"
+    docker exec "${SCS_CONTAINER_DATABASE}" mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "CREATE USER IF NOT EXISTS 'pma'@'%' IDENTIFIED BY '${SCS_DBMS_PMA_PASSWORD}';"
+    docker exec "${SCS_CONTAINER_DATABASE}" mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "GRANT SELECT, INSERT, UPDATE, DELETE, ALTER ON phpmyadmin.* TO 'pma'@'%';"
+    docker exec "${SCS_CONTAINER_DATABASE}" mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;"
     echo "phpMyAdmin pmadb created successfully."
 else
     echo "Skipping phpMyAdmin pmadb (SCS_DBMS_PMA_PASSWORD not set)."

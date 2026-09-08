@@ -6,6 +6,9 @@
 
 set -euo pipefail
 
+# Docker DNS names from .env (naming migration).
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../global/scs-container-names.bash"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "$ROOT_DIR"
@@ -31,10 +34,10 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BASE_BACKUP_DIR="/srv/backups"
 SCS_MANAGER_BACKUP_DIR="${BASE_BACKUP_DIR}/scs-manager"
 TMP_BASE_DIR="${BASE_BACKUP_DIR}/tmp/scs-manager"
-DB_CONTAINER="scs--database"
+DB_CONTAINER="${SCS_CONTAINER_DATABASE}"
 DB_ROOT_PASSWORD="${SCS_DB_ROOT_PASSWORD}"
 SCS_MANAGER_DB_NAME="${SCS_MANAGER_DB_NAME:-scs_manager}"
-SCS_MANAGER_CONTAINER="scs-manager--drupal"
+SCS_MANAGER_CONTAINER="${SCS_CONTAINER_MANAGER}"
 
 # Create backup directories.
 mkdir -p "$SCS_MANAGER_BACKUP_DIR"

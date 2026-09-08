@@ -9,7 +9,7 @@ services:
     build:
       context: scs-project-website-stack
     depends_on:
-      - scs--database
+      - core--mariadb--db
     volumes: !override
       - scs-project-website-data:/opt/drupal/web/sites
     environment:

@@ -11,6 +11,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "$ROOT_DIR"
 
+source "${SCRIPT_DIR}/../global/scs-container-names.bash"
+
 if [ -f .env ]; then
     set -a
     source .env
@@ -24,13 +26,13 @@ echo ""
 
 # 1. Restart reverse proxy to pick up nginx config changes (.well-known URLs, etc.)
 echo "Step 1: Restarting Nextcloud reverse proxy..."
-docker compose restart nextcloud--nextcloud-reverse-proxy
+docker compose restart "${SCS_CONTAINER_NEXTCLOUD_EDGE}"
 echo "✓ Reverse proxy restarted."
 echo ""
 
 # 2. Disable AppAPI (removes "deploy daemon not set" warning; enable only if you need Ex-Apps)
 echo "Step 2: Disabling AppAPI..."
-docker exec nextcloud--nextcloud php /var/www/html/occ --no-warnings app:disable app_api 2>/dev/null || true
+docker exec "${SCS_CONTAINER_NEXTCLOUD}" php /var/www/html/occ --no-warnings app:disable app_api 2>/dev/null || true
 echo "✓ AppAPI disabled."
 echo ""
 

@@ -1,86 +1,87 @@
 # Docker Compose Override for SCS Nextcloud Stack Integration
-# This file overrides the base docker-compose.yml to integrate with the main SCS deployment
-# It adds Traefik integration, proper networking, and consistent naming
+# Wave H: {scope}--{service}--{function}. Aliases keep Today DNS (nginx upstreams,
+# REDIS_HOST, OnlyOffice DocumentServerInternalUrl) until cutover.
+# Traefik router label IDs lag on purpose.
 
 services:
-  # Nextcloud FPM
-  nextcloud--nextcloud:
-    container_name: nextcloud--nextcloud
+  nextcloud--nextcloud--app:
+    container_name: nextcloud--nextcloud--app
     environment:
-      # Override database host to use parent stack's database
-      - MYSQL_HOST=scs--database
+      - MYSQL_HOST=${SCS_CONTAINER_DATABASE:-scs--database}
     volumes: !override
       - ${SCS_ROOT_PATH}/scs-nextcloud-stack/hooks/post-installation:/docker-entrypoint-hooks.d/post-installation
-      # Outside /var/www/html so Nextcloud upgrade rsync can replace core files in the data volume.
       - ${SCS_ROOT_PATH}/scs-nextcloud-stack/skeleton:/scs-skeleton:ro
       - nextcloud-data:/var/www/html
-      # Nested bind after data volume so it is not shadowed by the named volume.
       - ${SCS_ROOT_PATH}/scs-nextcloud-stack/apps/scs_manager_integration:/var/www/html/custom_apps/scs_manager_integration
-
     networks:
-      - default
-      - reverse-proxy
+      nextcloud:
+        aliases:
+          - nextcloud--nextcloud
+      reverse-proxy:
+        aliases:
+          - nextcloud--nextcloud
     labels:
       - "traefik.enable=false"
 
-  # OnlyOffice Document Server
-  nextcloud--onlyoffice-document-server:
-    container_name: nextcloud--onlyoffice-document-server
+  nextcloud--ods--app:
+    container_name: nextcloud--ods--app
     networks:
-      - default
-      - reverse-proxy
+      nextcloud:
+        aliases:
+          - nextcloud--onlyoffice-document-server
+      reverse-proxy:
+        aliases:
+          - nextcloud--onlyoffice-document-server
     labels:
       - "traefik.enable=false"
-    # Inner DS nginx defaults ~60s → 504 on slow /converter (e.g. previews). Uses SCS_ROOT_PATH so
-    # `docker compose -f docker-compose.yml -f …/scs-nextcloud-stack/docker-compose.yml` resolves bind correctly.
     volumes:
       - ${SCS_ROOT_PATH}/scs-nextcloud-stack/onlyoffice-document-server/ds-timeout.conf:/etc/nginx/includes/ds-timeout.conf:ro
 
-  # Nginx Reverse Proxy for Nextcloud with Traefik
-  nextcloud--nextcloud-reverse-proxy:
-    container_name: nextcloud--nextcloud-reverse-proxy
+  nextcloud--nginx--edge:
+    container_name: nextcloud--nginx--edge
     volumes:
       - ./scs-nextcloud-stack/reverse-proxy/nginx.conf:/etc/nginx/nginx.conf
     networks:
-      - default
-      - reverse-proxy
-    ports: !reset []  # Remove port binding, use Traefik instead
+      nextcloud:
+        aliases:
+          - nextcloud--nextcloud-reverse-proxy
+      reverse-proxy:
+        aliases:
+          - nextcloud--nextcloud-reverse-proxy
+    ports: !reset []
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
       - "traefik.http.routers.nextcloud--nextcloud-reverse-proxy.rule=Host(`${NEXTCLOUD_NEXTCLOUD_DOMAIN}`)"
       - "traefik.http.routers.nextcloud--nextcloud-reverse-proxy.entrypoints=websecure"
-      # No Traefik rate limit: SPA + WebDAV fire many parallel requests; edge 429 breaks JS modules and app-menu icons.
-      # Abuse mitigation: Nextcloud ratelimit + brute-force remain; consider WAF / IP allowlist if needed.
       - "traefik.http.routers.nextcloud--nextcloud-reverse-proxy.tls=true"
       - "traefik.http.routers.nextcloud--nextcloud-reverse-proxy.tls.certresolver=le"
       - "traefik.http.services.nextcloud--nextcloud-reverse-proxy.loadbalancer.server.port=80"
 
-  # OnlyOffice Reverse Proxy with Traefik
-  nextcloud--onlyoffice-reverse-proxy:
-    container_name: nextcloud--onlyoffice-reverse-proxy
+  nextcloud--ods--edge:
+    container_name: nextcloud--ods--edge
     volumes:
       - ${SCS_ROOT_PATH}/scs-nextcloud-stack/onlyoffice-proxy/nginx.conf:/etc/nginx/nginx.conf
     networks:
-      - default
-      - reverse-proxy
-    ports: !reset []  # Remove port binding, use Traefik instead
+      nextcloud:
+        aliases:
+          - nextcloud--onlyoffice-reverse-proxy
+      reverse-proxy:
+        aliases:
+          - nextcloud--onlyoffice-reverse-proxy
+    ports: !reset []
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
-      # Internal reverse-proxy traffic: no rate limit.
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy-internal.rule=Host(`${NEXTCLOUD_ONLYOFFICE_DOMAIN}`) && (ClientIP(`172.16.0.0/12`) || ClientIP(`192.168.0.0/16`) || ClientIP(`10.0.0.0/8`) || ClientIP(`127.0.0.1/32`) || ClientIP(`::1/128`) || ClientIP(`fd00::/8`))"
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy-internal.entrypoints=websecure"
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy-internal.priority=100"
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy-internal.tls=true"
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy-internal.tls.certresolver=le"
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy-internal.service=nextcloud--onlyoffice-reverse-proxy"
-      # External traffic: rate limit (editor loads many font shards in parallel).
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.rule=Host(`${NEXTCLOUD_ONLYOFFICE_DOMAIN}`)"
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.entrypoints=websecure"
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.priority=10"
-      # Middleware must be declared on a backend container Traefik discovers; labels on `scs--reverse-proxy` are ignored
-      # (“middleware …@docker does not exist”), which breaks routing and yields 404 for office.*.
       - "traefik.http.middlewares.rate-limit-onlyoffice.ratelimit.average=8000"
       - "traefik.http.middlewares.rate-limit-onlyoffice.ratelimit.period=1m"
       - "traefik.http.middlewares.rate-limit-onlyoffice.ratelimit.burst=3000"
@@ -89,6 +90,9 @@ services:
       - "traefik.http.routers.nextcloud--onlyoffice-reverse-proxy.tls.certresolver=le"
       - "traefik.http.services.nextcloud--onlyoffice-reverse-proxy.loadbalancer.server.port=80"
 
-  # Redis for Nextcloud caching
-  nextcloud--redis:
-    container_name: nextcloud--redis
+  nextcloud--redis--cache:
+    container_name: nextcloud--redis--cache
+    networks:
+      nextcloud:
+        aliases:
+          - nextcloud--redis

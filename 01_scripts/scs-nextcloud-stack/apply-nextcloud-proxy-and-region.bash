@@ -9,13 +9,15 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "$ROOT_DIR"
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../global/scs-container-names.bash"
+
 if [ -f .env ]; then
     set -a
     source .env
     set +a
 fi
 
-CONTAINER_NAME="nextcloud--nextcloud"
+CONTAINER_NAME="${SCS_CONTAINER_NEXTCLOUD}"
 OCC="docker exec ${CONTAINER_NAME} php /var/www/html/occ"
 
 # Fix overwrite settings for .well-known checks (critical for internal checks to work).

@@ -2,6 +2,9 @@
 
 set -e
 
+# Docker DNS names from .env (naming migration).
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../global/scs-container-names.bash"
+
 # Load environment variables.
 if [ -f .env ]; then
     source .env
@@ -33,15 +36,15 @@ fi
 
 
 echo "Cleaning up Nextcloud..."
-docker compose down -v nextcloud--nextcloud nextcloud--onlyoffice-document-server nextcloud--nextcloud-reverse-proxy nextcloud--onlyoffice-reverse-proxy nextcloud--redis
+docker compose down -v "${SCS_CONTAINER_NEXTCLOUD}" "${SCS_CONTAINER_ODS}" "${SCS_CONTAINER_NEXTCLOUD_EDGE}" "${SCS_CONTAINER_ODS_EDGE}" "${SCS_CONTAINER_NEXTCLOUD_REDIS}"
 
 # Drop Nextcloud database and user.
 echo "Dropping Nextcloud database and user..."
-docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "DROP DATABASE IF EXISTS ${NEXTCLOUD_DB_NAME};"
+docker exec "${SCS_CONTAINER_DATABASE}" mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "DROP DATABASE IF EXISTS ${NEXTCLOUD_DB_NAME};"
 echo "Nextcloud database dropped successfully."
-docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "DROP USER IF EXISTS '${NEXTCLOUD_DB_USER}'@'%';"
+docker exec "${SCS_CONTAINER_DATABASE}" mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "DROP USER IF EXISTS '${NEXTCLOUD_DB_USER}'@'%';"
 echo "Nextcloud user dropped successfully."
-docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;"
+docker exec "${SCS_CONTAINER_DATABASE}" mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;"
 echo "Privileges flushed successfully."
 
 echo "Nextcloud cleaned up successfully."

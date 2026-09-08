@@ -3,10 +3,13 @@
 # without waiting for image rebuilds. Safe to re-run.
 #
 # Usage: 01_scripts/wisski/apply-performance-tuning.bash
-# Env: INTERNAL_TS_BASE (default http://scs--authproxy:8000)
+# Env: INTERNAL_TS_BASE / SCS_CONTAINER_AUTHPROXY (see scs-container-names.bash)
 set -euo pipefail
 
-INTERNAL_TS_BASE="${INTERNAL_TS_BASE:-http://scs--authproxy:8000}"
+# Docker DNS names from .env (naming migration).
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../global/scs-container-names.bash"
+
+INTERNAL_TS_BASE="${INTERNAL_TS_BASE:-http://${SCS_CONTAINER_AUTHPROXY}:8000}"
 PHP_FPM_CONF_SRC="${PHP_FPM_CONF_SRC:-/home/rnsrk/git/wisski-base-image/config/php-fpm/zz-wisski-production.conf}"
 
 apply_php_fpm() {

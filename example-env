@@ -19,6 +19,42 @@ SCS_DB_ROOT_PASSWORD=
 SCS_DB_SERVICE_NAME=db
 SCS_DB_DOMAIN=dbms.scs.localhost
 
+# --- Docker DNS / container_name (naming migration) ---
+# Compose service key should match these values (see naming-vocabulary.md).
+# Flipped names keep a Docker network alias for the old DNS until soak
+# (e.g. core--mariadb--db aliases scs--database;
+# core--traefik--edge aliases scs--reverse-proxy). Do not drop aliases
+# until soda_scs_manager.settings and leftover *_DB_HOST values are cut over.
+# Shared helper for scripts: 01_scripts/global/scs-container-names.bash
+SCS_CONTAINER_DATABASE=core--mariadb--db
+SCS_CONTAINER_REVERSE_PROXY=core--traefik--edge
+SCS_CONTAINER_NEXTCLOUD_MOUNTER=nextcloud-mounter
+SCS_CONTAINER_AUTHPROXY=opengdb--authproxy--proxy
+SCS_CONTAINER_RDF4J=opengdb--rdf4j--db
+SCS_CONTAINER_OUTPROXY=opengdb--outproxy--proxy
+SCS_CONTAINER_OPENGDB_PROXY=opengdb--nginx--edge
+SCS_CONTAINER_PORTAINER=core--portainer--app
+SCS_CONTAINER_PHPMYADMIN=dbms--phpmyadmin--app
+SCS_CONTAINER_FORWARD_AUTH=dbms--forwardauth--proxy
+SCS_CONTAINER_ECHO=core--echo--app
+SCS_CONTAINER_HEALTH=health--health--app
+SCS_CONTAINER_KEYCLOAK=keycloak--keycloak--app
+SCS_CONTAINER_MANAGER=manager--drupal--app
+SCS_CONTAINER_MANAGER_REDIS=manager--redis--cache
+SCS_CONTAINER_NEXTCLOUD=nextcloud--nextcloud--app
+SCS_CONTAINER_NEXTCLOUD_REDIS=nextcloud--redis--cache
+SCS_CONTAINER_NEXTCLOUD_EDGE=nextcloud--nginx--edge
+SCS_CONTAINER_ODS=nextcloud--ods--app
+SCS_CONTAINER_ODS_EDGE=nextcloud--ods--edge
+SCS_CONTAINER_JUPYTERHUB=jupyterhub--jupyterhub--app
+SCS_CONTAINER_JUPYTERHUB_BUILDER=jupyterhub--spawner--builder
+SCS_CONTAINER_WEBPROTEGE=webprotege--webprotege--app
+SCS_CONTAINER_WEBPROTEGE_MONGODB=webprotege--mongodb--db
+# INTERNAL_TS_BASE stays on the alias until WissKI TS_* / Manager internalHost cutover.
+INTERNAL_TS_BASE=http://scs--authproxy:8000
+# Derived (override if needed):
+# NEXTCLOUD_MOUNTER_RC_URL=http://${SCS_CONTAINER_NEXTCLOUD_MOUNTER}:5572
+
 # Open GDB.
 DJANGO_ALLOWED_HOSTS=localhost
 DJANGO_CSRF_TRUSTED_ORIGINS=http://localhost
@@ -33,7 +69,8 @@ PUBLIC_PORT=8082
 # Optional if it matches code.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}; compose defaults match that pattern.
 JUPYTERHUB_DOMAIN=code.scs.localhost
 JUPYTERHUB_OPENREFINE_DIR=${SCS_ROOT_PATH}/openrefine
-JUPYTERHUB_SERVICE_NAME=jupyterhub
+# Docker DNS / hub_connect_ip — must match container_name (not the public Host).
+JUPYTERHUB_SERVICE_NAME=jupyterhub--jupyterhub--app
 JUPYTERHUB_SHARE=shared-data
 JUPYTERHUB_CLIENT_SECRET=
 JUPYTERHUB_CLIENT_ID=http://code.scs.localhost
@@ -44,7 +81,7 @@ KC_ADMIN_GROUPS=
 KC_BOOTSTRAP_ADMIN_PASSWORD=
 KC_BOOTSTRAP_ADMIN_USERNAME=admin
 KC_DB_DRIVER=mariadb
-KC_DB_HOST=scs--database
+KC_DB_HOST=${SCS_CONTAINER_DATABASE}
 KC_DB_NAME=keycloak
 KC_DB_PASSWORD=
 KC_DB_PORT=3306
@@ -64,7 +101,7 @@ KC_DIDMOS_CLIENT_ID=didmos
 # Nextcloud.
 NEXTCLOUD_ADMIN_PASSWORD=nextcloudpass
 NEXTCLOUD_ADMIN_USER=admin
-NEXTCLOUD_DB_HOST=scs--database
+NEXTCLOUD_DB_HOST=${SCS_CONTAINER_DATABASE}
 NEXTCLOUD_DB_NAME=nextcloud
 NEXTCLOUD_DB_PASSWORD=nextcloudpass
 NEXTCLOUD_DB_USER=nextcloud
@@ -132,6 +169,8 @@ NEXTCLOUD_MOUNTS_ROOT=/var/lib/scs/nextcloud-mounts
 NEXTCLOUD_MOUNTER_RC_USER=scs-manager
 # Generate with: openssl rand -hex 32
 NEXTCLOUD_MOUNTER_RC_PASS=
+# Optional override; default http://${SCS_CONTAINER_NEXTCLOUD_MOUNTER}:5572
+NEXTCLOUD_MOUNTER_RC_URL=http://${SCS_CONTAINER_NEXTCLOUD_MOUNTER}:5572
 
 # Portainer
 SCS_PORTAINER_DOMAIN=deployments.scs.localhost
@@ -146,7 +185,7 @@ SCS_PORTAINER_PASSWORD=
 SCS_MANAGER_CLIENT_SECRET=
 SCS_MANAGER_DOMAIN=manager.scs.localhost
 SCS_MANAGER_DB_DRIVER=mysql
-SCS_MANAGER_DB_HOST=scs--database
+SCS_MANAGER_DB_HOST=${SCS_CONTAINER_DATABASE}
 SCS_MANAGER_DB_IMAGE_VERSION=11.5
 SCS_MANAGER_DB_NAME=scs_manager
 SCS_MANAGER_DB_PASSWORD=scsmanagerpass
@@ -173,7 +212,7 @@ SCS_MANAGER_SECOND_DOMAIN=scs.localhost
 
 # phpMyAdmin / DBMS (with Keycloak SSO)
 SCS_DBMS_DOMAIN=dbms.scs.localhost
-SCS_DBMS_DEFAULT_SERVER=scs--database
+SCS_DBMS_DEFAULT_SERVER=${SCS_CONTAINER_DATABASE}
 # Keycloak client for phpMyAdmin SSO (create client with redirect URI https://${SCS_DBMS_DOMAIN}/_oauth)
 SCS_DBMS_CLIENT_SECRET=
 # Forward-auth: 32-char hex string for cookie encryption; random string for secret
@@ -185,7 +224,7 @@ SCS_DBMS_PMA_PASSWORD=
 
 # SCS Project Page.
 PROJECT_WEBSITE_DB_DRIVER=mysql
-PROJECT_WEBSITE_DB_HOST=scs--database
+PROJECT_WEBSITE_DB_HOST=${SCS_CONTAINER_DATABASE}
 PROJECT_WEBSITE_DB_IMAGE_VERSION=11.5
 PROJECT_WEBSITE_DB_NAME=projectpage
 PROJECT_WEBSITE_DB_PASSWORD=projectpagepass

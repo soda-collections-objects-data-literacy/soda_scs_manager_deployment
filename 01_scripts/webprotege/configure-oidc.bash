@@ -25,6 +25,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 ENV_FILE="${ROOT_DIR}/.env"
 
+# Docker DNS names from .env (naming migration).
+# shellcheck source=/dev/null
+source "${SCRIPT_DIR}/../global/scs-container-names.bash"
+
 ISSUER_URI=""
 CLIENT_ID=""
 CLIENT_SECRET=""
@@ -96,9 +100,9 @@ else
 fi
 
 if [ "$RESTART" -eq 1 ]; then
-    echo "Recreating webprotege container so the new env takes effect"
+    echo "Recreating ${SCS_CONTAINER_WEBPROTEGE} so the new env takes effect"
     cd "$ROOT_DIR"
-    docker compose up -d --force-recreate webprotege
+    docker compose up -d --force-recreate "${SCS_CONTAINER_WEBPROTEGE}"
 fi
 
 echo "Done."

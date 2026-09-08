@@ -2,6 +2,9 @@
 
 set -euo pipefail
 
+# Docker DNS names from .env (naming migration).
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../global/scs-container-names.bash"
+
 # Load environment variables.
 if [ -f .env ]; then
     source .env
@@ -52,8 +55,8 @@ echo ""
 echo "Stopping scs-manager-stack containers:"
 containerNames=(
     "scs-manager--varnish"
-    "scs-manager--drupal"
-    "scs-manager--redis"
+    "${SCS_CONTAINER_MANAGER}"
+    "${SCS_CONTAINER_MANAGER_REDIS}"
     "scs-manager--database"
 )
 
@@ -70,12 +73,12 @@ done
 echo "Containers stopped and removed."
 
 # Delete database and user.
-echo "Deleting from scs--database container:"
+echo "Deleting from ${SCS_CONTAINER_DATABASE} container:"
 echo "  - Database: ${SCS_MANAGER_DB_NAME}"
 echo "  - User: ${SCS_MANAGER_DB_USER}"
-docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "DROP DATABASE IF EXISTS ${SCS_MANAGER_DB_NAME};"
-docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "DROP USER IF EXISTS '${SCS_MANAGER_DB_USER}'@'%';"
-docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;"
+docker exec "${SCS_CONTAINER_DATABASE}" mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "DROP DATABASE IF EXISTS ${SCS_MANAGER_DB_NAME};"
+docker exec "${SCS_CONTAINER_DATABASE}" mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "DROP USER IF EXISTS '${SCS_MANAGER_DB_USER}'@'%';"
+docker exec "${SCS_CONTAINER_DATABASE}" mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "FLUSH PRIVILEGES;"
 
 echo "Database and user deleted successfully."
 

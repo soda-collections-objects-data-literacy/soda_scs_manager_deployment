@@ -1,32 +1,61 @@
 # Docker Compose Override for SCS OpenGDB Stack Integration
-# This file overrides the base docker-compose.yml to integrate with the main SCS deployment
-# It adds Traefik integration, proper networking, and consistent naming
+# Wave F: introduce {scope}--{service}--{function} without editing the submodule
+# compose keys. Legacy keys (rdf4j, nginx, authproxy, outproxy) are parked on a
+# profile so they are not started. Aliases keep Today DNS (scs--*) and upstream
+# short names until Manager internalHost / WissKI TS_* cutover.
 
 services:
-  # RDF4J Triplestore
   rdf4j:
-    container_name: scs--rdf4j
+    profiles: ["opengdb-legacy-keys"]
+  nginx:
+    profiles: ["opengdb-legacy-keys"]
+  outproxy:
+    profiles: ["opengdb-legacy-keys"]
+  authproxy:
+    profiles: ["opengdb-legacy-keys"]
+
+  opengdb--rdf4j--db:
     image: eclipse/rdf4j-workbench:5.1.0
+    container_name: opengdb--rdf4j--db
+    restart: always
     environment:
-      - JAVA_OPTS=-Xms1g -Xmx6g -Dhttp.nonProxyHosts="" -Dhttp.proxyHost=scs--outproxy -Dhttp.proxyPort=8080 -Dhttps.proxyHost=scs--outproxy -Dhttps.proxyPort=8080
+      - JAVA_OPTS=-Xms1g -Xmx6g -Dhttp.nonProxyHosts="" -Dhttp.proxyHost=${SCS_CONTAINER_OUTPROXY:-scs--outproxy} -Dhttp.proxyPort=8080 -Dhttps.proxyHost=${SCS_CONTAINER_OUTPROXY:-scs--outproxy} -Dhttps.proxyPort=8080
+    volumes:
+      - rdf4j-data:/var/rdf4j
+      - rdf4j-logs:/usr/local/tomcat/logs
     networks:
-      - default
-      - reverse-proxy
+      default:
+        aliases:
+          - scs--rdf4j
+          - rdf4j
+      reverse-proxy:
+        aliases:
+          - scs--rdf4j
     labels:
       - "traefik.enable=false"
 
-  # Nginx Reverse Proxy with Traefik Integration
-  nginx:
-    container_name: scs--opengdb-proxy
+  opengdb--nginx--edge:
+    image: nginxinc/nginx-unprivileged:latest
+    container_name: opengdb--nginx--edge
+    restart: always
     environment:
-      AUTHPROXY_HOSTNAME: scs--authproxy
-      RDF4J_HOSTNAME: scs--rdf4j
-    volumes: !override
-        - ./open_gdb/nginx/nginx.conf.template:/etc/nginx/templates/nginx.conf.template
+      AUTHPROXY_HOSTNAME: ${SCS_CONTAINER_AUTHPROXY:-scs--authproxy}
+      RDF4J_HOSTNAME: ${SCS_CONTAINER_RDF4J:-scs--rdf4j}
+      NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
+    depends_on:
+      - opengdb--rdf4j--db
+      - opengdb--authproxy--proxy
+      - opengdb--outproxy--proxy
+    volumes:
+      - ./open_gdb/nginx/nginx.conf.template:/etc/nginx/templates/nginx.conf.template
     networks:
-      - default
-      - reverse-proxy
-    ports: !reset []  # Remove port binding, use Traefik instead
+      default:
+        aliases:
+          - scs--opengdb-proxy
+          - nginx
+      reverse-proxy:
+        aliases:
+          - scs--opengdb-proxy
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
@@ -36,31 +65,54 @@ services:
       - "traefik.http.routers.open-gdb--nginx.tls.certresolver=le"
       - "traefik.http.services.open-gdb--nginx.loadbalancer.server.port=80"
 
-  # Outproxy for external HTTP requests
-  outproxy:
-    container_name: scs--outproxy
-    build: !reset []
+  opengdb--outproxy--proxy:
+    image: ghcr.io/fau-cdi/open_gdb_outproxy:latest
+    container_name: opengdb--outproxy--proxy
+    restart: always
+    depends_on:
+      - opengdb--rdf4j--db
     networks:
-      - default
-      - reverse-proxy
+      default:
+        aliases:
+          - scs--outproxy
+          - outproxy
+      reverse-proxy:
+        aliases:
+          - scs--outproxy
     labels:
       - "traefik.enable=false"
 
-  # Authentication Proxy
-  authproxy:
-    container_name: scs--authproxy
+  opengdb--authproxy--proxy:
+    image: ghcr.io/fau-cdi/open_gdb_authproxy:latest
+    container_name: opengdb--authproxy--proxy
+    restart: always
     build:
       context: ${SCS_ROOT_PATH}/open_gdb/authproxy
     environment:
-      DJANGO_ALLOWED_HOSTS: ${OPEN_GDB_DOMAIN},${SCS_BASE_DOMAIN},scs--authproxy,scs--authproxy:8000
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_SUPERUSER_NAME: ${DJANGO_SUPERUSER_NAME}
+      DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD}
+      DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL}
       DJANGO_CSRF_TRUSTED_ORIGINS: https://${OPEN_GDB_DOMAIN}
+      RDF4J_HOSTNAME: ${SCS_CONTAINER_RDF4J:-scs--rdf4j}
+      RDF4J_TIMEOUT: ${RDF4J_TIMEOUT:-5}
+      # Keep Today DNS while WissKI/Manager still call scs--authproxy.
+      DJANGO_ALLOWED_HOSTS: ${OPEN_GDB_DOMAIN},${SCS_BASE_DOMAIN},${SCS_CONTAINER_AUTHPROXY:-opengdb--authproxy--proxy},${SCS_CONTAINER_AUTHPROXY:-opengdb--authproxy--proxy}:8000,scs--authproxy,scs--authproxy:8000
+    volumes:
+      - authproxy-data:/data/
+    depends_on:
+      - opengdb--rdf4j--db
     networks:
-      - default
-      - reverse-proxy
+      default:
+        aliases:
+          - scs--authproxy
+          - authproxy
+      reverse-proxy:
+        aliases:
+          - scs--authproxy
     labels:
       - "traefik.enable=false"
 
-# Networks
 networks:
   default:
     name: open_gdb

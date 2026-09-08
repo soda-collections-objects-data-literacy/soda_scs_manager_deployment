@@ -1,17 +1,19 @@
 # Docker Compose Override for SCS JupyterHub Stack Integration
-# This file overrides the base docker-compose.yml to integrate with the main SCS deployment
-# It adds Traefik integration, proper networking, and consistent naming
+# Wave H4: {scope}--{service}--{function}. Alias keeps Today DNS
+# (jupyterhub--jupyterhub) until soak. Traefik router label IDs lag.
+# JUPYTERHUB_SERVICE_NAME must match container_name (hub_connect_ip).
+# Notebook containers jupyter-{user} are unchanged.
 
 services:
-  # JupyterHub Service
-  jupyterhub--jupyterhub:
-    container_name: ${JUPYTERHUB_SERVICE_NAME}
+  jupyterhub--jupyterhub--app:
+    container_name: jupyterhub--jupyterhub--app
     build:
       context: jupyterhub/jupyterhub
     env_file: !override
       - ${SCS_ROOT_PATH}/jupyterhub/secret.env
     environment:
       DOCKER_NETWORK: ${JUPYTERHUB_NETWORK}
+      JUPYTERHUB_SERVICE_NAME: ${JUPYTERHUB_SERVICE_NAME:-jupyterhub--jupyterhub--app}
       # Override with parent environment variables
       CLIENT_SECRET: ${JUPYTERHUB_CLIENT_SECRET}
       CLIENT_ID: ${JUPYTERHUB_CLIENT_ID}
@@ -32,7 +34,9 @@ services:
         bind:
           propagation: rslave
     networks: !override
-      - reverse-proxy
+      reverse-proxy:
+        aliases:
+          - jupyterhub--jupyterhub
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"
@@ -42,9 +46,7 @@ services:
       - "traefik.http.routers.jupyterhub--jupyterhub.tls.certresolver=le"
       - "traefik.http.services.jupyterhub--jupyterhub.loadbalancer.server.port=8000"
 
-  # Spawner Image Builder
-  jupyterhub--image-builder:
-    container_name: jupyterhub--image-builder
+  jupyterhub--spawner--builder:
+    container_name: jupyterhub--spawner--builder
     build:
       context: jupyterhub/spawner_image
-

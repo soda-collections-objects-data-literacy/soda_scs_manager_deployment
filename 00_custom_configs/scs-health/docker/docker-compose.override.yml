@@ -3,14 +3,16 @@
 # It adds Traefik integration and reverse-proxy networking
 
 services:
-  scs--health:
+  health--health--app:
     build:
       context: ${SCS_ROOT_PATH}/scs-health
       dockerfile: Dockerfile
     networks:
-      - reverse-proxy
+      reverse-proxy:
+        aliases:
+          - scs--health
     depends_on:
-      - scs--reverse-proxy
+      - core--traefik--edge
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"

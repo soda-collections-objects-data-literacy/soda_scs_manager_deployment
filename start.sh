@@ -71,6 +71,10 @@ set +a
 echo "Environment variables loaded"
 echo ""
 
+# Docker DNS names (SCS_CONTAINER_*); defaults match current compose service names.
+# shellcheck source=01_scripts/global/scs-container-names.bash
+source "$SCRIPTS_DIR/global/scs-container-names.bash"
+
 # Shared bind for Nextcloud FUSE mounts must be rshared before Docker starts
 # consumers (see 01_scripts/global/setup-nextcloud-mounts.sh).
 NEXTCLOUD_MOUNTS_ROOT="${NEXTCLOUD_MOUNTS_ROOT:-/var/lib/scs/nextcloud-mounts}"
@@ -108,13 +112,13 @@ echo "Step 3: Starting database service..."
 echo "----------------------------------------"
 
 # Check if database container is already running (use main compose file)
-if docker compose ps scs--database 2>/dev/null | grep -q "Up"; then
+if docker compose ps "${SCS_CONTAINER_DATABASE}" 2>/dev/null | grep -q "Up"; then
     echo "Database service is already running"
 else
-    echo "Starting database service..."
+    echo "Starting database service (${SCS_CONTAINER_DATABASE})..."
     # Use only the main docker-compose.yml to start just the database service
     # This avoids loading all submodule compose files which may have missing env vars
-    docker compose up -d scs--database
+    docker compose up -d "${SCS_CONTAINER_DATABASE}"
 
     if [ $? -ne 0 ]; then
         echo "Error: Failed to start database service."
@@ -141,7 +145,7 @@ db_ready() {
 
   while [ $attempt -lt $max_attempts ]; do
       # Check if container is running (use main compose file)
-      if ! docker compose ps scs--database 2>/dev/null | grep -q "Up"; then
+      if ! docker compose ps "${SCS_CONTAINER_DATABASE}" 2>/dev/null | grep -q "Up"; then
           attempt=$((attempt + 1))
           echo "  Waiting for database container to start... (attempt $attempt/$max_attempts)"
           sleep 2
@@ -150,9 +154,9 @@ db_ready() {
 
       # Try to connect to database and verify root user exists
       # Use only main docker-compose.yml for exec commands too
-      if docker compose exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "SELECT 1;" >/dev/null 2>&1; then
+      if docker compose exec "${SCS_CONTAINER_DATABASE}" mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "SELECT 1;" >/dev/null 2>&1; then
           # Verify root user can connect (this confirms root user is created and database is healthy)
-          if docker compose exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "SHOW DATABASES;" >/dev/null 2>&1; then
+          if docker compose exec "${SCS_CONTAINER_DATABASE}" mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "SHOW DATABASES;" >/dev/null 2>&1; then
               echo "Database is ready and root user is accessible"
               return 0
           fi
@@ -166,7 +170,7 @@ db_ready() {
 
 if ! db_ready; then
   echo "Error: Database is not be fully ready. Aborting!"
-  echo "You can check database logs with: docker compose logs scs--database"
+  echo "You can check database logs with: docker compose logs ${SCS_CONTAINER_DATABASE}"
   exit 1
 fi
 

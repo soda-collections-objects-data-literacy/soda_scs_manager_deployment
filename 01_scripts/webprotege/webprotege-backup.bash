@@ -17,6 +17,10 @@ if [ -f .env ]; then
     set +a
 fi
 
+# Docker DNS names from .env (naming migration).
+# shellcheck source=/dev/null
+source "${SCRIPT_DIR}/../global/scs-container-names.bash"
+
 # Source common backup functions.
 source "${SCRIPT_DIR}/../global/backup-functions.bash"
 
@@ -25,7 +29,7 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BASE_BACKUP_DIR="/srv/backups"
 WEBPROTEGE_BACKUP_DIR="${BASE_BACKUP_DIR}/webprotege"
 TMP_BASE_DIR="${BASE_BACKUP_DIR}/tmp/webprotege"
-WP_MONGO_CONTAINER="webprotege-mongodb"
+WP_MONGO_CONTAINER="${SCS_CONTAINER_WEBPROTEGE_MONGODB}"
 
 # Create backup directories.
 mkdir -p "$WEBPROTEGE_BACKUP_DIR"

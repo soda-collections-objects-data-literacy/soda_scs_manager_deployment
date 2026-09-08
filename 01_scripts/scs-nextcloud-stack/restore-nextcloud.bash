@@ -8,6 +8,9 @@
 
 set -e
 
+# Docker DNS names from .env (naming migration).
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../global/scs-container-names.bash"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "$ROOT_DIR"
@@ -35,8 +38,8 @@ fi
 
 # Configuration.
 BACKUP_DIR="/srv/backups/nextcloud"
-DB_CONTAINER="scs--database"
-NC_CONTAINER="nextcloud--nextcloud"
+DB_CONTAINER="${SCS_CONTAINER_DATABASE}"
+NC_CONTAINER="${SCS_CONTAINER_NEXTCLOUD}"
 DB_NAME="${NEXTCLOUD_DB_NAME}"
 DB_ROOT_PASSWORD="${SCS_DB_ROOT_PASSWORD}"
 
@@ -118,7 +121,7 @@ echo ""
 
 # 1. Stop Nextcloud services.
 echo "Step 1: Stopping Nextcloud services..."
-docker compose stop nextcloud--nextcloud nextcloud--nextcloud-reverse-proxy nextcloud--onlyoffice-document-server nextcloud--onlyoffice-reverse-proxy
+docker compose stop "${SCS_CONTAINER_NEXTCLOUD}" "${SCS_CONTAINER_NEXTCLOUD_EDGE}" "${SCS_CONTAINER_ODS}" "${SCS_CONTAINER_ODS_EDGE}"
 echo "✓ Services stopped."
 echo ""
 
@@ -160,7 +163,7 @@ fi
 
 # 5. Start services.
 echo "Step 5: Starting Nextcloud services..."
-docker compose up -d nextcloud--nextcloud nextcloud--nextcloud-reverse-proxy nextcloud--onlyoffice-document-server nextcloud--onlyoffice-reverse-proxy
+docker compose up -d "${SCS_CONTAINER_NEXTCLOUD}" "${SCS_CONTAINER_NEXTCLOUD_EDGE}" "${SCS_CONTAINER_ODS}" "${SCS_CONTAINER_ODS_EDGE}"
 echo "✓ Services started."
 echo ""
 

@@ -6,6 +6,9 @@
 
 set -euo pipefail
 
+# Docker DNS names from .env (naming migration).
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../global/scs-container-names.bash"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 cd "$ROOT_DIR"
@@ -31,10 +34,10 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BASE_BACKUP_DIR="/srv/backups"
 NEXTCLOUD_BACKUP_DIR="${BASE_BACKUP_DIR}/nextcloud"
 TMP_BASE_DIR="${BASE_BACKUP_DIR}/tmp/nextcloud"
-DB_CONTAINER="scs--database"
+DB_CONTAINER="${SCS_CONTAINER_DATABASE}"
 DB_ROOT_PASSWORD="${SCS_DB_ROOT_PASSWORD}"
 NEXTCLOUD_DB_NAME="${NEXTCLOUD_DB_NAME:-nextcloud}"
-NC_CONTAINER="nextcloud--nextcloud"
+NC_CONTAINER="${SCS_CONTAINER_NEXTCLOUD}"
 
 # Create backup directories.
 mkdir -p "$NEXTCLOUD_BACKUP_DIR"

@@ -1,10 +1,11 @@
 # Docker Compose Override for Keycloak SCS Integration
 # This file overrides the base docker-compose.yml to integrate with the main SCS deployment
-# It adds Traefik integration, proper networking, and uses parent stack's database
+# It adds Traefik integration, proper networking, and uses parent stack's database.
+# Wave H: service key = container_name = keycloak--keycloak--app; alias keeps old DNS.
 
 services:
-  keycloak:
-    container_name: keycloak--keycloak
+  keycloak--keycloak--app:
+    container_name: keycloak--keycloak--app
     build:
       context: keycloak/keycloak
     # Reset ports - no direct port binding, use Traefik instead
@@ -13,7 +14,7 @@ services:
       - ./keycloak/import:/opt/keycloak/data/import
     environment: !override
       # Database connection - use parent stack's database.
-      KC_DB_URL: jdbc:${KC_DB_DRIVER:-mariadb}://scs--database:3306/${KC_DB_NAME:-keycloak}
+      KC_DB_URL: jdbc:${KC_DB_DRIVER:-mariadb}://${SCS_CONTAINER_DATABASE:-scs--database}:3306/${KC_DB_NAME:-keycloak}
       KC_DB_USERNAME: ${KC_DB_USERNAME}
       KC_DB_PASSWORD: ${KC_DB_PASSWORD}
 
@@ -33,9 +34,11 @@ services:
       # Use local cache for single-node deployment (eliminates JDBC ping warnings).
       KC_CACHE: local
     networks:
-      - reverse-proxy
+      reverse-proxy:
+        aliases:
+          - keycloak--keycloak
     depends_on:
-      - scs--database
+      - core--mariadb--db
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=reverse-proxy"

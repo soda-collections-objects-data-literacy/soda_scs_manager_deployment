@@ -3,18 +3,24 @@
 # It adds Traefik integration, proper networking, and uses parent stack's database
 
 services:
-  # Drupal with NGINX
-  scs-manager--drupal:
-    container_name: scs-manager--drupal
+  # Wave H: manager--drupal--app; alias scs-manager--drupal until cutover.
+  manager--drupal--app:
+    container_name: manager--drupal--app
     restart: unless-stopped
     environment:
-      # Override to use parent stack's database
-      DB_HOST: scs--database
+      # Override to use parent stack's database (DNS from SCS_CONTAINER_DATABASE)
+      DB_HOST: ${SCS_CONTAINER_DATABASE:-scs--database}
       # Pass through Drupal configuration
       DRUPAL_TRUSTED_HOSTS: ${SCS_MANAGER_DRUPAL_TRUSTED_HOSTS}
       DRUPAL_PROXY_ADDRESSES: ${SCS_MANAGER_DRUPAL_PROXY_ADDRESSES}
+      # Container DNS helpers for soda_scs_manager (naming migration)
+      SCS_CONTAINER_DATABASE: ${SCS_CONTAINER_DATABASE:-scs--database}
+      SCS_CONTAINER_NEXTCLOUD_MOUNTER: ${SCS_CONTAINER_NEXTCLOUD_MOUNTER:-nextcloud-mounter}
+      SCS_CONTAINER_AUTHPROXY: ${SCS_CONTAINER_AUTHPROXY:-scs--authproxy}
+      SCS_CONTAINER_REVERSE_PROXY: ${SCS_CONTAINER_REVERSE_PROXY:-scs--reverse-proxy}
+      INTERNAL_TS_BASE: ${INTERNAL_TS_BASE:-http://${SCS_CONTAINER_AUTHPROXY:-scs--authproxy}:8000}
       # Nextcloud mounter sidecar (rclone rc-API)
-      NEXTCLOUD_MOUNTER_RC_URL: "http://nextcloud-mounter:5572"
+      NEXTCLOUD_MOUNTER_RC_URL: "${NEXTCLOUD_MOUNTER_RC_URL:-http://${SCS_CONTAINER_NEXTCLOUD_MOUNTER:-nextcloud-mounter}:5572}"
       NEXTCLOUD_MOUNTER_RC_USER: "${NEXTCLOUD_MOUNTER_RC_USER}"
       NEXTCLOUD_MOUNTER_RC_PASS: "${NEXTCLOUD_MOUNTER_RC_PASS}"
       NEXTCLOUD_MOUNTS_ROOT: "${NEXTCLOUD_MOUNTS_ROOT:-/var/lib/scs/nextcloud-mounts}"
@@ -34,16 +40,22 @@ services:
           propagation: rslave
       # Workaround: Mount PHP-FPM config to fix socket issue until image is rebuilt
     networks: !override
-      - default
-      - reverse-proxy
-      - nextcloud-mounter-net
+      default:
+        aliases:
+          - scs-manager--drupal
+      reverse-proxy:
+        aliases:
+          - scs-manager--drupal
+      nextcloud-mounter-net:
+        aliases:
+          - scs-manager--drupal
     ports: !reset []  # Remove port binding, use Varnish with Traefik
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on: !override
-      - scs--reverse-proxy
-      - scs--database
-      - nextcloud-mounter
+      - core--traefik--edge
+      - core--mariadb--db
+      - core--rclone--sidecar
     healthcheck:
       test: ["CMD", "curl", "-f", "-H", "Host: ${SCS_MANAGER_DOMAIN}", "http://localhost/health"]
       interval: 15s
@@ -76,10 +88,13 @@ services:
       replicas: 0
 
   # Redis
-  scs-manager--redis:
-    container_name: scs-manager--redis
+  manager--redis--cache:
+    container_name: manager--redis--cache
     networks:
-      - default
+      default:
+        aliases:
+          - scs-manager--redis
+          - redis
     labels:
       - "traefik.enable=false"
 

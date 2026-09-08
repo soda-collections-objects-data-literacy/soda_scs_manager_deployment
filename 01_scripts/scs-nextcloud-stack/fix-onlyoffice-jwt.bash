@@ -17,6 +17,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 cd "$REPO_ROOT"
 
+source "$(cd "$SCRIPT_DIR/../global" && pwd)/scs-container-names.bash"
+
 # Load .env if present
 if [ -f .env ]; then
   set -a
@@ -37,24 +39,24 @@ else
 fi
 
 echo "Setting JWT secret in Nextcloud OnlyOffice config..."
-docker exec nextcloud--nextcloud php /var/www/html/occ config:system:set onlyoffice jwt_secret --value="$JWT_SECRET"
+docker exec "${SCS_CONTAINER_NEXTCLOUD}" php /var/www/html/occ config:system:set onlyoffice jwt_secret --value="$JWT_SECRET"
 
 echo "Recreating OnlyOffice Document Server with JWT secret..."
 export NEXTCLOUD_ONLYOFFICE_JWT_SECRET="$JWT_SECRET"
-docker compose up -d nextcloud--onlyoffice-document-server
+docker compose up -d "${SCS_CONTAINER_ODS}"
 
 echo ""
 echo "Waiting for OnlyOffice to start (30s)..."
 sleep 30
 
 echo "Verifying connection..."
-if docker exec nextcloud--nextcloud php /var/www/html/occ onlyoffice:documentserver --check 2>/dev/null; then
+if docker exec "${SCS_CONTAINER_NEXTCLOUD}" php /var/www/html/occ onlyoffice:documentserver --check 2>/dev/null; then
   echo ""
   echo "✓ OnlyOffice connection successful!"
 else
   echo ""
   echo "Connection check failed. The Document Server may need more time to start."
-  echo "Try again in a minute: docker exec nextcloud--nextcloud php /var/www/html/occ onlyoffice:documentserver --check"
+  echo "Try again in a minute: docker exec ${SCS_CONTAINER_NEXTCLOUD} php /var/www/html/occ onlyoffice:documentserver --check"
 fi
 
 echo ""
