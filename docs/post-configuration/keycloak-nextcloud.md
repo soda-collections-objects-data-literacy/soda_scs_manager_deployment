@@ -6,6 +6,8 @@ This guide explains how to configure Keycloak and Nextcloud to work together for
 - **Bearer token validation**: API requests with OIDC Bearer tokens from SCS Manager are accepted by Nextcloud (user_oidc app).
 - **App password creation**: SCS Manager can create Nextcloud app passwords on behalf of users for WebDAV integration (e.g. WissKI instances).
 
+Wave H3: `docker exec` uses `nextcloud--nextcloud--app` (`nextcloud--nextcloud` is a DNS alias only).
+
 ---
 
 ## Architecture Overview

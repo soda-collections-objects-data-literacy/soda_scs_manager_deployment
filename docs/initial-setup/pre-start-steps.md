@@ -48,7 +48,7 @@ After override copies, `start.sh` copies the custom Nextcloud reverse-proxy ngin
 
 ### Step 4: Start database service
 
-- Starts only the main stack database service: `scs--database` (MariaDB).
+- Starts only the main stack database service: `core--mariadb--db` (MariaDB; DNS alias `scs--database`).
 - Uses `COMPOSE_FILE=docker-compose.yml` so only the main compose file is loaded (avoids loading submodule compose files that might depend on env vars not yet set).
 - Skips if the database container is already running.
 
@@ -72,7 +72,7 @@ Runs the following scripts in order from the repo root. Each script is executed 
 | `01_scripts/scs-project-website/pre-install.bash` | Creates project website database and user; generates Varnish VCL from template. **Note:** The script directory is actually `01_scripts/scs-project-page/` (not `scs-project-website`). If `start.sh` reports "Pre-install script not found", run `01_scripts/scs-project-page/pre-install.bash` manually or fix the path in `start.sh`. The script itself references `00_custom_configs/scs-project-website/varnish/default.vcl.tpl`; the template file is under `00_custom_configs/scs-project-page/varnish/default.vcl.tpl`. |
 | `01_scripts/open_gdb/pre-install.bash` | Validates `OPEN_GDB_DOMAIN`; generates OpenGDB nginx config from `00_custom_configs/open_gdb/opengdb_proxy/nginx.conf.tpl` into `open_gdb/opengdb_proxy/nginx.conf`. |
 
-All scripts expect `.env` to be loaded (they source it if present). They use `docker exec scs--database` for DB operations, so the database must be running (Step 4) and ready (Step 5).
+All scripts expect `.env` to be loaded (they source it if present). They use `docker exec "${SCS_CONTAINER_DATABASE}"` (`core--mariadb--db`) for DB operations, so the database must be running (Step 4) and ready (Step 5). JDBC hosts may still be the alias `scs--database` until cutover.
 
 ## After `start.sh` completes
 
@@ -89,7 +89,7 @@ All scripts expect `.env` to be loaded (they source it if present). They use `do
 The user notebook image `spawner_image` is built locally and is not started as a running container. After `start.sh` (or before the first Hub login), build it once from the repo root:
 
 ```bash
-docker compose build jupyterhub--image-builder
+docker compose build jupyterhub--spawner--builder
 ```
 
 Rebuild after changes under `jupyterhub/spawner_image/`. See [JupyterHub spawn failure](../troubleshooting/jupyterhub-spawn-failure.md) if spawn returns HTTP 500.

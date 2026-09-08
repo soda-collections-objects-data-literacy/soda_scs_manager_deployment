@@ -134,7 +134,7 @@ Idempotent: already linked projects only re-grant member `EDIT`. Owner is set as
 
 The project-page WebProtégé card deep-links with `?project=` to `#projects/{uuid}/perspectives/69df8fa8-4f84-499e-9341-28eb5085c40b`. The dashboard card has no project context and opens `#projects/list`.
 
-API key and optional Docker-internal API base URL live in SCS Manager settings (WebProtégé tab). Generate the key with `docker exec -it webprotege java -jar /webprotege-cli.jar generate-api-key`; do not commit it.
+API key and optional Docker-internal API base URL live in SCS Manager settings (WebProtégé tab). Generate the key with `docker exec -it webprotege--webprotege--app java -jar /webprotege-cli.jar generate-api-key`; do not commit it.
 
 ---
 
@@ -295,7 +295,7 @@ Users with `soda scs manager admin` or the entity-specific `administer soda scs 
 ### Delete Nextcloud user
 
 ```bash
-docker exec nextcloud--nextcloud php /var/www/html/occ user:delete "keycloak-${KEYCLOAK_UUID}"
+docker exec nextcloud--nextcloud--app php /var/www/html/occ user:delete "keycloak-${KEYCLOAK_UUID}"
 ```
 
 Or configure Nextcloud admin credentials in SCS Manager and rely on `hook_user_delete()`.

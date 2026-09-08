@@ -51,17 +51,17 @@ If the prefix in SCS Manager does not match the real Drive account id, status ch
 
 ```bash
 # List both forms for a Keycloak sub fragment
-docker exec --user www-data nextcloud--nextcloud php /var/www/html/occ user:list | grep {sub-fragment}
+docker exec --user www-data nextcloud--nextcloud--app php /var/www/html/occ user:list | grep {sub-fragment}
 
 # Optional: copy SCS-Share from legacy account first
-docker exec nextcloud--nextcloud bash -c '
+docker exec nextcloud--nextcloud--app bash -c '
   SRC=/var/www/html/data/keycloak-{sub}/files/SCS-Share
   DST=/var/www/html/data/{sub}/files/SCS-Share
   mkdir -p "$DST" && cp -n "$SRC"/* "$DST/" 2>/dev/null || true
 '
 
 # Delete legacy prefixed account
-docker exec --user www-data nextcloud--nextcloud php /var/www/html/occ user:delete keycloak-{sub}
+docker exec --user www-data nextcloud--nextcloud--app php /var/www/html/occ user:delete keycloak-{sub}
 ```
 
 Clear stale Keycloak attributes if needed (SCS Manager clears them automatically when validation fails):
@@ -108,14 +108,14 @@ Then trigger sync again from JupyterLab (first run re-bootstraps with `--resync`
 Files copied on the Nextcloud host (e.g. migration between accounts) may not appear over WebDAV until indexed:
 
 ```bash
-docker exec --user www-data nextcloud--nextcloud php occ files:scan {nextcloud-user-id} --path=/{nextcloud-user-id}/files/SCS-Share
+docker exec --user www-data nextcloud--nextcloud--app php occ files:scan {nextcloud-user-id} --path=/{nextcloud-user-id}/files/SCS-Share
 ```
 
 ## Verify
 
 ```bash
 # One Drive account per Keycloak sub (plus optional legacy keycloak- duplicate)
-docker exec --user www-data nextcloud--nextcloud php /var/www/html/occ user:list | grep {sub-fragment}
+docker exec --user www-data nextcloud--nextcloud--app php /var/www/html/occ user:list | grep {sub-fragment}
 
 # Keycloak attribute (via SCS Manager / Admin API) should match the user_oidc account id
 # nextcloud_login_name = {sub}

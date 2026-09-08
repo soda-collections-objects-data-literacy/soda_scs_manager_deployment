@@ -52,7 +52,7 @@ flowchart LR
 | `occ files:scan`, `occ user:delete`, migrate SCS-Share | | ✓ |
 | Fix Keycloak audience mapper / `user_oidc` provider | | ✓ |
 | Rebuild Jupyter spawner image | | ✓ |
-| Restart `jupyterhub--jupyterhub`, `nextcloud--nextcloud`, `keycloak--keycloak` | | ✓ (usually **not** needed for one user) |
+| Restart `jupyterhub--jupyterhub--app`, `nextcloud--nextcloud--app`, `keycloak--keycloak--app` | | ✓ (usually **not** needed for one user) |
 
 ## Symptoms → first steps
 
@@ -134,7 +134,7 @@ echo 'stored: ' . (\$c['username'] ?? 'INVALID') . PHP_EOL;
 "
 
 # 3. Nextcloud accounts (look for duplicate keycloak-{sub} AND raw {sub})
-docker exec --user www-data nextcloud--nextcloud php occ user:list | grep {sub-fragment}
+docker exec --user www-data nextcloud--nextcloud--app php occ user:list | grep {sub-fragment}
 
 # 4. Jupyter env (after user respawned)
 docker inspect jupyter-{username} --format '{{range .Config.Env}}{{println .}}{{end}}' | grep ^NC_
@@ -185,7 +185,7 @@ docker exec -u jovyan jupyter-{username} python3 -c \
 ### WebDAV missing files after host-side copy
 
 ```bash
-docker exec --user www-data nextcloud--nextcloud php occ files:scan \
+docker exec --user www-data nextcloud--nextcloud--app php occ files:scan \
   {sub} --path=/{sub}/files/SCS-Share
 ```
 
@@ -196,10 +196,10 @@ docker exec --user www-data nextcloud--nextcloud php occ files:scan \
 | **User: Stop → Start Jupyter server** | After reconnecting Drive, or when `NC_LOGIN_NAME` is wrong | One user |
 | **User: log out/in SCS Manager + Drive** | Stale OIDC token, Bearer 401 | One user |
 | `docker compose restart scs-manager--drupal` | Drupal/SCS Manager code or config cache issues | All Manager users |
-| `docker compose restart jupyterhub--jupyterhub` | Hub config / authenticator changes | All Hub users (running servers keep old env until respawn) |
-| `docker compose restart nextcloud--nextcloud` | Nextcloud app/config changes | All Drive users |
-| `docker compose restart keycloak--keycloak` | Realm/client mapper changes | All SSO users |
-| Rebuild `jupyterhub--image-builder` | Spawner image / sync extension changes | New spawns only |
+| `docker compose restart jupyterhub--jupyterhub--app` | Hub config / authenticator changes | All Hub users (running servers keep old env until respawn) |
+| `docker compose restart nextcloud--nextcloud--app` | Nextcloud app/config changes | All Drive users |
+| `docker compose restart keycloak--keycloak--app` | Realm/client mapper changes | All SSO users |
+| Rebuild `jupyterhub--spawner--builder` | Spawner image / sync extension changes | New spawns only |
 
 **Default for “connection broken for one user”:** reconnect in SCS Manager + Jupyter **respawn** — **no** stack restart required.
 

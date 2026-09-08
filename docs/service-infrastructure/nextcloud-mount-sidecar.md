@@ -1,6 +1,7 @@
 # Nextcloud Mount Sidecar
 
-A dedicated `nextcloud-mounter` container runs `rclone rcd` with `SYS_ADMIN` and
+A dedicated `core--rclone--sidecar` container (alias `nextcloud-mounter` during naming migration) runs `rclone rcd` with
+`SYS_ADMIN` and
 `/dev/fuse`. It creates one WebDAV/FUSE mount per platform user under
 `${NEXTCLOUD_MOUNTS_ROOT}/<machine-name>` (default root
 `/var/lib/scs/nextcloud-mounts`). Consumer containers (WissKI, Jupyter) bind that
@@ -91,8 +92,8 @@ Keep these in `00_custom_configs/scs-manager-stack/docker/docker-compose.overrid
 ## Start / health
 
 ```bash
-docker compose up -d nextcloud-mounter
-docker compose ps nextcloud-mounter
+docker compose up -d core--rclone--sidecar
+docker compose ps core--rclone--sidecar
 # Healthy; no host port published for :5572
 ```
 
@@ -168,14 +169,14 @@ Stopping alone does not remount; a Hub spawn is required.
 ## Secret rotation
 
 1. Set a new `NEXTCLOUD_MOUNTER_RC_PASS` in `.env`.
-2. `docker compose up -d nextcloud-mounter scs-manager--drupal`
+2. `docker compose up -d core--rclone--sidecar scs-manager--drupal`
 3. Confirm Manager can still call `core/pid` (or `scs-drush scs:nextcloud-status`).
 
 ## Troubleshooting
 
 | Symptom | Likely cause | Action |
 |---|---|---|
-| `Transport endpoint is not connected` | Sidecar crashed; stale FUSE node | `docker compose restart nextcloud-mounter`; then `scs-drush scs:nextcloud-reconcile` |
+| `Transport endpoint is not connected` | Sidecar crashed; stale FUSE node | `docker compose restart core--rclone--sidecar`; then `scs-drush scs:nextcloud-reconcile` |
 | Mount empty in running WissKI | Source dir missing at stack start, or wrong `NEXTCLOUD_USER_MOUNT_SOURCE` | Ensure owner mount + project folder exist; redeploy stack with correct source |
 | WissKI shows disconnected / not mounted | Module not in `external` mode, or bind still `_disabled` | Check `NEXTCLOUD_MOUNT_MODE` / `operation_mode`; redeploy after Team Folder exists |
 | `start.sh` aborts on propagation | Host bind not rshared | Re-run setup script / enable systemd unit |

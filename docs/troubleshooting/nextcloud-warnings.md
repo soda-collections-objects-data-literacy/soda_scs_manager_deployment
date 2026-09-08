@@ -2,6 +2,8 @@
 
 This guide addresses common warnings that appear in the Nextcloud admin panel (Settings → Administration → Overview).
 
+Wave H3: `docker exec` / `docker compose` use `nextcloud--nextcloud--app` and `nextcloud--nginx--edge`. Old names remain Docker DNS aliases only (`REDIS_HOST`, nginx upstreams, OnlyOffice internal URL).
+
 ## Reverse proxy header configuration
 
 **Warning:** "Die Konfiguration des Reverse-Proxy-Headers ist falsch. Dies stellt ein Sicherheitsproblem dar..."
@@ -19,13 +21,13 @@ This guide addresses common warnings that appear in the Nextcloud admin panel (S
    ```bash
    # From repo root
    cp 00_custom_configs/scs-nextcloud-stack/reverse-proxy/nginx.conf scs-nextcloud-stack/reverse-proxy/nginx.conf
-   docker compose restart nextcloud--nextcloud-reverse-proxy
+   docker compose restart nextcloud--nginx--edge
    ```
 
 3. Verify settings inside the container:
    ```bash
-   docker exec nextcloud--nextcloud php /var/www/html/occ config:system:get trusted_proxies
-   docker exec nextcloud--nextcloud php /var/www/html/occ config:system:get forwarded_for_headers
+   docker exec nextcloud--nextcloud--app php /var/www/html/occ config:system:get trusted_proxies
+   docker exec nextcloud--nextcloud--app php /var/www/html/occ config:system:get forwarded_for_headers
    ```
 
 ---
@@ -41,7 +43,7 @@ This guide addresses common warnings that appear in the Nextcloud admin panel (S
 Ensure custom nginx config is in use (includes `.mjs` handling):
 ```bash
 cp 00_custom_configs/scs-nextcloud-stack/reverse-proxy/nginx.conf scs-nextcloud-stack/reverse-proxy/nginx.conf
-docker compose restart nextcloud--nextcloud-reverse-proxy
+docker compose restart nextcloud--nginx--edge
 ```
 
 The custom config defines `.mjs` as `application/javascript` and includes it in the static file location block.
@@ -63,8 +65,8 @@ Apply maintenance window settings:
 
 Or manually:
 ```bash
-docker exec nextcloud--nextcloud php /var/www/html/occ config:system:set maintenance_window_start --type integer --value=22
-docker exec nextcloud--nextcloud php /var/www/html/occ config:system:set maintenance_window_length --type integer --value=6
+docker exec nextcloud--nextcloud--app php /var/www/html/occ config:system:set maintenance_window_start --type integer --value=22
+docker exec nextcloud--nextcloud--app php /var/www/html/occ config:system:set maintenance_window_length --type integer --value=6
 ```
 
 This sets the maintenance window to start at 22:00 (10 PM) for 6 hours.
@@ -86,13 +88,13 @@ This sets the maintenance window to start at 22:00 (10 PM) for 6 hours.
 
 2. Apply the setting:
    ```bash
-   docker compose up -d nextcloud--nextcloud
+   docker compose up -d nextcloud--nextcloud--app
    01_scripts/scs-nextcloud-stack/apply-nextcloud-proxy-and-region.bash
    ```
 
 Or manually:
 ```bash
-docker exec nextcloud--nextcloud php /var/www/html/occ config:system:set default_phone_region --value=DE
+docker exec nextcloud--nextcloud--app php /var/www/html/occ config:system:set default_phone_region --value=DE
 ```
 
 ---
@@ -129,9 +131,9 @@ Run the comprehensive repair script (handles all three):
 
 Or manually:
 ```bash
-docker exec nextcloud--nextcloud php /var/www/html/occ db:add-missing-indices
-docker exec nextcloud--nextcloud php /var/www/html/occ db:add-missing-columns
-docker exec nextcloud--nextcloud php /var/www/html/occ db:add-missing-primary-keys
+docker exec nextcloud--nextcloud--app php /var/www/html/occ db:add-missing-indices
+docker exec nextcloud--nextcloud--app php /var/www/html/occ db:add-missing-columns
+docker exec nextcloud--nextcloud--app php /var/www/html/occ db:add-missing-primary-keys
 ```
 
 ---
@@ -184,7 +186,7 @@ See detailed guide: [Nextcloud email setup](nextcloud-email.md)
 Ensure custom nginx config is in use (includes correct `.well-known` handling with full URL preservation):
 ```bash
 cp 00_custom_configs/scs-nextcloud-stack/reverse-proxy/nginx.conf scs-nextcloud-stack/reverse-proxy/nginx.conf
-docker compose restart nextcloud--nextcloud-reverse-proxy
+docker compose restart nextcloud--nginx--edge
 ```
 
 The custom config handles `.well-known` URLs with 301 redirects that preserve the full URL:
@@ -200,8 +202,8 @@ The custom config handles `.well-known` URLs with 301 redirects that preserve th
 
 **Fix overwrite.cli.url:**
 ```bash
-docker exec nextcloud--nextcloud php /var/www/html/occ config:system:set overwrite.cli.url --value="https://your-nextcloud-domain.com"
-docker exec nextcloud--nextcloud php /var/www/html/occ config:system:set overwritehost --value="your-nextcloud-domain.com"
+docker exec nextcloud--nextcloud--app php /var/www/html/occ config:system:set overwrite.cli.url --value="https://your-nextcloud-domain.com"
+docker exec nextcloud--nextcloud--app php /var/www/html/occ config:system:set overwritehost --value="your-nextcloud-domain.com"
 ```
 
 Or use the apply script (includes this fix):
@@ -240,20 +242,20 @@ curl -I https://your-nextcloud-domain/.well-known/webfinger
 
 **Option A: Suppress the check** (recommended if URLs work externally)
 ```bash
-docker exec nextcloud--nextcloud php /var/www/html/occ config:app:set serverinfo check_well_known --value=false
+docker exec nextcloud--nextcloud--app php /var/www/html/occ config:app:set serverinfo check_well_known --value=false
 ```
 
 **Option B: Add domain to container hosts**
 Edit `00_custom_configs/scs-nextcloud-stack/docker/docker-compose.override.yml`:
 ```yaml
-nextcloud--nextcloud:
+nextcloud--nextcloud--app:
   extra_hosts:
     - "your-nextcloud-domain.com:172.18.0.1"  # Point to Traefik gateway
 ```
 
 Then restart:
 ```bash
-docker compose up -d nextcloud--nextcloud
+docker compose up -d nextcloud--nextcloud--app
 ```
 
 **Note:** If external access to `.well-known` URLs works (CalDAV, CardDAV, federation), the warning is cosmetic and can be safely ignored or suppressed.
@@ -278,7 +280,7 @@ docker compose up -d nextcloud--nextcloud
 
 Ignore this warning or disable the AppAPI app:
 ```bash
-docker exec nextcloud--nextcloud php /var/www/html/occ app:disable app_api
+docker exec nextcloud--nextcloud--app php /var/www/html/occ app:disable app_api
 ```
 
 ---
@@ -301,7 +303,7 @@ docker exec nextcloud--nextcloud php /var/www/html/occ app:disable app_api
 
 Clear old log entries after addressing issues:
 ```bash
-docker exec nextcloud--nextcloud php /var/www/html/occ log:manage --clear
+docker exec nextcloud--nextcloud--app php /var/www/html/occ log:manage --clear
 ```
 
 ---
@@ -317,17 +319,17 @@ docker exec nextcloud--nextcloud php /var/www/html/occ log:manage --clear
 Redis is already included in the stack. Verify it's configured:
 
 ```bash
-docker exec nextcloud--nextcloud php /var/www/html/occ config:system:get memcache.distributed
-docker exec nextcloud--nextcloud php /var/www/html/occ config:system:get memcache.locking
-docker exec nextcloud--nextcloud php /var/www/html/occ config:system:get redis host
+docker exec nextcloud--nextcloud--app php /var/www/html/occ config:system:get memcache.distributed
+docker exec nextcloud--nextcloud--app php /var/www/html/occ config:system:get memcache.locking
+docker exec nextcloud--nextcloud--app php /var/www/html/occ config:system:get redis host
 ```
 
 If not configured, set Redis:
 ```bash
-docker exec nextcloud--nextcloud php /var/www/html/occ config:system:set memcache.distributed --value='\OC\Memcache\Redis'
-docker exec nextcloud--nextcloud php /var/www/html/occ config:system:set memcache.locking --value='\OC\Memcache\Redis'
-docker exec nextcloud--nextcloud php /var/www/html/occ config:system:set redis host --value=nextcloud--redis
-docker exec nextcloud--nextcloud php /var/www/html/occ config:system:set redis port --value=6379 --type=integer
+docker exec nextcloud--nextcloud--app php /var/www/html/occ config:system:set memcache.distributed --value='\OC\Memcache\Redis'
+docker exec nextcloud--nextcloud--app php /var/www/html/occ config:system:set memcache.locking --value='\OC\Memcache\Redis'
+docker exec nextcloud--nextcloud--app php /var/www/html/occ config:system:set redis host --value=nextcloud--redis
+docker exec nextcloud--nextcloud--app php /var/www/html/occ config:system:set redis port --value=6379 --type=integer
 ```
 
 ---
@@ -344,7 +346,7 @@ docker exec nextcloud--nextcloud php /var/www/html/occ config:system:set redis p
 2. Ensure "Cron" is selected (not AJAX or Webcron)
 3. Verify cron is running inside the container:
    ```bash
-   docker exec nextcloud--nextcloud cat /var/spool/cron/crontabs/www-data
+   docker exec nextcloud--nextcloud--app cat /var/spool/cron/crontabs/www-data
    ```
 
    Should show:
@@ -354,12 +356,12 @@ docker exec nextcloud--nextcloud php /var/www/html/occ config:system:set redis p
 
 4. If missing, the Nextcloud image should set this up automatically. Restart the container:
    ```bash
-   docker compose restart nextcloud--nextcloud
+   docker compose restart nextcloud--nextcloud--app
    ```
 
 5. Manually trigger cron to test:
    ```bash
-   docker exec -u www-data nextcloud--nextcloud php /var/www/html/cron.php
+   docker exec -u www-data nextcloud--nextcloud--app php /var/www/html/cron.php
    ```
 
 ---
@@ -401,13 +403,13 @@ Connector settings can be lost after upgrades or config changes. Re-saving often
 If both OnlyOffice and Collabora (richdocuments) are enabled, Collabora can override OnlyOffice's file associations. Check:
 
 ```bash
-docker exec nextcloud--nextcloud php /var/www/html/occ app:list | grep -E "onlyoffice|richdocuments"
+docker exec nextcloud--nextcloud--app php /var/www/html/occ app:list | grep -E "onlyoffice|richdocuments"
 ```
 
 If `richdocuments` is enabled and you want OnlyOffice for DOCX/XLSX/PPTX, disable Collabora:
 
 ```bash
-docker exec nextcloud--nextcloud php /var/www/html/occ app:disable richdocuments
+docker exec nextcloud--nextcloud--app php /var/www/html/occ app:disable richdocuments
 ```
 
 ### 4. File extension case sensitivity
@@ -417,7 +419,7 @@ Some setups only handle lowercase extensions. Try files named `document.docx` (l
 ### 5. Verify OnlyOffice configuration
 
 ```bash
-docker exec nextcloud--nextcloud php /var/www/html/occ config:list onlyoffice
+docker exec nextcloud--nextcloud--app php /var/www/html/occ config:list onlyoffice
 ```
 
 Ensure:
@@ -428,7 +430,7 @@ Ensure:
 ### 6. Test Document Server connectivity
 
 ```bash
-docker exec nextcloud--nextcloud php /var/www/html/occ onlyoffice:documentserver --check
+docker exec nextcloud--nextcloud--app php /var/www/html/occ onlyoffice:documentserver --check
 ```
 
 ### 6b. Converter / thumbnails: HTTP 504 Gateway Time-out (`/converter`)
@@ -465,7 +467,7 @@ Or run the steps manually:
 
 ```bash
 # 1. Restart reverse proxy (picks up nginx config: .well-known URLs, etc.)
-docker compose restart nextcloud--nextcloud-reverse-proxy
+docker compose restart nextcloud--nginx--edge
 
 # 2. Apply proxy, maintenance window, phone region, overwritecondaddr
 01_scripts/scs-nextcloud-stack/apply-nextcloud-proxy-and-region.bash

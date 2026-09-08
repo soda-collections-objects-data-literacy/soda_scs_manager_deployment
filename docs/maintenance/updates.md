@@ -43,7 +43,7 @@ Nextcloud is a stateful service with a database, file storage, and apps. Updates
    Manual backup (alternative):
 
    ```bash
-   docker exec scs--database mariadb-dump -u root -p"${SCS_DB_ROOT_PASSWORD}" "${NEXTCLOUD_DB_NAME}" > nextcloud-backup-$(date +%Y%m%d).sql
+   docker exec core--mariadb--db mariadb-dump -u root -p"${SCS_DB_ROOT_PASSWORD}" "${NEXTCLOUD_DB_NAME}" > nextcloud-backup-$(date +%Y%m%d).sql
    ```
 
 3. **Check Nextcloud release notes**
@@ -65,7 +65,7 @@ Nextcloud is a stateful service with a database, file storage, and apps. Updates
    Edit `scs-nextcloud-stack/docker-compose.yml`:
 
    ```yaml
-   nextcloud--nextcloud:
+   nextcloud--nextcloud--app:
      image: nextcloud:31.0-fpm  # Change to nextcloud:32.0-fpm (example)
    ```
 
@@ -74,14 +74,14 @@ Nextcloud is a stateful service with a database, file storage, and apps. Updates
    From the repo root:
 
    ```bash
-   docker compose pull nextcloud--nextcloud
-   docker compose up -d nextcloud--nextcloud
+   docker compose pull nextcloud--nextcloud--app
+   docker compose up -d nextcloud--nextcloud--app
    ```
 
    The Nextcloud container will detect the version change and run database migrations automatically on startup. **This can take several minutes to hours** depending on the size of your instance and the number of migrations. Monitor logs:
 
    ```bash
-   docker compose logs -f nextcloud--nextcloud
+   docker compose logs -f nextcloud--nextcloud--app
    ```
 
    Look for messages like:
@@ -100,7 +100,7 @@ After the update completes and Nextcloud is running, perform these tasks from th
 1. **Disable maintenance mode** (if still enabled)
 
    ```bash
-   docker exec nextcloud--nextcloud php /var/www/html/occ maintenance:mode --off
+   docker exec nextcloud--nextcloud--app php /var/www/html/occ maintenance:mode --off
    ```
 
 2. **Run maintenance and repair tasks**
@@ -122,7 +122,7 @@ After the update completes and Nextcloud is running, perform these tasks from th
    After a Nextcloud upgrade, apps may need updates:
 
    ```bash
-   docker exec nextcloud--nextcloud php /var/www/html/occ app:update --all
+   docker exec nextcloud--nextcloud--app php /var/www/html/occ app:update --all
    ```
 
    Or use the Nextcloud web UI (Admin → Apps → Updates).
@@ -160,7 +160,7 @@ After the update completes and Nextcloud is running, perform these tasks from th
 **Fix:**
 
 ```bash
-docker exec nextcloud--nextcloud php /var/www/html/occ maintenance:mode --off
+docker exec nextcloud--nextcloud--app php /var/www/html/occ maintenance:mode --off
 ```
 
 Check logs for errors that prevented the upgrade from completing.
@@ -184,8 +184,8 @@ Check logs for errors that prevented the upgrade from completing.
 Check the app list and re-enable compatible apps:
 
 ```bash
-docker exec nextcloud--nextcloud php /var/www/html/occ app:list
-docker exec nextcloud--nextcloud php /var/www/html/occ app:enable <app-name>
+docker exec nextcloud--nextcloud--app php /var/www/html/occ app:list
+docker exec nextcloud--nextcloud--app php /var/www/html/occ app:enable <app-name>
 ```
 
 If an app is incompatible, wait for an update or disable it until a compatible version is available.
@@ -296,14 +296,14 @@ If you need to manually restore:
 1. **Stop the affected service**:
 
    ```bash
-   docker compose stop nextcloud--nextcloud nextcloud--nextcloud-reverse-proxy
+   docker compose stop nextcloud--nextcloud--app nextcloud--nginx--edge
    ```
 
 2. **Restore the database backup**:
 
    ```bash
-   docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "DROP DATABASE IF EXISTS ${NEXTCLOUD_DB_NAME};"
-   docker exec scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "CREATE DATABASE ${NEXTCLOUD_DB_NAME};"
+   docker exec core--mariadb--db mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "DROP DATABASE IF EXISTS ${NEXTCLOUD_DB_NAME};"
+   docker exec core--mariadb--db mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "CREATE DATABASE ${NEXTCLOUD_DB_NAME};"
    docker exec -i scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" "${NEXTCLOUD_DB_NAME}" < /srv/backups/nextcloud/nextcloud-db_TIMESTAMP.sql
    ```
 
@@ -312,7 +312,7 @@ If you need to manually restore:
 4. **Recreate the container**:
 
    ```bash
-   docker compose up -d nextcloud--nextcloud nextcloud--nextcloud-reverse-proxy
+   docker compose up -d nextcloud--nextcloud--app nextcloud--nginx--edge
    ```
 
 5. **Verify** the service is working with the old version and backed-up data.
@@ -390,7 +390,7 @@ The script will:
 Nextcloud uses cron for background jobs (file scans, cleanup, etc.). The deployment uses the Docker entrypoint hook to set up cron inside the Nextcloud container. Verify cron is running:
 
 ```bash
-docker exec nextcloud--nextcloud php /var/www/html/occ background:cron
+docker exec nextcloud--nextcloud--app php /var/www/html/occ background:cron
 ```
 
 Check last run time in Settings → Administration → Basic settings → Background jobs.

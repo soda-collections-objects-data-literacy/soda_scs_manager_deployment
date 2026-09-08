@@ -2,11 +2,13 @@
 
 This section describes what is in the SODa SCS Manager deployment and how the services are wired.
 
+For a C4-style Mermaid map (Compose → containers → modules → integrations → configs/scripts), see **[Architecture overview](architecture-overview.md)**. Naming scheme: **[Naming vocabulary](naming-vocabulary.md)**. Migration (aliases, Manager settings, env, code): **[Naming migration plan](naming-migration-plan.md)**.
+
 ## Overview
 
 The deployment is built from multiple Docker Compose files merged via the `COMPOSE_FILE` environment variable (see `example-env`). It includes:
 
-- A **main stack** (`docker-compose.yml`): Traefik reverse proxy, shared MariaDB, Portainer, phpMyAdmin, access-proxy helper, and the **Nextcloud FUSE mounter** sidecar (`nextcloud-mounter`).
+- A **main stack** (`docker-compose.yml`): Traefik reverse proxy, shared MariaDB, Portainer, phpMyAdmin, and the **Nextcloud FUSE mounter** sidecar (`nextcloud-mounter`).
 - **Submodule stacks**: SCS Manager (Drupal), Nextcloud, JupyterHub, Keycloak, OpenGDB, WebProtégé, the project website stack, and the SCS Health dashboard.
 
 All services that serve HTTP or need to be reached by Traefik attach to the same Docker network, `reverse-proxy`. The shared MariaDB instance is used by Keycloak, SCS Manager, Nextcloud, and the project website; each has its own database and user created by pre-install scripts.
@@ -64,11 +66,11 @@ flowchart LR
 
 ## Main stack (`docker-compose.yml`)
 
-- **scs--reverse-proxy** — Traefik: HTTP/HTTPS entrypoints, TLS (e.g. Let’s Encrypt), middlewares (HTTPS redirect, Nextcloud headers, rate limiting). Routes by `Host(...)` using Docker labels.
-- **scs--database** — MariaDB. Single instance; databases and users for Keycloak, SCS Manager, Nextcloud, and project website are created by pre-install scripts.
-- **scs--portainer** — Portainer CE for container management; used by SCS Manager for WissKI stack operations.
-- **scs--phpmyadmin** — phpMyAdmin for database access (optional).
-- **scs--access-proxy** — Helper container for file management and snapshot paths.
+- **core--traefik--edge** (alias `scs--reverse-proxy`) — Traefik: HTTP/HTTPS entrypoints, TLS (e.g. Let’s Encrypt), middlewares (HTTPS redirect, Nextcloud headers, rate limiting). Routes by `Host(...)` using Docker labels. The Docker **network** remains `reverse-proxy`.
+- **core--mariadb--db** (alias `scs--database`) — MariaDB. Single instance; databases and users for Keycloak, SCS Manager, Nextcloud, and project website are created by pre-install scripts.
+- **core--portainer--app** (alias `scs--portainer`) — Portainer CE for container management; used by SCS Manager for WissKI stack operations.
+- **dbms--phpmyadmin--app** (alias `scs--phpmyadmin`) — phpMyAdmin for database access (optional).
+- **dbms--forwardauth--proxy** (alias `scs--forward-auth`) — Keycloak forward-auth for phpMyAdmin SSO.
 - **nextcloud-mounter** — rclone `rcd` sidecar for per-user Nextcloud WebDAV/FUSE mounts. See [Nextcloud mount sidecar](nextcloud-mount-sidecar.md).
 
 ## Compose file aggregation
@@ -93,7 +95,7 @@ Override files are copied from `00_custom_configs/<stack>/docker/` to each stack
 
 ### Database
 
-- **scs--database** (MariaDB) is started first by `start.sh`. Pre-install scripts create:
+- **core--mariadb--db** (MariaDB, alias `scs--database`) is started first by `start.sh`. Pre-install scripts create:
   - Keycloak DB and user
   - SCS Manager DB and user
   - Nextcloud DB and user
@@ -140,11 +142,11 @@ Override files are copied from `00_custom_configs/<stack>/docker/` to each stack
 - **API key (once per environment):** rebuild/recreate `webprotege` after Java changes, then generate a key for a user with `CREATE_EMPTY_PROJECT`:
 
   ```bash
-  docker compose up -d --force-recreate --build webprotege
-  docker exec -it webprotege java -jar /webprotege-cli.jar generate-api-key
+  docker compose up -d --force-recreate --build webprotege--webprotege--app
+  docker exec -it webprotege--webprotege--app java -jar /webprotege-cli.jar generate-api-key
   ```
 
-  Store the key in SCS Manager settings (WebProtégé → API key), not in git. Optional **API base URL** `http://webprotege:8080` for Docker-internal REST. Run `drush updb` for field `webprotegeProjectId` (update 11028) and rebuild caches. Then backfill existing SCS projects (owners + member EDIT):
+  Store the key in SCS Manager settings (WebProtégé → API key), not in git. Optional **API base URL** `http://webprotege:8080` for Docker-internal REST (Today alias until soak; Target `http://webprotege--webprotege--app:8080`). Run `drush updb` for field `webprotegeProjectId` (update 11028) and rebuild caches. Then backfill existing SCS projects (owners + member EDIT):
 
   ```bash
   scs-drush soda_scs_manager:backfill-webprotege-projects --dry-run --all
@@ -155,7 +157,7 @@ Override files are copied from `00_custom_configs/<stack>/docker/` to each stack
 
 ### OpenGDB
 
-- RDF4J triplestore, AuthProxy (Django), OutProxy, nginx. Nginx config is generated from `00_custom_configs/open_gdb/opengdb_proxy/nginx.conf.tpl` during pre-install using `OPEN_GDB_DOMAIN`.
+- RDF4J (`opengdb--rdf4j--db`, alias `scs--rdf4j`), AuthProxy (`opengdb--authproxy--proxy`, alias `scs--authproxy`), OutProxy, nginx (`opengdb--nginx--edge`). Internal SPARQL from WissKI still uses the alias until cutover.
 
 ### Project website (scs-project-website-stack)
 

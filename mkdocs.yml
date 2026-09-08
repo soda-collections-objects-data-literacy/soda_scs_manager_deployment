@@ -17,6 +17,9 @@ nav:
   - Glossary: glossary.md
   - Service infrastructure:
     - Overview: service-infrastructure/index.md
+    - Architecture (C4 / Mermaid): service-infrastructure/architecture-overview.md
+    - Naming vocabulary: service-infrastructure/naming-vocabulary.md
+    - Naming migration plan: service-infrastructure/naming-migration-plan.md
     - PHP debugging (Xdebug): service-infrastructure/php-xdebug.md
     - SCS Health dashboard: service-infrastructure/scs-health.md
     - SCS Manager user lifecycle: service-infrastructure/scs-manager-user-lifecycle.md
@@ -52,6 +55,16 @@ nav:
 plugins:
   - search
 
-# For Mermaid diagram rendering, add: pip install mkdocs-mermaid2-plugin
-# and under plugins: - mermaid2
-# The service-infrastructure diagram is in a mermaid code block.
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true

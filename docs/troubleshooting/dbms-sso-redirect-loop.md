@@ -10,7 +10,7 @@ The mesosphere/traefik-forward-auth fork does not implement `/_oauth/logout`. Tr
 
 If logout redirects to `manager.localhost` or Keycloak uses `auth.localhost`, the phpMyAdmin container is not receiving env vars from the main `docker-compose.yml`.
 
-**Cause:** `scs--phpmyadmin` is defined only in the **main** `docker-compose.yml` at the repo root. If that file is not in your `COMPOSE_FILE`, or you run from a different directory, the service may use a different compose definition without the env vars.
+**Cause:** `dbms--phpmyadmin--app` (alias `scs--phpmyadmin`) is defined only in the **main** `docker-compose.yml` at the repo root. If that file is not in your `COMPOSE_FILE`, or you run from a different directory, the service may use a different compose definition without the env vars.
 
 **Fix:**
 1. Ensure `COMPOSE_FILE` has the main `docker-compose.yml` **first** and includes the phpMyAdmin override:
@@ -20,11 +20,11 @@ If logout redirects to `manager.localhost` or Keycloak uses `auth.localhost`, th
 2. Run `docker compose` from the repo root (where the main `docker-compose.yml` lives).
 3. **Recreate** the container (restart does not pick up new env or volume mounts):
    ```bash
-   docker compose up -d --force-recreate scs--phpmyadmin
+   docker compose up -d --force-recreate dbms--phpmyadmin--app
    ```
 4. Verify env in the container:
    ```bash
-   docker exec scs--phpmyadmin env | grep -E 'KC_|SCS_DBMS|SCS_MANAGER'
+   docker exec dbms--phpmyadmin--app env | grep -E 'KC_|SCS_DBMS|SCS_MANAGER'
    ```
 
 **Fallback:** The config derives the manager URL from `HTTP_HOST` (dbms.X → manager.X), so it should work even without env if you visit phpMyAdmin at the correct host (e.g. dbms.dev-scs.sammlungen.io).
@@ -39,7 +39,7 @@ Keycloak forward-auth succeeds (you reach phpMyAdmin without a Keycloak redirect
 
 **Check:**
 ```bash
-docker exec scs--phpmyadmin ls -la /etc/phpmyadmin/config.user.inc.php /var/www/html/signon.php
+docker exec dbms--phpmyadmin--app ls -la /etc/phpmyadmin/config.user.inc.php /var/www/html/signon.php
 # Broken: both show as directories (drwxr-xr-x), not files (-rw-r--r--)
 ```
 
@@ -47,11 +47,11 @@ docker exec scs--phpmyadmin ls -la /etc/phpmyadmin/config.user.inc.php /var/www/
 1. Add `00_custom_configs/phpmyadmin/docker/docker-compose.override.yml` to `COMPOSE_FILE` (see `example-env`).
 2. Recreate phpMyAdmin:
    ```bash
-   docker compose up -d --force-recreate scs--phpmyadmin
+   docker compose up -d --force-recreate dbms--phpmyadmin--app
    ```
 3. Verify mounts point to `00_custom_configs/phpmyadmin/configs/`:
    ```bash
-   docker inspect scs--phpmyadmin --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{"\n"}}{{end}}'
+   docker inspect dbms--phpmyadmin--app --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{"\n"}}{{end}}'
    ```
 
 After the fix, visiting phpMyAdmin should redirect through `signon.php`, which reads `preferred_username` and `mariadb_password` from the JWT. If `mariadb_password` is empty, you see "No database access" — create an SQL component or join a project with SQL databases in SCS Manager.
@@ -70,7 +70,7 @@ When clicking "Log out" in phpMyAdmin, the browser redirects to Keycloak's logou
    - `KC_REALM=dev-scs` (must match your Keycloak realm)
    - `SCS_DBMS_DOMAIN=dbms.dev-scs.sammlungen.io` (must match the phpMyAdmin host)
 2. If `KC_URL`/`KC_DOMAIN` are unset, the URL is built from `KC_SERVICE_NAME.SCS_SUBDOMAIN.SCS_BASE_DOMAIN` (e.g. auth.dev-scs.sammlungen.io)
-3. Restart phpMyAdmin: `docker compose restart scs--phpmyadmin`
+3. Restart phpMyAdmin: `docker compose restart dbms--phpmyadmin--app`
 
 ---
 
@@ -95,7 +95,7 @@ The client secret in `.env` must **exactly match** the Keycloak client secret.
 1. Keycloak Admin → **Clients** → **DBMS SSO** (client ID: `https://${SCS_DBMS_DOMAIN}`)
 2. **Credentials** tab → copy the secret
 3. Set `.env`: `SCS_DBMS_CLIENT_SECRET=<paste>`
-4. Restart: `docker compose restart scs--forward-auth`
+4. Restart: `docker compose restart dbms--forwardauth--proxy`
 
 ### 2. Re-run Keycloak pre-install
 
@@ -103,7 +103,7 @@ If the realm was imported before `SCS_DBMS_*` was set, the client may have wrong
 
 ```bash
 ./01_scripts/keycloak/pre-install.sh
-docker compose restart keycloak--keycloak
+docker compose restart keycloak--keycloak--app
 ```
 
 ### 3. Check redirect URI in Keycloak
@@ -123,7 +123,7 @@ After fixing the secret, clear cookies for `dbms.dev-scs.sammlungen.io` (or your
 
 ```bash
 # Forward-auth logs (look for "Handling callback" vs "sending CSRF")
-docker logs scs--forward-auth --tail 50
+docker logs dbms--forwardauth--proxy --tail 50
 
 # Traefik/Keycloak: 400 on token = wrong secret or redirect_uri
 docker logs scs--reverse-proxy --tail 100 | grep -E "token|401|400"

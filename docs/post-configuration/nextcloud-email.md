@@ -124,7 +124,7 @@ NEXTCLOUD_NEXTCLOUD_MAIL_DOMAIN=yourdomain.com
 
 **Apply to new install:**
 - Add variables to `.env` before first start
-- Run `docker compose up -d nextcloud--nextcloud`
+- Run `docker compose up -d nextcloud--nextcloud--app`
 - Post-installation hook will configure email automatically
 
 **Apply to existing install:**

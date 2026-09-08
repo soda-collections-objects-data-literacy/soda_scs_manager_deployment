@@ -7,7 +7,7 @@ After logging in at `code.<scs>.<domain>`, starting a notebook shows:
 - **500 Internal Server Error**
 - *Unhandled error starting server &lt;username&gt;*
 
-Hub logs (`docker compose logs jupyterhub--jupyterhub`) contain:
+Hub logs (`docker compose logs jupyterhub--jupyterhub--app`) contain:
 
 ```text
 pull access denied for spawner_image, repository does not exist or may require 'docker login'
@@ -17,7 +17,7 @@ or `docker.errors.ImageNotFound` for `fromImage=spawner_image`.
 
 ## Cause
 
-JupyterHub spawns user containers from a **local-only** Docker image named `spawner_image` (see `DOCKER_JUPYTER_IMAGE` in `jupyterhub/docker-compose.yml`). That image is built by the `jupyterhub--image-builder` compose service; it is **not** pulled from a registry and is **not** started automatically (`deploy.replicas: 0`).
+JupyterHub spawns user containers from a **local-only** Docker image named `spawner_image` (see `DOCKER_JUPYTER_IMAGE` in `jupyterhub/docker-compose.yml`). That image is built by the `jupyterhub--spawner--builder` compose service; it is **not** pulled from a registry and is **not** started automatically (`deploy.replicas: 0`).
 
 If the image was never built, or was removed during `docker image prune`, spawn fails with HTTP 500.
 
@@ -26,7 +26,7 @@ If the image was never built, or was removed during `docker image prune`, spawn 
 From the deployment root (with `COMPOSE_FILE` from `.env`):
 
 ```bash
-docker compose build jupyterhub--image-builder
+docker compose build jupyterhub--spawner--builder
 ```
 
 Verify:
@@ -42,7 +42,7 @@ Then retry starting the server from the Hub home page (no Hub restart required).
 Rebuild after changes under `jupyterhub/spawner_image/` (Dockerfile, Nextcloud sync extension, server extension package):
 
 ```bash
-docker compose build jupyterhub--image-builder
+docker compose build jupyterhub--spawner--builder
 ```
 
 Existing user containers keep running until stopped; new spawns use the updated image.
@@ -55,4 +55,4 @@ Existing user containers keep running until stopped; new spawns use the updated 
 ## Related
 
 - OpenRefine must exist at `JUPYTERHUB_OPENREFINE_DIR` (default: `$PWD/openrefine` in root `.env`). Run `01_scripts/jupyterhub/pre-install.sh` if missing.
-- Hub logs: `docker compose logs -f jupyterhub--jupyterhub`
+- Hub logs: `docker compose logs -f jupyterhub--jupyterhub--app`

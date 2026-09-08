@@ -123,7 +123,7 @@ if (!req.http.X-Forwarded-Port) {
 **Meaning:** Varnish does not overwrite Traefik's X-Forwarded-Proto/Host/Port; it only fills defaults when absent so Drupal still sees the original scheme and host.
 ## Nextcloud (backend)
 **Role:** Generate HTTPS URLs and accept requests for the public hostname. Nextcloud is behind Traefik (and in this stack often behind an internal nginx reverse-proxy container); it does not use X-Forwarded-* by default for URL generation unless overwrite is set.
-**Where:** `scs-nextcloud-stack/docker-compose.yml` → `nextcloud--nextcloud` → `environment`.
+**Where:** `scs-nextcloud-stack/docker-compose.yml` → `nextcloud--nextcloud--app` → `environment`.
 **Required config:**
 ```yaml
 environment:

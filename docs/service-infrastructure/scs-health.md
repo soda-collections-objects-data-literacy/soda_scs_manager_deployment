@@ -1,6 +1,6 @@
 # SCS Health dashboard
 
-**scs-health** is a Next.js application (git submodule at `scs-health/`) that provides an operator-facing health dashboard for the SODa SCS stack. It is served by container `scs--health` behind Traefik.
+**scs-health** is a Next.js application (git submodule at `scs-health/`) that provides an operator-facing health dashboard for the SODa SCS stack. It is served by container `health--health--app` (alias `scs--health` during naming migration) behind Traefik.
 
 ## Purpose
 
@@ -52,19 +52,19 @@ From the deployment repo root (after submodules and `.env` are configured):
 ```bash
 git submodule update --init scs-health
 ./start.sh   # copies override files and updates submodules
-docker compose up -d --build scs--health
+docker compose up -d --build health--health--app
 ```
 
 Recreate after compose or env changes:
 
 ```bash
-docker compose up -d --force-recreate scs--health
+docker compose up -d --force-recreate health--health--app
 ```
 
 Logs:
 
 ```bash
-docker compose logs -f scs--health
+docker compose logs -f health--health--app
 ```
 
 ## Keycloak SSO
@@ -88,10 +88,10 @@ Set `SCS_HEALTH_OIDC_CLIENT_ID` and either `SCS_HEALTH_OIDC_ISSUER` or rely on `
 https://<keycloak-host>/realms/<realm-name>
 ```
 
-Recreate `scs--health` after setting OIDC variables (rebuild required when app code changes):
+Recreate `health--health--app` after setting OIDC variables (rebuild required when app code changes):
 
 ```bash
-docker compose up -d --build scs--health
+docker compose up -d --build health--health--app
 ```
 
 The login page reads OIDC env vars at **request time**, not at image build time. If you add OIDC settings later, `--force-recreate` is enough; no rebuild needed unless you changed the app.

@@ -54,7 +54,7 @@ Use this checklist after the whole environment has started (`docker compose up -
 
   Post-install hook sets `trusted_proxies`, `forwarded_for_headers`, `forwarded_host_headers`, `forwarded_proto_headers` in Nextcloud config. For an existing install, run: `01_scripts/scs-nextcloud-stack/apply-nextcloud-proxy-and-region.bash`.
 
-  If `.well-known` warnings persist after updating nginx config, restart the reverse proxy: `docker compose restart nextcloud--nextcloud-reverse-proxy`.
+  If `.well-known` warnings persist after updating nginx config, restart the reverse proxy: `docker compose restart nextcloud--nginx--edge`.
 
 - [ ] **Maintenance window** — Post-install sets maintenance window (e.g. start hour 22, length 6). If the admin warning remains, set manually: `occ config:system:set maintenance_window_start --type integer --value=22` and `maintenance_window_length --type integer --value=6`.
 

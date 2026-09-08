@@ -4,9 +4,13 @@ This documentation describes how to deploy and operate the SODa SCS Manager depl
 
 ## Documentation overview
 
-- **[Glossary](glossary.md)** — Definitions of terms used in this project (SCS, Keycloak, Traefik, OpenID Connect, etc.).
+- **[Glossary](glossary.md)** — Definitions of terms used in this project (SCS, Keycloak, Traefik, OpenID Connect, service naming, etc.).
+  - [Service naming vocabulary](service-infrastructure/naming-vocabulary.md) — `{scope}--{service}--{function}`: scopes, services, functions.
 
 - **[Service infrastructure](service-infrastructure/index.md)** — What is in the stack and how services are wired: main compose, Traefik, shared database, Keycloak, SCS Manager, Nextcloud, JupyterHub, OpenGDB, and project website.
+  - [Architecture overview (C4 / Mermaid)](service-infrastructure/architecture-overview.md) — Compose app, Docker services, modules, FUSE integrations, config locations, bootstrap/backup scripts.
+  - [Naming vocabulary](service-infrastructure/naming-vocabulary.md) — `{scope}--{service}--{function}`: scopes, service tokens, functions.
+  - [Naming migration plan](service-infrastructure/naming-migration-plan.md) — Piecewise rename; aliases, env, Manager settings, code hardcodes.
   - [SCS Manager user create/delete routines](service-infrastructure/scs-manager-user-lifecycle.md) — Keycloak, Nextcloud, and MariaDB provisioning and teardown via the `soda_scs_manager` module.
 
 - **[Initial setup](initial-setup/index.md)** — What to do before the first `docker compose up`:

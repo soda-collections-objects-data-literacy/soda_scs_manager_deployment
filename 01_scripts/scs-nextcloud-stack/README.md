@@ -252,9 +252,9 @@ This directory contains scripts for managing the Nextcloud stack. All scripts sh
 ### Update Nextcloud
 1. `backup-nextcloud.bash`
 2. Edit `scs-nextcloud-stack/docker-compose.yml` (change image tag)
-3. `docker compose pull nextcloud--nextcloud`
-4. `docker compose up -d nextcloud--nextcloud`
-5. Monitor logs: `docker compose logs -f nextcloud--nextcloud`
+3. `docker compose pull nextcloud--nextcloud--app`
+4. `docker compose up -d nextcloud--nextcloud--app`
+5. Monitor logs: `docker compose logs -f nextcloud--nextcloud--app`
 6. `run-nextcloud-repair.bash`
 7. Test functionality
 
