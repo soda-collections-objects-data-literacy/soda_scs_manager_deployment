@@ -1,0 +1,108 @@
+# Troubleshooting
+
+Common issues and testing procedures for the SODa SCS Manager deployment.
+
+## Verification Scripts
+
+The `docs/technical/troubleshooting/` directory contains test scripts to verify your deployment:
+
+### Test Proxy Client IP Forwarding
+
+**Purpose:** Verify that Traefik is correctly forwarding real client IP addresses to backend services.
+
+**Script:** `test-proxy-client-ips.bash`
+
+**Usage:**
+```bash
+./docs/technical/troubleshooting/test-proxy-client-ips.bash [domain]
+# Default domain: echo.scs.sammlungen.io
+```
+
+**What it checks:**
+- Real IPv4 client IPs are preserved in X-Forwarded-For and X-Real-Ip headers
+- Real IPv6 client IPs are preserved (if available)
+- Docker internal IPs are not being used instead of real client IPs
+
+**Expected result:** Both IPv4 and IPv6 tests should show your real public IP addresses, not Docker internal IPs like `172.x.x.x`.
+
+**Related documentation:** [Reverse proxy backend config](../knowledge-base/reverse-proxy-backend-config-knowledge-base.md)
+
+### Test Nextcloud .well-known URLs
+
+**Purpose:** Verify that Nextcloud's .well-known URLs for CalDAV, CardDAV, webfinger, and nodeinfo are working correctly.
+
+**Script:** `test-nextcloud-wellknown.bash`
+
+**Usage:**
+```bash
+./docs/technical/troubleshooting/test-nextcloud-wellknown.bash [domain]
+# Default domain: drive.scs.localhost
+```
+
+**What it checks:**
+- `.well-known/carddav` redirects correctly
+- `.well-known/caldav` redirects correctly
+- `.well-known/webfinger` redirects correctly
+- `.well-known/nodeinfo` redirects correctly
+
+**Expected result:** All URLs should return HTTP 301, 302, or 200 status codes.
+
+**Related documentation:** [Nextcloud warnings](nextcloud-warnings.md)
+
+## Common Issues
+
+### Reverse Proxy / Client IP Issues
+
+**Symptom:** Backend services see Docker gateway IPs (172.x.x.x) instead of real client IPs in logs or access controls.
+
+**Causes:**
+1. Incorrect Traefik port binding configuration
+2. Missing or incorrect backend proxy configuration
+3. Upstream proxy without proper trusted IPs configuration
+
+**Solutions:**
+1. Run the `test-proxy-client-ips.bash` script to verify current behavior
+2. Check network configuration - IPv6 must be enabled:
+   ```bash
+   docker network inspect reverse-proxy --format '{{.EnableIPv6}}'
+   # Should return: true
+   ```
+   If false, see [Network creation guide](../initial-setup/network-creation.md) for detailed instructions on recreating the network with IPv6.
+3. Check Traefik port bindings in `docker-compose.yml` (should be standard `- "80:80"` and `- "443:443"`)
+4. Verify backend configurations:
+   - Drupal: Check `00_custom_configs/scs-manager-stack/drupal/reverse-proxy.settings.php`
+   - Keycloak: Check `KC_PROXY_HEADERS=xforwarded` in environment
+   - Nextcloud: Check `OVERWRITEPROTOCOL=https` and `OVERWRITEHOST` in environment
+5. See [Reverse proxy backend config](../knowledge-base/reverse-proxy-backend-config-knowledge-base.md) for detailed configuration
+
+### SCS Manager URLs contain `/index.php`
+
+See [SCS Manager clean URLs](scs-manager-clean-urls.md) when Drupal admin and front-end links include `/index.php` in the path.
+
+### DBMS/phpMyAdmin SSO: ERR_TOO_MANY_REDIRECTS
+
+See [DBMS SSO redirect loop](dbms-sso-redirect-loop.md) when Keycloak SSO for phpMyAdmin causes infinite redirects.
+
+### DBMS/phpMyAdmin: login form instead of auto signon
+
+See [DBMS SSO redirect loop](dbms-sso-redirect-loop.md#phpmyadmin-login-form-instead-of-auto-signon) when Keycloak auth works but phpMyAdmin shows a manual login form.
+
+### Nextcloud Warnings
+
+See [Nextcloud warnings](nextcloud-warnings.md) for common Nextcloud admin panel warnings and how to resolve them.
+
+### SCS Manager cannot connect to Drive
+
+See [Nextcloud Drive connection](nextcloud-drive-connect.md) when Bearer SSO fails, manual connect is required, or duplicate Nextcloud accounts (legacy `keycloak-{sub}` vs current raw `sub` from `user_oidc`) cause JupyterHub sync or app-password validation issues.
+
+### Drive ↔ Jupyter connection renewal (runbook)
+
+See [SCS Drive ↔ Jupyter connection](scs-drive-jupyter-connection.md) for a full runbook: what users vs admins do, how to renew credentials in SCS Manager / Keycloak / Drive / Jupyter, what to respawn vs restart, and verification commands.
+
+### WissKI Drupal package update times out
+
+See [WissKI package update failures](wisski-package-update.md) when package updates fail during the database backup step with Portainer `cURL error 28` on `/docker/exec/.../start`.
+
+### JupyterHub notebook server will not start (500)
+
+See [JupyterHub spawn failure](jupyterhub-spawn-failure.md) when the Hub returns *Unhandled error starting server* and logs mention `spawner_image` not found.

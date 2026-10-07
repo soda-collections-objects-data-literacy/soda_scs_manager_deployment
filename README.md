@@ -8,8 +8,8 @@ Docker Compose environment for the Drupal-based SCS Manager plus Keycloak, Nextc
 
 - SODa SCS Manager Deployment 1.0.0 · Drupal 11 · MariaDB 11.5 · Traefik 3 · Portainer CE 2.21
 
+## Requirements
 
-## Requirements:
 - `jq`
 - `curl`
 
@@ -19,27 +19,20 @@ Docker Compose environment for the Drupal-based SCS Manager plus Keycloak, Nextc
 2. Copy `example-env` to `.env` and set required variables (database, Keycloak, client secrets, domains, `SCS_DBMS_*` for phpMyAdmin SSO).
 3. Run `./start.sh` (creates network, starts DB, runs pre-install scripts).
 4. Run `docker compose up -d`.
-5. Complete post-configuration (Keycloak, SCS Manager, Nextcloud, phpMyAdmin/DBMS SSO, etc.) — see **Technical documentation** below.
+5. Complete post-configuration — see [Technical documentation](docs/en/technical/index.md).
 
-**Prerequisites:** Docker, user in `docker` group, GitHub auth for ghcr.io and Git (see technical docs).
+**Prerequisites:** Docker, user in `docker` group, GitHub auth for ghcr.io and Git.
 
-## Technical documentation (MkDocs)
+## Documentation (Zensical)
 
-Full documentation (prerequisites, initial setup, service infrastructure, post-configuration checklist, reference) is in the **docs** and built with [MkDocs Material](https://squidfunk.github.io/mkdocs-material/).
-
-**View the docs locally (Docker):**
-
-Download this repo to your local machine, then from the repository root run:
+Full docs live in [`docs/en/`](docs/en/index.md) and [`docs/de/`](docs/de/index.md) (overlays), built with [Zensical](https://zensical.org/) (modern theme), and served at **`https://docs.<SCS_SUBDOMAIN>.<SCS_BASE_DOMAIN>`** (`/en/`, `/de/`; `core--docs--app`, env `SCS_DOCS_DOMAIN`).
 
 ```bash
-git clone git@github.com:soda-collections-objects-data-literacy/soda_scs_manager_deployment.git
-cd soda_scs_manager_deployment
-docker run --rm -it -p 3456:8000 -v "${PWD}:/docs" squidfunk/mkdocs-material
+./01_scripts/global/build-docs.bash
+docker compose up -d --force-recreate core--docs--app
 ```
 
-Then open [http://localhost:3456](http://localhost:3456).
-
-**Build static site:** `docker run --rm -v "${PWD}:/docs" squidfunk/mkdocs-material build` → output in `site/`.
+Local preview: `docker run --rm -it -p 3456:8000 -v "${PWD}:/docs" zensical/zensical`
 
 ## License
 

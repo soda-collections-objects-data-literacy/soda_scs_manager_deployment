@@ -53,7 +53,7 @@ docker-compose up -d scs--default-page
 
 ### Update the Service List
 
-Edit `index.html` to add/remove services or change links. Update the service cards in the grid section.
+Edit `index.html` for service links. Descriptions and how-tos live in Zensical docs: `docs/user/services.md`.
 
 ### Change Styling
 

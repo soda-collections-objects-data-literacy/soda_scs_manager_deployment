@@ -1,6 +1,6 @@
 #!/bin/bash
 # Prepare the shared host bind for Nextcloud FUSE mounts (rshared propagation).
-# Prefer enabling the systemd unit (see docs/service-infrastructure/nextcloud-mount-sidecar.md).
+# Prefer enabling the systemd unit (see docs/technical/service-infrastructure/nextcloud-mount-sidecar.md).
 # This script is safe to re-run (idempotent).
 
 set -euo pipefail

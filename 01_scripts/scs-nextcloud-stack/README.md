@@ -304,5 +304,5 @@ All scripts expect these variables in `.env`:
 ## Documentation
 
 See the full documentation:
-- [Updates and maintenance](../../docs/maintenance/updates.md)
-- [Post-configuration checklist](../../docs/post-configuration/checklist.md)
+- [Updates and maintenance](../../docs/technical/maintenance/updates.md)
+- [Post-configuration checklist](../../docs/technical/post-configuration/checklist.md)

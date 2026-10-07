@@ -1,0 +1,192 @@
+/*
+ * SCS Manager brand tokens from scs_custom_theme (assets/scss/base/_vars.scss).
+ * Applied to Zensical/Material CSS variables for docs parity with the Manager UI.
+ */
+
+@font-face {
+  font-family: "Noto Sans";
+  src: url("../assets/fonts/NotoSans.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Noto Sans";
+  src: url("../assets/fonts/NotoSans-Italic.ttf") format("truetype");
+  font-style: italic;
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+:root,
+[data-md-color-scheme="default"] {
+  /* Brand tokens */
+  --scs-black: #000000;
+  --scs-white: #ffffff;
+  --scs-green: #006117;
+  --scs-red: #a80000;
+  --scs-orange-500: #ffa933;
+  --scs-orange-600: #e68500;
+  --scs-slate-50: #fafbfc;
+  --scs-slate-100: #f4f6f8;
+  --scs-slate-300: #d5dce4;
+  --scs-slate-600: #4d5866;
+  --scs-slate-900: #17212b;
+  --scs-radius-small: 8px;
+  --scs-radius-large: 16px;
+  --scs-shadow-small: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  --md-text-font: "Noto Sans";
+  --md-code-font: "Noto Sans";
+
+  --md-primary-fg-color: var(--scs-slate-900);
+  --md-primary-fg-color--light: var(--scs-slate-600);
+  --md-primary-fg-color--dark: var(--scs-black);
+  --md-primary-bg-color: var(--scs-white);
+  --md-primary-bg-color--light: var(--scs-slate-50);
+
+  --md-accent-fg-color: var(--scs-orange-500);
+  --md-accent-fg-color--transparent: color-mix(in srgb, var(--scs-orange-500) 10%, transparent);
+  --md-accent-bg-color: var(--scs-slate-900);
+  --md-accent-bg-color--light: var(--scs-slate-600);
+
+  --md-default-fg-color: var(--scs-slate-900);
+  --md-default-fg-color--light: var(--scs-slate-600);
+  --md-default-fg-color--lighter: var(--scs-slate-300);
+  --md-default-fg-color--lightest: color-mix(in srgb, var(--scs-slate-300) 40%, transparent);
+  --md-default-bg-color: var(--scs-slate-50);
+  --md-default-bg-color--light: var(--scs-white);
+  --md-default-bg-color--lighter: var(--scs-slate-100);
+  --md-default-bg-color--lightest: var(--scs-white);
+
+  --md-typeset-a-color: var(--scs-orange-600);
+  --md-typeset-color: var(--scs-slate-900);
+}
+
+/* Header like Manager public chrome: light bar + dark logo block */
+.md-header {
+  background-color: var(--scs-white);
+  color: var(--scs-slate-900);
+  box-shadow: none;
+  border-bottom: 1px solid var(--scs-slate-300);
+}
+
+.md-header__title,
+.md-header .md-header__button,
+.md-header .md-tabs__link,
+.md-header a {
+  color: var(--scs-slate-900);
+}
+
+.md-header .md-logo {
+  padding: 0.15rem 0;
+}
+
+.md-header .md-logo img,
+.md-header .md-logo svg {
+  height: 2.75rem;
+  width: auto;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Hide duplicate site title next to logo (brand is the logo). */
+.md-header__title {
+  visibility: hidden;
+  width: 0;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Right cluster: language → search → login, flush to the edge */
+.md-header__inner {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.md-header__inner > .md-header__option:has(.md-select) {
+  margin-left: auto;
+  order: 98;
+  flex-shrink: 0;
+}
+
+.md-header__inner > .md-search {
+  order: 99;
+  flex-shrink: 0;
+  padding: 0;
+  width: auto;
+}
+
+.md-header__inner > .md-search .md-search__form {
+  width: 2.4rem;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.md-header__inner > .md-search .md-search__input {
+  border: 0;
+  box-shadow: none;
+}
+
+.md-header__inner > .md-search .md-search__icon {
+  color: var(--scs-slate-900);
+}
+
+.md-tabs {
+  background-color: var(--scs-white);
+  border-bottom: 1px solid var(--scs-slate-300);
+}
+
+.md-tabs__link--active,
+.md-tabs__link:focus,
+.md-tabs__link:hover {
+  color: var(--scs-orange-600);
+}
+
+/* Sidebar / nav accents */
+.md-nav__link--active,
+.md-nav__link:focus,
+.md-nav__link:hover {
+  color: var(--scs-orange-600);
+}
+
+.md-typeset a:hover {
+  color: var(--scs-orange-500);
+}
+
+/* Buttons / CTAs in admonitions and content */
+.md-typeset .md-button--primary {
+  background-color: var(--scs-slate-900);
+  border-color: var(--scs-slate-900);
+  color: var(--scs-white);
+  border-radius: var(--scs-radius-small);
+}
+
+.md-typeset .md-button--primary:hover {
+  background-color: var(--scs-white);
+  color: var(--scs-slate-900);
+}
+
+.md-typeset .md-button {
+  border-radius: var(--scs-radius-small);
+}
+
+/* Search dialog / footer stay on brand surfaces */
+.md-search__form {
+  border-radius: var(--scs-radius-small);
+}
+
+.md-footer {
+  background-color: var(--scs-slate-900);
+  color: var(--scs-white);
+}
+
+.md-footer a {
+  color: var(--scs-orange-500);
+}

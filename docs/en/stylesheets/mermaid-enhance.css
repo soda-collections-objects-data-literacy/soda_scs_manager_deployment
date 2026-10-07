@@ -1,0 +1,86 @@
+/* Mermaid diagram shell + fullscreen overlay */
+
+.scs-mermaid {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  margin: 1em 0;
+  max-width: 100%;
+}
+
+.scs-mermaid__btn {
+  align-self: flex-end;
+  flex: 0 0 auto;
+  appearance: none;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  padding: 0.35rem 0.65rem;
+  color: var(--scs-slate-900, #17212b);
+  background: var(--scs-white, #fff);
+  border: 1px solid var(--scs-slate-300, #d5dce4);
+  border-radius: var(--scs-radius-small, 8px);
+  box-shadow: none;
+  opacity: 1;
+}
+
+.scs-mermaid__btn:hover,
+.scs-mermaid__btn:focus-visible {
+  border-color: var(--scs-orange-600, #e68500);
+  outline: none;
+}
+
+.scs-mermaid > .mermaid {
+  margin: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.scs-mermaid > .mermaid svg {
+  max-width: none;
+  height: auto;
+}
+
+.scs-mermaid.is-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1rem 1.25rem 1.25rem;
+  background: var(--scs-slate-50, #fafbfc);
+  overflow: auto;
+  max-width: none;
+}
+
+.scs-mermaid.is-fullscreen > .scs-mermaid__btn {
+  position: sticky;
+  top: 0;
+  align-self: flex-end;
+  z-index: 2;
+}
+
+.scs-mermaid.is-fullscreen > .mermaid {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  overflow: auto;
+}
+
+.scs-mermaid.is-fullscreen svg {
+  max-width: none !important;
+  height: auto !important;
+}
+
+html.scs-mermaid-fullscreen-open,
+html.scs-mermaid-fullscreen-open body {
+  overflow: hidden;
+}

@@ -3,7 +3,7 @@
 # Source after `.env` is loaded (or call scs_load_container_names which loads repo-root `.env`).
 #
 # Naming migration: set SCS_CONTAINER_* in `.env` to the new `{scope}--{service}--{function}`
-# values once aliases exist. See docs/service-infrastructure/naming-vocabulary.md.
+# values once aliases exist. See docs/technical/service-infrastructure/naming-vocabulary.md.
 #
 # shellcheck shell=bash
 

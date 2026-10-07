@@ -14,6 +14,8 @@ backups/
 exports
 
 # Site-specific / generated
+site/
+.docs-build/
 helpers
 configure_man
 openrefine

@@ -1,0 +1,43 @@
+/* Docs header auth status — light header (scs_custom_theme public chrome). */
+.scs-docs-auth {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 0.35rem;
+  margin-right: 0;
+  padding-right: 0.15rem;
+  font-size: 0.7rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  order: 100;
+  flex-shrink: 0;
+}
+
+.scs-docs-auth[hidden] {
+  display: none !important;
+}
+
+.scs-docs-auth__user {
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--scs-slate-600, #4d5866);
+}
+
+.scs-docs-auth a {
+  color: var(--scs-orange-600, #e68500);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  font-weight: 700;
+}
+
+.scs-docs-auth a:hover {
+  border-bottom-color: currentColor;
+  color: var(--scs-slate-900, #17212b);
+}
+
+@media screen and (max-width: 76.1875em) {
+  .scs-docs-auth__user {
+    max-width: 6rem;
+  }
+}

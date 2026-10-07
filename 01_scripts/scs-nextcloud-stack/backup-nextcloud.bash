@@ -149,6 +149,6 @@ echo ""
 echo "Files created:"
 ls -lh "$BACKUP_DIR" | grep "$TIMESTAMP" | awk '{print "  " $9 " (" $5 ")"}'
 echo ""
-echo "To restore from this backup, see: docs/maintenance/updates.md (Rollback section)"
+echo "To restore from this backup, see: docs/technical/maintenance/updates.md (Rollback section)"
 echo ""
 echo "Consider moving backups to secure off-site storage."

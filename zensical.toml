@@ -1,0 +1,108 @@
+# Default config = English (compat for plain `zensical build` / `zensical serve`).
+# Full DE+EN site: ./01_scripts/global/build-docs.bash
+# See also: zensical.en.toml, zensical.de.toml
+
+[project]
+site_name = "SODa SCS Manager Deployment"
+site_description = "Documentation for the SODa SCS Manager Docker Compose deployment."
+site_url = "https://docs.dev-scs.sammlungen.io/en/"
+docs_dir = "docs/en"
+site_dir = "site/en"
+
+extra_css = [
+  "stylesheets/scs-theme.css?v=4",
+  "stylesheets/auth-status.css?v=4",
+  "stylesheets/mermaid-enhance.css?v=4",
+]
+
+extra_javascript = [
+  "javascripts/mermaid-enhance.js?v=4",
+  "javascripts/auth-status.js?v=4",
+]
+
+nav = [
+  { "Welcome" = "index.md" },
+  { "User guide" = [
+    { "Overview" = "user/index.md" },
+    { "Available services" = "user/services.md" },
+    { "SCS Drive" = "user/scs-drive.md" },
+  ] },
+  { "Technical" = [
+    { "Overview" = "technical/index.md" },
+    { "Glossary" = "technical/glossary.md" },
+    { "Service infrastructure" = [
+      { "Overview" = "technical/service-infrastructure/index.md" },
+      { "Architecture (C4 / Mermaid)" = "technical/service-infrastructure/architecture-overview.md" },
+      { "Naming vocabulary" = "technical/service-infrastructure/naming-vocabulary.md" },
+      { "Naming migration plan" = "technical/service-infrastructure/naming-migration-plan.md" },
+      { "PHP debugging (Xdebug)" = "technical/service-infrastructure/php-xdebug.md" },
+      { "SCS Health dashboard" = "technical/service-infrastructure/scs-health.md" },
+      { "SCS Manager user lifecycle" = "technical/service-infrastructure/scs-manager-user-lifecycle.md" },
+      { "Nextcloud mount sidecar" = "technical/service-infrastructure/nextcloud-mount-sidecar.md" },
+    ] },
+    { "Initial setup" = [
+      { "Overview" = "technical/initial-setup/index.md" },
+      { "Prerequisites" = "technical/initial-setup/prerequisites.md" },
+      { "Network creation" = "technical/initial-setup/network-creation.md" },
+      { "Pre-start steps" = "technical/initial-setup/pre-start-steps.md" },
+    ] },
+    { "Post-start" = [
+      { "Overview" = "technical/post-start/index.md" },
+    ] },
+    { "Post-configuration" = [
+      { "Overview" = "technical/post-configuration/index.md" },
+      { "Checklist" = "technical/post-configuration/checklist.md" },
+      { "Nextcloud email setup" = "technical/post-configuration/nextcloud-email.md" },
+    ] },
+    { "Maintenance" = [
+      { "Overview" = "technical/maintenance/index.md" },
+      { "Updates" = "technical/maintenance/updates.md" },
+    ] },
+    { "Troubleshooting" = [
+      { "Overview" = "technical/troubleshooting/index.md" },
+      { "SCS Manager clean URLs" = "technical/troubleshooting/scs-manager-clean-urls.md" },
+      { "DBMS SSO redirect loop" = "technical/troubleshooting/dbms-sso-redirect-loop.md" },
+      { "Nextcloud Drive connection" = "technical/troubleshooting/nextcloud-drive-connect.md" },
+      { "SCS Drive Jupyter connection" = "technical/troubleshooting/scs-drive-jupyter-connection.md" },
+      { "Nextcloud warnings" = "technical/troubleshooting/nextcloud-warnings.md" },
+      { "WissKI package update" = "technical/troubleshooting/wisski-package-update.md" },
+      { "JupyterHub spawn failure" = "technical/troubleshooting/jupyterhub-spawn-failure.md" },
+    ] },
+    { "Reference" = [
+      { "Reverse proxy backend config" = "technical/knowledge-base/reverse-proxy-backend-config-knowledge-base.md" },
+      { "Traefik labels and commands" = "technical/knowledge-base/traefik-labels-and-commands.md" },
+      { "Dedicated WissKI deployment (Uni Graz)" = "technical/infrastruktur-uebersicht.md" },
+    ] },
+  ] },
+]
+
+[project.theme]
+variant = "modern"
+language = "en"
+logo = "assets/images/logo.png"
+favicon = "assets/images/favicon.png"
+font = false
+
+[project.theme.palette]
+scheme = "default"
+primary = "custom"
+accent = "custom"
+
+[project.extra]
+generator = false
+alternate = [
+  { name = "English", link = "/en/", lang = "en" },
+  { name = "Deutsch", link = "/de/", lang = "de" },
+]
+
+[project.plugins.search]
+
+[project.markdown_extensions]
+admonition = {}
+tables = {}
+toc.permalink = true
+"pymdownx.details" = {}
+"pymdownx.superfences".custom_fences = [
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
+]
+"pymdownx.tabbed".alternate_style = true
