@@ -213,7 +213,7 @@ Or use the apply script (includes this fix):
 
 **Test the fix:**
 ```bash
-docs/technical/troubleshooting/test-nextcloud-wellknown.bash your-nextcloud-domain.com
+docs/en/technical/troubleshooting/test-nextcloud-wellknown.bash your-nextcloud-domain.com
 ```
 
 Or manually:

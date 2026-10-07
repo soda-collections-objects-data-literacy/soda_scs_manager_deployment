@@ -125,7 +125,7 @@ docker compose up -d
 Run the test script to verify everything works:
 
 ```bash
-./docs/technical/troubleshooting/test-proxy-client-ips.bash
+./docs/en/technical/troubleshooting/test-proxy-client-ips.bash
 ```
 
 Expected output should show:

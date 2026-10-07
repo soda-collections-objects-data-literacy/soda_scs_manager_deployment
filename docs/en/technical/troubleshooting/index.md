@@ -4,7 +4,7 @@ Common issues and testing procedures for the SODa SCS Manager deployment.
 
 ## Verification Scripts
 
-The `docs/technical/troubleshooting/` directory contains test scripts to verify your deployment:
+The `docs/en/technical/troubleshooting/` directory contains test scripts to verify your deployment:
 
 ### Test Proxy Client IP Forwarding
 
@@ -14,7 +14,7 @@ The `docs/technical/troubleshooting/` directory contains test scripts to verify 
 
 **Usage:**
 ```bash
-./docs/technical/troubleshooting/test-proxy-client-ips.bash [domain]
+./docs/en/technical/troubleshooting/test-proxy-client-ips.bash [domain]
 # Default domain: echo.scs.sammlungen.io
 ```
 
@@ -35,7 +35,7 @@ The `docs/technical/troubleshooting/` directory contains test scripts to verify 
 
 **Usage:**
 ```bash
-./docs/technical/troubleshooting/test-nextcloud-wellknown.bash [domain]
+./docs/en/technical/troubleshooting/test-nextcloud-wellknown.bash [domain]
 # Default domain: drive.scs.localhost
 ```
 

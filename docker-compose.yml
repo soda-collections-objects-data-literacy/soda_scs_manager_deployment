@@ -491,7 +491,7 @@ volumes:
 networks:
   reverse-proxy:
     name: reverse-proxy
-    # If clients use IPv6 (AAAA DNS), enable on the live network — see docs/technical/initial-setup/network-creation.md
+    # If clients use IPv6 (AAAA DNS), enable on the live network — see docs/en/technical/initial-setup/network-creation.md
     # enable_ipv6: true
     driver: bridge
     external: true
