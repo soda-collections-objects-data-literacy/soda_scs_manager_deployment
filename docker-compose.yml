@@ -195,6 +195,87 @@ services:
       - "traefik.http.services.scs--echo.loadbalancer.server.port=80"
     restart: unless-stopped
 
+  # Zensical documentation
+  core--docs--app:
+    image: nginx:1.27-alpine
+    container_name: core--docs--app
+    volumes:
+      - ${SCS_ROOT_PATH}/site:/usr/share/nginx/html:ro
+      - ${SCS_ROOT_PATH}/00_custom_configs/docs/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - reverse-proxy
+    depends_on:
+      - core--traefik--edge
+      - core--docsauth--proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy"
+      - "traefik.http.services.scsdocs.loadbalancer.server.port=80"
+      - "traefik.http.routers.scsdocs.rule=Host(`${SCS_DOCS_DOMAIN:-docs.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}}`)"
+      - "traefik.http.routers.scsdocs.entrypoints=websecure"
+      - "traefik.http.routers.scsdocs.tls=true"
+      - "traefik.http.routers.scsdocs.tls.certresolver=le"
+      - "traefik.http.routers.scsdocs.priority=10"
+      - "traefik.http.routers.scsdocstech.rule=Host(`${SCS_DOCS_DOMAIN:-docs.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}}`) && (PathPrefix(`/en/technical`) || PathPrefix(`/de/technical`))"
+      - "traefik.http.routers.scsdocstech.entrypoints=websecure"
+      - "traefik.http.routers.scsdocstech.tls=true"
+      - "traefik.http.routers.scsdocstech.tls.certresolver=le"
+      - "traefik.http.routers.scsdocstech.priority=50"
+      - "traefik.http.routers.scsdocstech.service=scsdocs"
+      - "traefik.http.routers.scsdocstech.middlewares=docs-sso@docker"
+    restart: unless-stopped
+
+  # oauth2-proxy for technical docs (Keycloak OIDC realm role = KC_ADMIN_GROUPS)
+  core--docsauth--proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.8.2
+    container_name: core--docsauth--proxy
+    restart: unless-stopped
+    extra_hosts:
+      - "auth.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}:host-gateway"
+    environment:
+      OAUTH2_PROXY_HTTP_ADDRESS: "0.0.0.0:4180"
+      OAUTH2_PROXY_REVERSE_PROXY: "true"
+      OAUTH2_PROXY_UPSTREAMS: "static://202"
+      OAUTH2_PROXY_PROVIDER: "keycloak-oidc"
+      OAUTH2_PROXY_CLIENT_ID: "https://${SCS_DOCS_DOMAIN:-docs.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}}"
+      OAUTH2_PROXY_CLIENT_SECRET: "${SCS_DOCS_CLIENT_SECRET}"
+      OAUTH2_PROXY_OIDC_ISSUER_URL: "https://auth.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}/realms/${KC_REALM:-scs-dev}"
+      OAUTH2_PROXY_REDIRECT_URL: "https://${SCS_DOCS_DOMAIN:-docs.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}}/oauth2/callback"
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      # Keycloak realm often has unverified emails; skip oauth2-proxy's verified-email check.
+      OAUTH2_PROXY_INSECURE_OIDC_ALLOW_UNVERIFIED_EMAIL: "true"
+      # Keycloak access tokens often include aud=account (and other clients via scope).
+      OAUTH2_PROXY_OIDC_EXTRA_AUDIENCES: "account"
+      # Allow post-login redirects back to the docs host (absolute rd / X-Forwarded-*).
+      OAUTH2_PROXY_WHITELIST_DOMAINS: "${SCS_DOCS_DOMAIN:-docs.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}}"
+      # keycloak-oidc: realm role from JWT realm_access.roles (not Keycloak groups)
+      OAUTH2_PROXY_ALLOWED_ROLES: "${KC_ADMIN_GROUPS}"
+      OAUTH2_PROXY_SCOPE: "openid email profile"
+      OAUTH2_PROXY_COOKIE_SECURE: "true"
+      OAUTH2_PROXY_COOKIE_SECRET: "${SCS_DOCS_OAUTH2_COOKIE_SECRET}"
+      OAUTH2_PROXY_COOKIE_NAME: "_docs_oauth2"
+      OAUTH2_PROXY_COOKIE_DOMAINS: "${SCS_DOCS_DOMAIN:-docs.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}}"
+      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
+      OAUTH2_PROXY_CODE_CHALLENGE_METHOD: "S256"
+      OAUTH2_PROXY_SILENCE_PING_LOGGING: "true"
+      OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
+      OAUTH2_PROXY_SSL_INSECURE_SKIP_VERIFY: "true"
+    depends_on:
+      - core--traefik--edge
+    networks:
+      reverse-proxy:
+        aliases:
+          - scs--docs-auth
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy"
+      - "traefik.http.routers.scsdocsauth.rule=Host(`${SCS_DOCS_DOMAIN:-docs.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}}`) && PathPrefix(`/oauth2`)"
+      - "traefik.http.routers.scsdocsauth.entrypoints=websecure"
+      - "traefik.http.routers.scsdocsauth.tls=true"
+      - "traefik.http.routers.scsdocsauth.tls.certresolver=le"
+      - "traefik.http.routers.scsdocsauth.priority=200"
+      - "traefik.http.services.scsdocsauth.loadbalancer.server.port=4180"
+
   # Traefik
   # Wave D: {scope}--{service}--{function}; alias keeps old DNS until cutover.
   # Docker network name stays reverse-proxy (do not rename with the container).
@@ -220,6 +301,11 @@ services:
       - "traefik.http.middlewares.dbms-sso.forwardauth.address=http://scs--forward-auth:4181"
       - "traefik.http.middlewares.dbms-sso.forwardauth.trustForwardHeader=true"
       - "traefik.http.middlewares.dbms-sso.forwardauth.authResponseHeaders=X-Forwarded-User,X-Auth-Token"
+
+      ## Docs technical SSO (oauth2-proxy → Keycloak; realm role KC_ADMIN_GROUPS)
+      - "traefik.http.middlewares.docs-sso.forwardauth.address=http://scs--docs-auth:4180"
+      - "traefik.http.middlewares.docs-sso.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.docs-sso.forwardauth.authResponseHeaders=Authorization,X-Auth-Request-User,X-Auth-Request-Groups"
 
       ## DBMS logout: clear forward-auth cookie + redirect to Keycloak (mesosphere fork has no /_oauth/logout)
       - "traefik.http.middlewares.dbms-logout-headers.headers.customResponseHeaders.Set-Cookie=_forward_auth=; Path=/; Domain=dbms.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}; Max-Age=0; HttpOnly; Secure; SameSite=Lax"
@@ -405,7 +491,7 @@ volumes:
 networks:
   reverse-proxy:
     name: reverse-proxy
-    # If clients use IPv6 (AAAA DNS), enable on the live network — see docs/initial-setup/network-creation.md
+    # If clients use IPv6 (AAAA DNS), enable on the live network — see docs/technical/initial-setup/network-creation.md
     # enable_ipv6: true
     driver: bridge
     external: true

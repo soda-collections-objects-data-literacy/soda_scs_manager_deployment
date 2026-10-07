@@ -46,13 +46,25 @@
   "quickLoginCheckMilliSeconds": 1000,
   "maxDeltaTimeSeconds": 43200,
   "failureFactor": 30,
+  "roles": {
+    "realm": [
+      {
+        "name": "${KC_ADMIN_GROUPS}",
+        "description": "SCS platform admin (docs technical SSO, JupyterHub admin, …)",
+        "composite": false,
+        "clientRole": false
+      }
+    ]
+  },
   "groups": [
     {
       "name": "${KC_ADMIN_GROUPS}",
       "path": "/${KC_ADMIN_GROUPS}",
       "subGroups": [],
       "attributes": {},
-      "realmRoles": [],
+      "realmRoles": [
+        "${KC_ADMIN_GROUPS}"
+      ],
       "clientRoles": {}
     },
     {
@@ -491,6 +503,81 @@
             "claim.name": "mariadb_password",
             "jsonType.label": "String",
             "introspection.token.claim": "false"
+          }
+        }
+      ]
+    },
+    {
+      "id": "c2d3e4f5-a6b7-8901-cdef-234567890abc",
+      "clientId": "https://${SCS_DOCS_DOMAIN}",
+      "name": "Docs technical SSO",
+      "description": "oauth2-proxy client for technical documentation (realm role ${KC_ADMIN_GROUPS})",
+      "rootUrl": "https://${SCS_DOCS_DOMAIN}/",
+      "adminUrl": "https://${SCS_DOCS_DOMAIN}/",
+      "baseUrl": "https://${SCS_DOCS_DOMAIN}/",
+      "surrogateAuthRequired": false,
+      "enabled": true,
+      "alwaysDisplayInConsole": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "${SCS_DOCS_CLIENT_SECRET}",
+      "redirectUris": [
+        "https://${SCS_DOCS_DOMAIN}/oauth2/callback"
+      ],
+      "webOrigins": [
+        "https://${SCS_DOCS_DOMAIN}"
+      ],
+      "notBefore": 0,
+      "bearerOnly": false,
+      "consentRequired": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "publicClient": false,
+      "frontchannelLogout": true,
+      "protocol": "openid-connect",
+      "attributes": {
+        "realm_client": "false",
+        "oidc.ciba.grant.enabled": "false",
+        "backchannel.logout.session.required": "true",
+        "frontchannel.logout.session.required": "true",
+        "post.logout.redirect.uris": "*",
+        "display.on.consent.screen": "false",
+        "oauth2.device.authorization.grant.enabled": "false",
+        "use.jwks.url": "false",
+        "backchannel.logout.revoke.offline.tokens": "false"
+      },
+      "authenticationFlowBindingOverrides": {},
+      "fullScopeAllowed": true,
+      "nodeReRegistrationTimeout": -1,
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "groups",
+        "basic",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "organization",
+        "microprofile-jwt"
+      ],
+      "protocolMappers": [
+        {
+          "name": "docs-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "https://${SCS_DOCS_DOMAIN}",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "introspection.token.claim": "true",
+            "userinfo.token.claim": "true"
           }
         }
       ]

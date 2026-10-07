@@ -184,6 +184,13 @@ SCS_PORTAINER_PASSWORD=
 
 SCS_MANAGER_CLIENT_SECRET=
 SCS_MANAGER_DOMAIN=manager.scs.localhost
+# Zensical docs (core--docs--app). Default: docs.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}
+SCS_DOCS_DOMAIN=docs.scs.localhost
+# Keycloak confidential client for technical docs SSO (oauth2-proxy). Generate: openssl rand -hex 32
+SCS_DOCS_CLIENT_SECRET=
+# Cookie encryption for oauth2-proxy (16/24/32 bytes, base64). Generate:
+# python3 -c 'import os,base64; print(base64.urlsafe_b64encode(os.urandom(32)).decode())'
+SCS_DOCS_OAUTH2_COOKIE_SECRET=
 SCS_MANAGER_DB_DRIVER=mysql
 SCS_MANAGER_DB_HOST=${SCS_CONTAINER_DATABASE}
 SCS_MANAGER_DB_IMAGE_VERSION=11.5
