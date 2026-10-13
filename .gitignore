@@ -1,45 +1,38 @@
-# IDE / editor
-.vscode
-.cursor
+# Note: submodules (scs-health, webprotege, jupyterhub, …) have their own
+# .gitignore; patterns here do not apply inside them.
+
+# IDE / editor / OS
+.vscode/
+.idea/
+.cursor/
+*.swp
+*~
+.DS_Store
 
 # Secrets and local environment
 *.env
-*.env.local
+.env.*
+!*.env.sample
+!*.env.example
 acme.json
+*.pem
+*.key
 
-# Data, backups, archives
-volumes
-backups/
-**/*.tar.gz
-exports
+# Data, backups, archives, logs
+volumes/
+/backups/
+/exports/
+*.tar.gz
+*.log
 
-# Site-specific / generated
-site/
-.docs-build/
-helpers
-configure_man
-openrefine
-Openrefine
-lontod/data/ontologies
-ontology_resolver
-webprotege/.protegedata
+# Generated / caches
+/.cache/
+/.docs-build/
+/site/
 
-# scs-health (Next.js) — local build output and dependencies
-# Source is tracked; see also scs-health/.gitignore
-scs-health/node_modules/
-scs-health/.next/
-scs-health/out/
-scs-health/*.tsbuildinfo
-scs-health/.env*
-scs-health/npm-debug.log*
-scs-health/yarn-debug.log*
-scs-health/yarn-error.log*
-scs-health/.pnpm-debug.log*
+# Local checkouts and tools (not part of this repo)
+/repos/
+/[Oo]penrefine/
 
-# AI 
-roBot_rules
-plans
-
-# Images
-repos/
-
+# AI
+/plans/

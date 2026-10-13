@@ -1,0 +1,29 @@
+# Blocks Cursor AI access and indexing. Gitignored files are already
+# excluded from indexing; this file is for things the agent must never read.
+
+# Secrets
+.env
+*.env
+.env.*
+!*.env.sample
+!*.env.example
+acme.json
+*.pem
+*.key
+
+# Data, backups, archives (large and may contain personal data)
+volumes/
+backups/
+exports/
+*.tar.gz
+*.sql
+*.sql.gz
+*.log
+
+# Dependencies and build output
+node_modules/
+.next/
+vendor/
+/.cache/
+/.docs-build/
+/site/
