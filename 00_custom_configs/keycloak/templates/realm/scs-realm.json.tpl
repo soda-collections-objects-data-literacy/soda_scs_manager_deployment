@@ -477,7 +477,6 @@
         "acr",
         "profile",
         "roles",
-        "groups",
         "basic",
         "email"
       ],
