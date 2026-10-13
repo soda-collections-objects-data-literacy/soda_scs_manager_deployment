@@ -27,11 +27,12 @@ Jedes SCS-Projekt hat einen **Team-Ordner** mit dem Namen des Projekts. Alle Pro
 - **WissKI** — semantisches Datenmanagement für Kulturgut und Forschungsdaten
 - **JupyterHub** — interaktive Rechenumgebung für Datenanalyse und Notebooks
 
-In JupyterHub arbeitet jedes Mitglied in seinem eigenen Notebook. Unter `nextcloud/<Projektname>` erscheint der Ordner jedes Projekts, in dem du Mitglied bist und das JupyterHub hat. Deine persönlichen Dateien und andere Ordner erscheinen dort nicht.
+In JupyterHub hat jedes Projekt ein gemeinsames JupyterLab. Alle Mitglieder arbeiten gleichzeitig darin und sehen die Änderungen der anderen sofort. Du öffnest es über die Karte **JupyterHub** des Projekts im SCS Manager; es startet von selbst und stoppt nach einer Stunde ohne Nutzung. Der Projektordner liegt unter `nextcloud/<Projektname>`. Deine persönlichen Dateien und andere Ordner erscheinen dort nicht.
 
-- Ein neuer Projektordner erscheint erst, wenn du deinen Notebook-Server stoppst und wieder startest, etwa nachdem JupyterHub zu einem Projekt hinzugefügt wurde oder du einem Projekt beigetreten bist.
-- Änderungen im Drive erscheinen nach etwa 30 Sekunden im Notebook. Bearbeitet jemand dieselbe Datei gleichzeitig an beiden Stellen, gilt die zuletzt gespeicherte Fassung.
-- In der Aktivitätsliste des Drives erscheinen Änderungen aus Notebooks als **SCS project mounts**.
+- Neue Mitglieder können das Lab sofort öffnen, ein Neustart ist nicht nötig.
+- Die Mitglieder teilen sich das Lab: Sie sehen gegenseitig Terminals und laufende Kernel, und Stoppen oder Neustarten betrifft alle.
+- Änderungen im Drive erscheinen nach etwa 30 Sekunden im Lab. Bearbeitet jemand dieselbe Datei gleichzeitig im Drive und im Lab, gilt die zuletzt gespeicherte Fassung.
+- In der Aktivitätsliste des Drives erscheinen Änderungen aus dem Lab als **SCS project mounts**.
 
 ## Der SCS-Share-Ordner
 

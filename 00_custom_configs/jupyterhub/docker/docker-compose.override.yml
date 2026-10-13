@@ -2,7 +2,7 @@
 # Wave H4: {scope}--{service}--{function}. Alias keeps Today DNS
 # (jupyterhub--jupyterhub) until soak. Traefik router label IDs lag.
 # JUPYTERHUB_SERVICE_NAME must match container_name (hub_connect_ip).
-# Notebook containers jupyter-{user} are unchanged.
+# Notebook containers are jupyter-project-<gid> (one shared Lab per project).
 
 services:
   jupyterhub--jupyterhub--app:
@@ -19,8 +19,12 @@ services:
       CLIENT_ID: ${JUPYTERHUB_CLIENT_ID}
       # Encrypts auth_state in the hub DB (no longer hardcoded in jupyterhub/).
       JUPYTERHUB_CRYPT_KEY: ${JUPYTERHUB_CRYPT_KEY}
-      # Nextcloud WebDAV base for hub auth_state / spawn env (must match root jupyterhub compose)
-      NC_URL: ${NEXTCLOUD_URL}
+      # SCS Manager service account (REST API: project users and servers).
+      JUPYTERHUB_SCS_MANAGER_API_TOKEN: ${JUPYTERHUB_SCS_MANAGER_API_TOKEN}
+      # Project servers: stop after this many idle seconds; per-server limits.
+      JUPYTERHUB_IDLE_TIMEOUT: ${JUPYTERHUB_IDLE_TIMEOUT:-3600}
+      JUPYTERHUB_PROJECT_CPU_LIMIT: ${JUPYTERHUB_PROJECT_CPU_LIMIT:-2}
+      JUPYTERHUB_PROJECT_MEM_LIMIT: ${JUPYTERHUB_PROJECT_MEM_LIMIT:-10G}
       # Host root of the sidecar FUSE mounts; project mounts live in _projects/<gid>/<label>.
       NEXTCLOUD_MOUNTS_ROOT: ${NEXTCLOUD_MOUNTS_ROOT:-/var/lib/scs/nextcloud-mounts}
     volumes:

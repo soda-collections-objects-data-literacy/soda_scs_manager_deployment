@@ -165,7 +165,7 @@ Flip `.env` (and live Manager settings) only after the Compose service exists un
 
 | Name | Why |
 |------|-----|
-| `jupyter-{username}` | DockerSpawner notebook containers — leave as-is |
+| `jupyter-project-{gid}` | DockerSpawner project notebook containers (hub user `project-{gid}`) — leave as-is |
 | Public Hosts (`drive.…`, `auth.…`) | Traefik / TLS / OIDC — not container DNS |
 | `COMPOSE_FILE` paths (`scs-nextcloud-stack/…`) | Repo directories — separate from DNS naming |
 

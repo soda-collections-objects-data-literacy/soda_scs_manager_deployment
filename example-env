@@ -76,6 +76,15 @@ JUPYTERHUB_CLIENT_SECRET=
 JUPYTERHUB_CLIENT_ID=http://code.scs.localhost
 # Encrypts auth_state in the hub DB. Generate with: openssl rand -hex 32
 JUPYTERHUB_CRYPT_KEY=
+# Token of the hub service "scs-manager" (SCS Manager → hub REST API).
+# Generate with: openssl rand -hex 32
+JUPYTERHUB_SCS_MANAGER_API_TOKEN=
+# Optional; default http://${SCS_CONTAINER_JUPYTERHUB}:8081/hub/api
+# JUPYTERHUB_API_URL=
+# Project servers: idle seconds before the culler stops them, and limits.
+JUPYTERHUB_IDLE_TIMEOUT=3600
+JUPYTERHUB_PROJECT_CPU_LIMIT=2
+JUPYTERHUB_PROJECT_MEM_LIMIT=10G
 JUPYTERHUB_NETWORK=reverse-proxy
 
 # Keycloak.

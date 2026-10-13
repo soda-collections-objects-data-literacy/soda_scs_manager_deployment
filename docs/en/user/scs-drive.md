@@ -27,11 +27,12 @@ Every SCS project has a **Team Folder** with the project's name. All project mem
 - **WissKI** — semantic data management for cultural heritage and research data
 - **JupyterHub** — interactive computing for analysis and notebooks
 
-In JupyterHub, each member works in their own notebook. The folder of every project you belong to that has JupyterHub appears under `nextcloud/<project name>`. Your personal files and other folders are not shown there.
+In JupyterHub, every project has one shared JupyterLab. All members work in it at the same time and see each other's edits live. Open it from the project's **JupyterHub** card in the SCS Manager; it starts on its own and stops after an hour without use. The project folder is under `nextcloud/<project name>`. Your personal files and other folders are not shown there.
 
-- A new project folder appears only after you stop your notebook server and start it again, for example after JupyterHub was added to a project or after you joined one.
-- Changes made in the drive appear in the notebook after about 30 seconds. If someone edits the same file in both places at once, the last save wins.
-- In the drive's activity list, changes made from notebooks appear as **SCS project mounts**.
+- New members can open the Lab right away, no restart needed.
+- Members share the Lab: they see each other's terminals and running kernels, and stopping or restarting it affects everyone.
+- Changes made in the drive appear in the Lab after about 30 seconds. If someone edits the same file in the drive and in the Lab at once, the last save wins.
+- In the drive's activity list, changes made from the Lab appear as **SCS project mounts**.
 
 ## The SCS-Share folder
 

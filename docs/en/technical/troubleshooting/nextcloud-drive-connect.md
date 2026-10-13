@@ -7,7 +7,6 @@ When SCS Manager cannot reach Drive automatically, use the manual connect flow a
 - Watchdog: `Nextcloud SSO status check failed` or `401 Unauthorized` on `/ocs/v1.php/cloud/user`
 - UI: *Connecting Drive via SSO failed*
 - Nextcloud log: `App token login name does not match` (stored username vs the Drive account used for WebDAV)
-- JupyterHub sync succeeds with no errors but files do not appear in the Drive UI (or vice versa) — often a **duplicate account** or a **stale Jupyter spawn** (see below)
 
 ## Automatic SSO (Bearer) vs manual connect
 
@@ -39,13 +38,13 @@ On this host the prefix is **empty**. In SCS Manager config use the sentinel `{e
 docker compose exec -T scs-manager--drupal drush config:set soda_scs_manager.settings nextcloud.generalSettings.oidcUsernamePrefix '{empty}' -y
 ```
 
-If the prefix in SCS Manager does not match the real Drive account id, status checks and JupyterHub may target the wrong user while the Drive web UI shows another.
+If the prefix in SCS Manager does not match the real Drive account id, status checks and WissKI mounts may target the wrong user while the Drive web UI shows another.
 
 ## Duplicate Nextcloud accounts (legacy mismatch)
 
 `user_oidc` provisions **one account per Keycloak `sub`** (raw UUID). Legacy installs may **also** have a **`keycloak-{sub}`** account from the old **sociallogin** stack for the same person.
 
-**Symptom:** Drive web UI and JupyterHub (or Keycloak `nextcloud_login_name`) point at different accounts; SCS-Share contents differ.
+**Symptom:** The Drive web UI and Keycloak `nextcloud_login_name` point at different accounts; SCS-Share contents differ.
 
 **Cleanup** (keep the raw `sub` / `user_oidc` account, remove the legacy prefixed one when it is unused):
 
@@ -69,39 +68,11 @@ Clear stale Keycloak attributes if needed (SCS Manager clears them automatically
 - `nextcloud_login_name`
 - `nextcloud_app_password`
 
-Then reconnect Drive in SCS Manager (Bearer or manual). **Respawn the Jupyter server** from the Hub (Stop → Start) so `NC_LOGIN_NAME` is refreshed from Keycloak.
+Then reconnect Drive in SCS Manager (Bearer or manual). JupyterHub does not use these credentials: project notebooks mount the Team Folder through the service account `scs-jupyter`.
 
-See also the full [SCS Drive ↔ Jupyter connection runbook](scs-drive-jupyter-connection.md) (user vs admin steps, what to restart).
+See also the full [SCS Drive connection runbook](scs-drive-jupyter-connection.md) (user vs admin steps, what to restart).
 
-## JupyterHub SCS-Share sync errors
-
-### `permission denied` on `.../scs-nextcloud-sync/bisync/*.lck`
-
-**Cause:** `~/.cache/scs-nextcloud-sync/` (or files under `SCS-Share/`) were created as **root**, e.g. after debugging with `docker exec jupyter-{user} ...` without `-u jovyan`. The JupyterLab cloud sync runs as `jovyan` and cannot create rclone lock files in a root-owned workdir.
-
-**Fix** (replace `{user}` with the Hub username):
-
-```bash
-docker exec jupyter-{user} chown -R jovyan:users /home/jovyan/.cache/scs-nextcloud-sync /home/jovyan/SCS-Share
-```
-
-When testing sync from the host, always use the notebook user:
-
-```bash
-docker exec -u jovyan jupyter-{user} python3 -c "from scs_nextcloud_sync.handlers import _run_nextcloud_sync; print(_run_nextcloud_sync()['ok'])"
-```
-
-### `cannot find prior Path1 or Path2 listings` / bisync aborted after account change
-
-**Cause:** Bisync state under `~/.cache/scs-nextcloud-sync/bisync/` still refers to the **previous** Nextcloud account (e.g. after fixing `NC_LOGIN_NAME` or deleting a legacy `keycloak-{sub}` user).
-
-**Fix:**
-
-```bash
-docker exec -u jovyan jupyter-{user} rm -rf /home/jovyan/.cache/scs-nextcloud-sync/bisync /home/jovyan/.cache/scs-nextcloud-sync/bisync.initialized
-```
-
-Then trigger sync again from JupyterLab (first run re-bootstraps with `--resync`).
+## WebDAV
 
 ### WebDAV lists fewer files than the Drive UI
 
@@ -119,9 +90,6 @@ docker exec --user www-data nextcloud--nextcloud--app php /var/www/html/occ user
 
 # Keycloak attribute (via SCS Manager / Admin API) should match the user_oidc account id
 # nextcloud_login_name = {sub}
-
-# Jupyter single-user server after respawn
-docker inspect jupyter-{username} --format '{{range .Config.Env}}{{println .}}{{end}}' | grep ^NC_LOGIN
 
 # SCS Manager status (logged in as affected user in browser)
 # GET /soda-scs-manager/nextcloud/connect/status → connected: true, username: {sub}

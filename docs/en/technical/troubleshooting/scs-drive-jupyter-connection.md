@@ -1,10 +1,10 @@
-# SCS Drive ↔ Jupyter connection — renewal and troubleshooting
+# SCS Drive connection and project notebooks — troubleshooting
 
-Runbook when Drive (Nextcloud) connection fails, SCS-Share does not sync between JupyterHub and Drive, or credentials need to be renewed. Covers **SCS Manager**, **Keycloak**, **Nextcloud**, and **JupyterHub**.
+Runbook when the Drive (Nextcloud) connection fails, credentials need to be renewed, or a project notebook does not show its folder. Covers **SCS Manager**, **Keycloak**, **Nextcloud**, and **JupyterHub**.
 
-For deeper technical background see [SCS Manager user lifecycle](../service-infrastructure/scs-manager-user-lifecycle.md#4-nextcloud-credentials-in-keycloak), [Keycloak ↔ Nextcloud](../post-configuration/keycloak-nextcloud.md), and [Nextcloud Drive connection](nextcloud-drive-connect.md).
+For deeper technical background see [SCS Manager user lifecycle](../service-infrastructure/scs-manager-user-lifecycle.md#4-nextcloud-credentials-in-keycloak), [Keycloak ↔ Nextcloud](../post-configuration/keycloak-nextcloud.md), [Nextcloud Drive connection](nextcloud-drive-connect.md), and [Nextcloud mount sidecar](../service-infrastructure/nextcloud-mount-sidecar.md#jupyterhub-one-shared-lab-per-project).
 
-## How the connection works
+## How it fits together
 
 ```mermaid
 %%{init: {"flowchart": {"curve": "linear"}} }%%
@@ -12,32 +12,31 @@ flowchart LR
   subgraph user_actions [User]
     SM[SCS Manager login]
     Drive[Drive web UI]
-    JH[JupyterHub / Lab sync]
+    Lab[Project JupyterLab]
   end
   subgraph keycloak [Keycloak]
     Attr["User attributes\nnextcloud_login_name\nnextcloud_app_password"]
-    Userinfo[userinfo / token claims]
+    Groups[Project groups]
   end
   subgraph nextcloud [Nextcloud Drive]
     NCAccount["user_oidc account\n(raw Keycloak sub)"]
-    Share[SCS-Share folder]
+    TeamFolder[Project Team Folder]
   end
+  Mount["Project mount\n(service account scs-jupyter)"]
   SM -->|Bearer or manual Connect| Attr
-  Attr --> Userinfo
-  Userinfo -->|spawn time| JH
-  JH -->|rclone WebDAV| Share
   Drive --> NCAccount
-  NCAccount --> Share
+  NCAccount --> TeamFolder
+  TeamFolder --> Mount
+  Mount --> Lab
+  Groups -->|role scs-project-gid| Lab
 ```
 
 | Component | Role |
 |-----------|------|
-| **Keycloak** | Stores `nextcloud_login_name` and `nextcloud_app_password` on the user record (written by SCS Manager). |
-| **SCS Manager** | Provisions and validates those attributes (Bearer SSO or manual Connect popup). |
-| **Nextcloud** | Drive account via `user_oidc`; `SCS-Share/` is the shared folder for Jupyter, WissKI, etc. |
-| **JupyterHub** | At **server spawn**, copies Keycloak userinfo into `NC_LOGIN_NAME` / `NC_TOKEN` in the single-user container. Sync is **manual** (cloud icon in JupyterLab). |
-
-**Important:** Jupyter does **not** read Keycloak on every sync — only when the single-user server is **started**. After renewing credentials, the user must **Stop → Start** the notebook server from the Hub.
+| **Keycloak** | Stores `nextcloud_login_name` and `nextcloud_app_password` on the user record (written by SCS Manager), and the project groups (`gid = entityId + 10000`). |
+| **SCS Manager** | Provisions and validates the Drive credentials (Bearer SSO or manual Connect popup), mounts project Team Folders through the service account, and manages the project servers on JupyterHub. |
+| **Nextcloud** | Drive account via `user_oidc`; every project has a Team Folder. |
+| **JupyterHub** | One shared JupyterLab per project with JupyterHub. It binds the project mount, not the user's Drive, so it does **not** depend on the user's Drive connection. Access comes from the project groups. |
 
 ## Quick reference — who does what
 
@@ -45,30 +44,27 @@ flowchart LR
 |------|:----:|:-----:|
 | Log out and back in to SCS Manager / Drive / JupyterHub | ✓ | |
 | Reconnect Drive in SCS Manager (Connected Accounts) | ✓ | |
-| Stop and start Jupyter server from the Hub | ✓ | |
-| Cloud sync button in JupyterLab | ✓ | |
-| Clear bisync cache in own notebook container | | ✓ (or user via support) |
+| Open the project notebook from the project's JupyterHub card | ✓ | |
+| Start, stop or restart the project notebook (card health icon) | ✓ | |
 | Fix duplicate legacy `keycloak-{sub}` Drive accounts | | ✓ |
 | Set `oidcUsernamePrefix` (`{empty}` vs `keycloak-`) | | ✓ |
 | `occ files:scan`, `occ user:delete`, migrate SCS-Share | | ✓ |
 | Fix Keycloak audience mapper / `user_oidc` provider | | ✓ |
-| Rebuild Jupyter spawner image | | ✓ |
-| Restart `jupyterhub--jupyterhub--app`, `nextcloud--nextcloud--app`, `keycloak--keycloak--app` | | ✓ (usually **not** needed for one user) |
+| Mount or set up a project notebook (Drush) | | ✓ |
+| Rebuild the Jupyter spawner image | | ✓ |
 
 ## Symptoms → first steps
 
 | Symptom | Likely cause | First action |
 |---------|--------------|--------------|
 | SCS Manager: *Connecting Drive via SSO failed* | Bearer token rejected by Nextcloud | User: **Connect Drive manually**; Admin: check [Keycloak ↔ Nextcloud](../post-configuration/keycloak-nextcloud.md) audience / `user_oidc` |
-| SCS Manager shows connected but Jupyter sync wrong/missing files | Stale Jupyter spawn or duplicate NC account | User: **Stop → Start** Jupyter server, then sync; Admin: check duplicate accounts (below) |
-| Jupyter sync “succeeds”, files not in Drive UI | Jupyter syncing to **legacy** `keycloak-{sub}` account | Admin: merge accounts, delete legacy, user respawns Jupyter |
-| `permission denied` on `bisync/*.lck` | Cache dir owned by root (debug `docker exec`) | Admin: `chown -R jovyan:users` on cache + SCS-Share |
-| `cannot find prior Path1 or Path2 listings` | Bisync state from old NC account | User/admin: clear bisync cache (below), sync again |
-| `NC_*` missing on Hub home | No valid Keycloak attributes | User: reconnect Drive in SCS Manager, respawn Jupyter |
+| Drive UI and SCS Manager show different accounts | Duplicate legacy account or prefix mismatch | Admin: see [duplicate accounts](#fix-duplicate-legacy-accounts) |
+| Project notebook: *You are not a member of this project* | Keycloak group not synced yet | Admin: check the user in the project's Keycloak group; the launcher re-reads it on every call |
+| Project notebook: *The project folder is being prepared* | Project mount missing or broken | Admin: `scs:nextcloud-project-status`, then `scs:nextcloud-project-mount --project=<id>` |
+| Project notebook: *JupyterHub is not enabled for this project* | Hub user `project-<gid>` missing | Admin: `scs:jupyter-backfill-project-servers` |
+| Project notebook: *Personal notebook servers are disabled* | Opened JupyterHub directly and clicked a personal server | User: open the notebook from the project page in SCS Manager or from the hub home list |
 
 ## Users — renew the connection
-
-Do these steps **in order** when Drive or Jupyter sync stops working.
 
 ### 1. SCS Manager — reconnect Drive
 
@@ -79,26 +75,13 @@ Do these steps **in order** when Drive or Jupyter sync stops working.
    - Click **Connect Drive manually**, sign in in the popup with the **same Keycloak account** as SCS Manager.
 4. Confirm status shows connected (username should be your Keycloak `sub` UUID on this deployment, not `keycloak-…` unless your site still uses the legacy prefix).
 
-### 2. JupyterHub — respawn the notebook server
+### 2. JupyterHub — open the project notebook
 
-Credentials and **project Team Folder mounts** are applied **only at spawn**.
+1. Open the project in SCS Manager and click the **JupyterHub** card. It opens the project's shared JupyterLab and starts it when it is stopped.
+2. The project folder is under `nextcloud/<project name>` in the file browser.
+3. If the Lab misbehaves, restart it from the card's health icon. This affects all members of the project: open documents are saved automatically, but running kernels and terminals are lost.
 
-1. Open JupyterHub → **File → Hub Control Panel** (or Hub home).
-2. **Stop My Server**, then **Start My Server**.
-3. Open JupyterLab → use the **cloud icon** in the file browser toolbar to sync `SCS-Share` (optional; Team Folders under `/home/jovyan/nextcloud/` come from the FUSE bind, not bisync).
-
-Do **not** rely on only restarting the Docker container from the host — use the Hub **Stop / Start** so a new spawn picks up Keycloak userinfo and project mounts.
-
-#### After creating or joining a project
-
-New Team Folders are **not** hot-plugged into a running Lab. In SCS Manager:
-
-1. Use the warning link, or hover the Jupyter card health icon and choose
-   **Stop** → confirm (unsaved notebook work will be lost).
-2. That **stops** the notebook server only.
-3. Open JupyterHub → **Start My Server**.
-
-See [Nextcloud mount sidecar — Respawn after project create / join](../service-infrastructure/nextcloud-mount-sidecar.md#respawn-after-project-create-join-not-hot).
+New members and renamed projects need no restart: access follows the Keycloak group, and the folder is bound from its parent mount.
 
 ### 3. Nextcloud Drive — refresh SSO session (if Connect popup fails)
 
@@ -114,7 +97,7 @@ If problems persist after admin fixes, log out of all SCS services and clear sit
 
 ## Admins — diagnosis and repair
 
-### Verify the chain
+### Verify the Drive chain
 
 Replace `{username}`, `{sub}`, `{drupal-uid}` with the affected account.
 
@@ -136,11 +119,14 @@ echo 'stored: ' . (\$c['username'] ?? 'INVALID') . PHP_EOL;
 
 # 3. Nextcloud accounts (look for duplicate keycloak-{sub} AND raw {sub})
 docker exec --user www-data nextcloud--nextcloud--app php occ user:list | grep {sub-fragment}
+```
 
-# 4. Jupyter env (after user respawned)
-docker inspect jupyter-{username} --format '{{range .Config.Env}}{{println .}}{{end}}' | grep ^NC_
+### Verify a project notebook
 
-# NC_LOGIN_NAME must equal stored nextcloud_login_name and the user_oidc Drive account id
+```bash
+scs-drush scs:jupyter-project-status          # mount and server state per project
+scs-drush scs:nextcloud-project-status        # project mounts only
+docker inspect jupyter-project-{gid} --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{println}}{{end}}'
 ```
 
 ### Fix duplicate legacy accounts
@@ -150,7 +136,7 @@ See [Nextcloud Drive connection — duplicate accounts](nextcloud-drive-connect.
 1. Copy `SCS-Share` from `keycloak-{sub}` to `{sub}` if needed.
 2. `occ files:scan` on the target user.
 3. `occ user:delete keycloak-{sub}`.
-4. User reconnects Drive and respawns Jupyter.
+4. User reconnects Drive.
 
 ### Fix `oidcUsernamePrefix` mismatch
 
@@ -159,28 +145,6 @@ This deployment uses raw Keycloak `sub` for `user_oidc`. SCS Manager must use th
 ```bash
 docker compose exec -T scs-manager--drupal drush config:set \
   soda_scs_manager.settings nextcloud.generalSettings.oidcUsernamePrefix '{empty}' -y
-```
-
-### Jupyter bisync cache (per user)
-
-Always run as `jovyan`, not root:
-
-```bash
-# Permission fix
-docker exec jupyter-{username} chown -R jovyan:users \
-  /home/jovyan/.cache/scs-nextcloud-sync /home/jovyan/SCS-Share
-
-# Stale account / resync needed
-docker exec -u jovyan jupyter-{username} rm -rf \
-  /home/jovyan/.cache/scs-nextcloud-sync/bisync \
-  /home/jovyan/.cache/scs-nextcloud-sync/bisync.initialized
-```
-
-Test sync:
-
-```bash
-docker exec -u jovyan jupyter-{username} python3 -c \
-  "from scs_nextcloud_sync.handlers import _run_nextcloud_sync; print(_run_nextcloud_sync()['ok'])"
 ```
 
 ### WebDAV missing files after host-side copy
@@ -194,15 +158,15 @@ docker exec --user www-data nextcloud--nextcloud--app php occ files:scan \
 
 | Action | When | Affects |
 |--------|------|---------|
-| **User: Stop → Start Jupyter server** | After reconnecting Drive, or when `NC_LOGIN_NAME` is wrong | One user |
 | **User: log out/in SCS Manager + Drive** | Stale OIDC token, Bearer 401 | One user |
+| **Member: restart the project notebook (card)** | Lab hangs, extension errors | All members of that project |
 | `docker compose restart scs-manager--drupal` | Drupal/SCS Manager code or config cache issues | All Manager users |
-| `docker compose restart jupyterhub--jupyterhub--app` | Hub config / authenticator changes | All Hub users (running servers keep old env until respawn) |
+| `docker compose restart jupyterhub--jupyterhub--app` | Hub config / authenticator changes | **Stops all project notebooks** |
 | `docker compose restart nextcloud--nextcloud--app` | Nextcloud app/config changes | All Drive users |
 | `docker compose restart keycloak--keycloak--app` | Realm/client mapper changes | All SSO users |
-| Rebuild `jupyterhub--spawner--builder` | Spawner image / sync extension changes | New spawns only |
+| Rebuild `jupyterhub--spawner--builder` | Spawner image changes | Project notebooks started afterwards |
 
-**Default for “connection broken for one user”:** reconnect in SCS Manager + Jupyter **respawn** — **no** stack restart required.
+**Default for “Drive connection broken for one user”:** reconnect in SCS Manager — **no** stack restart required.
 
 ## Admin-only Keycloak checks
 
@@ -211,14 +175,14 @@ When Bearer connect fails for **all** users:
 1. Nextcloud client in Keycloak has **audience** mapper so tokens include Drive client id in `aud`.
 2. `user_oidc` provider: `--check-bearer=1`, `--bearer-provisioning=1` ([Keycloak ↔ Nextcloud §2.4](../post-configuration/keycloak-nextcloud.md)).
 3. `config.php`: `oidc_provider_bearer_validation` = true, `bearer_validation_azp_check` = false.
-4. JupyterHub client has protocol mappers for `nextcloud_login_name` and `nextcloud_app_password` (realm template).
+4. The JupyterHub client needs the `groups` claim; it no longer needs the Nextcloud credential mappers.
 
 Users never edit Keycloak Admin; admins fix realm/client configuration once.
 
 ## Related pages
 
-- [Nextcloud Drive connection](nextcloud-drive-connect.md) — Bearer vs manual, duplicates, Jupyter bisync errors
+- [Nextcloud Drive connection](nextcloud-drive-connect.md) — Bearer vs manual, duplicates
+- [Nextcloud mount sidecar](../service-infrastructure/nextcloud-mount-sidecar.md) — project mounts and project notebooks
 - [SCS Manager user lifecycle](../service-infrastructure/scs-manager-user-lifecycle.md)
 - [Keycloak ↔ Nextcloud](../post-configuration/keycloak-nextcloud.md)
 - [JupyterHub spawn failure](jupyterhub-spawn-failure.md)
-- JupyterHub README — Nextcloud sync: `jupyterhub/README.md`

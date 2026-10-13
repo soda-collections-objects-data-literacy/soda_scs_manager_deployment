@@ -40,12 +40,12 @@ Design rules:
 - **WissKI** binds only the **project Team Folder** subdirectory
   (`…/<user>/<project-label>` → `/opt/drupal/private-files/nextcloud` =
   `private://nextcloud`), with `NEXTCLOUD_MOUNT_MODE=external`.
-- **Jupyter** binds the **project mounts** of the Keycloak projects the user
-  belongs to (`…/_projects/<gid>/<project-label>` →
-  `/home/jovyan/nextcloud/<project-label>`, `rslave`; notebook user is in GID
-  `33` for www-data ownership on the FUSE tree). Project groups are integer
-  names (`gid = entityId + 10000`). Only projects with JupyterHub have a
-  project mount.
+- **Jupyter** runs one shared server per project with JupyterHub. It binds
+  the project's mount directory (`…/_projects/<gid>` →
+  `/home/jovyan/nextcloud`, `rslave`; the notebook user is in GID `33` for
+  www-data ownership on the FUSE tree). Project groups are integer names
+  (`gid = entityId + 10000`). Only projects with JupyterHub have a project
+  mount.
 - Project mounts use the Nextcloud service account `scs-jupyter` (group
   `scs-project-mounts`), not a member's app password. The account sees a Team
   Folder only while the project has JupyterHub: the Manager adds the group to
@@ -173,56 +173,82 @@ no app passwords in the WissKI stack).
 Existing stacks need a re-deploy to pick up the external bind after migration
 from sync mode.
 
-### JupyterHub (project Team Folders)
+### JupyterHub (one shared Lab per project)
 
-`jupyterhub/jupyterhub/jupyterhub_config.py` reads Keycloak project groups from
-OIDC `groups` (integer names ≥ `10000`) and binds every live mount below
-`_projects/<gid>/`:
+Every project with JupyterHub has one JupyterLab server with real-time
+collaboration (`jupyter-collaboration`). All members work in it at the same
+time and see each other's cursors and edits.
 
-`${NEXTCLOUD_MOUNTS_ROOT}/_projects/<gid>/<project-label>` →
-`/home/jovyan/nextcloud/<project-label>`
+| Part | Name |
+|---|---|
+| Hub user (owns the server) | `project-<gid>`, created by the SCS Manager via the hub REST API |
+| Container / home volume | `jupyter-project-<gid>` / `jupyterhub-user-project-<gid>` |
+| Bind | `${NEXTCLOUD_MOUNTS_ROOT}/_projects/<gid>` → `/home/jovyan/nextcloud` (`rslave`) |
+| Lab opens at | `nextcloud/<project-label>` |
+| Launcher (Manager card link) | `https://<hub>/hub/scs/projects/<gid>` |
+| Member role | `scs-project-<gid>`: `access:servers`, `servers`, `read:users:name` on `project-<gid>` |
 
-with `rslave`. Personal Drive content and non-project folders (e.g. `Documents`,
-`SCS-Share`) are not mounted, and members do not need a Drive mount of their
-own. The folder name comes from the mount directory, so the Hub needs no
-Keycloak Admin API access. The Hub override passes `NEXTCLOUD_MOUNTS_ROOT` and
-bind-mounts the mounts root (`rslave`). If none of the user's projects has a
-project mount, `_disabled` is bound to `/home/jovyan/nextcloud`.
+- **Bind the parent:** the hub binds `_projects/<gid>`, not the FUSE mount
+  itself, so a remount or rename reaches a running server.
+- **Home volume:** holds everything outside `nextcloud/`, including the
+  collaboration document store `.jupyter_ystore.db` and the file-id DB.
+  SQLite never lives on the FUSE mount.
+- **Access:** on login and every 5 minutes the hub maps the user's Keycloak
+  project groups to project roles (`manage_roles`). Admins reach every project.
+  Logins as `project-<n>` are blocked, and personal servers are disabled (403).
+- **Launcher:** refreshes the member's groups, checks the role, then opens the
+  running Lab or starts it. The hub home lists the user's projects with
+  **Open** and **Stop**.
+- **Lifecycle:** servers start on demand. The idle culler stops them after
+  `JUPYTERHUB_IDLE_TIMEOUT` seconds (default 3600). Start, stop and restart on
+  the Manager card act for all members, and the card health shows the server
+  state; *Stopped* is the normal idle state.
+- **Removing a member** stops a running server, so open sessions end at once;
+  the hub drops the role within 5 minutes.
+- **Removing JupyterHub or the project** stops the server, deletes
+  `project-<gid>` and its home volume, unmounts the folder and removes
+  `scs-project-mounts`. The files in the Team Folder stay.
+- **Shared identity:** all members run as `jovyan` in one container and share
+  terminals, kernels and processes. Nextcloud shows changes made from the
+  Lab as `scs-jupyter`.
+- **Hub restarts stop all project servers** (`cleanup_servers` stays on,
+  because `hub_connect_ip` is the hub's IPv4 and can change on recreate).
+
+Environment:
+
+```bash
+# Hub and SCS Manager: token of the hub service "scs-manager"
+JUPYTERHUB_SCS_MANAGER_API_TOKEN=<openssl rand -hex 32>
+# SCS Manager (default http://${SCS_CONTAINER_JUPYTERHUB}:8081/hub/api)
+JUPYTERHUB_API_URL=
+# Hub: idle culler and per-server limits
+JUPYTERHUB_IDLE_TIMEOUT=3600
+JUPYTERHUB_PROJECT_CPU_LIMIT=2
+JUPYTERHUB_PROJECT_MEM_LIMIT=10G
+```
+
+Drush:
+
+```bash
+scs-drush scs:jupyter-project-status
+scs-drush scs:jupyter-backfill-project-servers --dry-run   # mount + hub user for every project with JupyterHub
+```
 
 Project mount flow in the Manager:
 
 1. Adding JupyterHub to a project sets the Team Folder groups to
-   `[<gid>, scs-project-mounts]`, then mounts it. If the mount is not ready,
-   the next reconcile retries it.
+   `[<gid>, scs-project-mounts]`, mounts the folder and creates the hub user.
+   If the mount is not ready, the next reconcile retries it.
 2. Before mounting, the Manager checks with `PROPFIND` that `scs-jupyter` sees
    the folder. It never mounts an invisible folder, because rclone would then
    create a plain folder of that name in the service account's own Drive.
 3. Renaming the project remounts under the new label, after the Team Folder is
-   renamed.
-4. Removing JupyterHub unmounts and removes `scs-project-mounts` from the
-   folder; deleting the project unmounts before the Team Folder is deleted.
-   Files stay in Nextcloud.
+   renamed. A running Lab sees the new name without a restart.
 
 Mount options: `CacheMode=writes`, `UID/GID=33`, `Umask=002`, `DirCacheTime=30s`.
-Changes made in the Nextcloud web UI appear in notebooks after about 30 s; when
-the same file is edited in both places at once, the last write wins. In
-Nextcloud, changes made from notebooks appear as `scs-jupyter`.
-
-#### Respawn after project create / join (not hot)
-
-Mounts are fixed when the notebook container is **spawned**. Adding JupyterHub
-to a project or accepting a membership of a project with JupyterHub does
-**not** add folders to a running Lab.
-
-1. In SCS Manager, users see a warning with a link to stop the notebook
-   (`/soda-scs-manager/jupyter/restart-notebook`), or they can **Stop** from
-   the Jupyter card health icon.
-2. The confirm form **stops** the notebook server and warns that **unsaved
-   notebook work will be lost** (home volume and Nextcloud files are kept).
-3. The user opens JupyterHub and chooses **Start My Server** so the Hub
-   re-reads Keycloak project groups and binds the new Team Folders.
-
-Stopping alone does not remount; a Hub spawn is required.
+Changes made in the Nextcloud web UI appear in the Lab after about 30 s, and
+open documents reload them (file poll every 5 s). When the same file is edited
+in Nextcloud and in the Lab at once, the last write wins.
 
 ## Secret rotation
 
@@ -240,7 +266,10 @@ Stopping alone does not remount; a Hub spawn is required.
 | `start.sh` aborts on propagation | Host bind not rshared | Re-run setup script / enable systemd unit |
 | rc-API 401 | Password drift between sidecar and Manager | Align `.env` and recreate both services |
 | Manager cannot resolve `nextcloud-mounter` | Not on `nextcloud-mounter-net` | Fix override (network + `depends_on`) and recreate Manager |
-| Project folder missing in a notebook | Project has no JupyterHub, mount not ready, or server started before the mount | `scs-drush scs:nextcloud-project-status`; then stop and start the notebook |
+| Launcher answers 503 "project folder is being prepared" | Project mount missing or broken | `scs-drush scs:nextcloud-project-status`, then `scs:nextcloud-project-mount --project=<id>` |
+| Launcher answers 404 "JupyterHub is not enabled" | Hub user `project-<gid>` missing | `scs-drush scs:jupyter-backfill-project-servers` |
+| Launcher answers 403 for a member | Keycloak group membership not synced yet | Check the member in the project's Keycloak group; the launcher refreshes it on every call |
+| Jupyter card health *Unknown* | Hub API unreachable or token mismatch | Compare `JUPYTERHUB_SCS_MANAGER_API_TOKEN` in hub and Manager; `scs-drush scs:jupyter-project-status` |
 | Project mount fails, log says "not visible to the project mount account" | Team Folder lacks `scs-project-mounts`, or a folder of that name exists in `scs-jupyter`'s own Drive | Check the folder's groups in Nextcloud Team Folders; remove stray folders from `scs-jupyter`'s files |
 | Project mounts skipped silently | `NEXTCLOUD_PROJECT_MOUNT_*` missing in the Manager container | Set them in `.env` and recreate the Manager |
 
