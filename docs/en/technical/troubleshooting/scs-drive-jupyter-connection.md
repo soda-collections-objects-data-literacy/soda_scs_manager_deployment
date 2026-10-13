@@ -98,7 +98,7 @@ New Team Folders are **not** hot-plugged into a running Lab. In SCS Manager:
 2. That **stops** the notebook server only.
 3. Open JupyterHub → **Start My Server**.
 
-See [Nextcloud mount sidecar — Respawn after project create / join](../service-infrastructure/nextcloud-mount-sidecar.md#respawn-after-project-create--join-not-hot).
+See [Nextcloud mount sidecar — Respawn after project create / join](../service-infrastructure/nextcloud-mount-sidecar.md#respawn-after-project-create-join-not-hot).
 
 ### 3. Nextcloud Drive — refresh SSO session (if Connect popup fails)
 
