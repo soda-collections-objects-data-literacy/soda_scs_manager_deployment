@@ -17,15 +17,12 @@ services:
       # Override with parent environment variables
       CLIENT_SECRET: ${JUPYTERHUB_CLIENT_SECRET}
       CLIENT_ID: ${JUPYTERHUB_CLIENT_ID}
+      # Encrypts auth_state in the hub DB (no longer hardcoded in jupyterhub/).
+      JUPYTERHUB_CRYPT_KEY: ${JUPYTERHUB_CRYPT_KEY}
       # Nextcloud WebDAV base for hub auth_state / spawn env (must match root jupyterhub compose)
       NC_URL: ${NEXTCLOUD_URL}
-      # Host root for per-user Nextcloud FUSE mounts (sidecar / Plan 01)
+      # Host root of the sidecar FUSE mounts; project mounts live in _projects/<gid>/<label>.
       NEXTCLOUD_MOUNTS_ROOT: ${NEXTCLOUD_MOUNTS_ROOT:-/var/lib/scs/nextcloud-mounts}
-      # Resolve Keycloak project group id → Team Folder label at spawn
-      KC_URL: ${KC_URL}
-      KC_REALM: ${KC_REALM}
-      KC_BOOTSTRAP_ADMIN_USERNAME: ${KC_BOOTSTRAP_ADMIN_USERNAME}
-      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_BOOTSTRAP_ADMIN_PASSWORD}
     volumes:
       # Need host FUSE tree visible to Hub for existence checks before bind.
       - type: bind

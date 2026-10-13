@@ -74,6 +74,8 @@ JUPYTERHUB_SERVICE_NAME=jupyterhub--jupyterhub--app
 JUPYTERHUB_SHARE=shared-data
 JUPYTERHUB_CLIENT_SECRET=
 JUPYTERHUB_CLIENT_ID=http://code.scs.localhost
+# Encrypts auth_state in the hub DB. Generate with: openssl rand -hex 32
+JUPYTERHUB_CRYPT_KEY=
 JUPYTERHUB_NETWORK=reverse-proxy
 
 # Keycloak.
@@ -171,6 +173,13 @@ NEXTCLOUD_MOUNTER_RC_USER=scs-manager
 NEXTCLOUD_MOUNTER_RC_PASS=
 # Optional override; default http://${SCS_CONTAINER_NEXTCLOUD_MOUNTER}:5572
 NEXTCLOUD_MOUNTER_RC_URL=http://${SCS_CONTAINER_NEXTCLOUD_MOUNTER}:5572
+# Service account that mounts project Team Folders (projects with JupyterHub).
+# Create it and print an app password with:
+#   docker exec -u www-data -e CREATE_APP_PASSWORD=1 nextcloud--nextcloud--app \
+#     bash /docker-entrypoint-hooks.d/post-installation/create-project-mount-user.sh
+NEXTCLOUD_PROJECT_MOUNT_USER=scs-jupyter
+NEXTCLOUD_PROJECT_MOUNT_APP_PASSWORD=
+NEXTCLOUD_PROJECT_MOUNT_GROUP=scs-project-mounts
 
 # Portainer
 SCS_PORTAINER_DOMAIN=deployments.scs.localhost

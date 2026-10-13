@@ -20,14 +20,22 @@ Klicke auf **+ Neu** in der Dateiansicht, um ein neues Dokument zu erstellen, od
 
 Draw.io steht als integrierte App für Diagramme, Flussdiagramme, Mindmaps und Netzwerkdiagramme zur Verfügung. Klicke auf **+ Neu → Neues Diagramm**. Alle Diagramme werden als `.drawio`-Dateien in deinem Drive gespeichert.
 
-## Der SCS-Share-Ordner
+## Projektordner
 
-Der Ordner **`SCS-Share`** ist ein **geteilter Team-Ordner** (nicht dein privater Home-Ordner). Er verbindet deinen Drive mit anderen SCS-Anwendungen, z. B.:
+Jedes SCS-Projekt hat einen **Team-Ordner** mit dem Namen des Projekts. Alle Projektmitglieder sehen ihn in ihrem Drive und arbeiten gemeinsam darin. Die Anwendungen des Projekts nutzen denselben Ordner:
 
 - **WissKI** — semantisches Datenmanagement für Kulturgut und Forschungsdaten
 - **JupyterHub** — interaktive Rechenumgebung für Datenanalyse und Notebooks
 
-Dateien im `SCS-Share`-Ordner sind anwendungsübergreifend zugänglich — ohne manuelle Uploads oder Downloads. Lege gemeinsame Dateien bitte direkt in diesem Team-Ordner ab (ggf. unter deinem Benutzerverzeichnis darin).
+In JupyterHub arbeitet jedes Mitglied in seinem eigenen Notebook. Unter `nextcloud/<Projektname>` erscheint der Ordner jedes Projekts, in dem du Mitglied bist und das JupyterHub hat. Deine persönlichen Dateien und andere Ordner erscheinen dort nicht.
+
+- Ein neuer Projektordner erscheint erst, wenn du deinen Notebook-Server stoppst und wieder startest, etwa nachdem JupyterHub zu einem Projekt hinzugefügt wurde oder du einem Projekt beigetreten bist.
+- Änderungen im Drive erscheinen nach etwa 30 Sekunden im Notebook. Bearbeitet jemand dieselbe Datei gleichzeitig an beiden Stellen, gilt die zuletzt gespeicherte Fassung.
+- In der Aktivitätsliste des Drives erscheinen Änderungen aus Notebooks als **SCS project mounts**.
+
+## Der SCS-Share-Ordner
+
+Der Ordner **`SCS-Share`** ist ein **geteilter Team-Ordner** (nicht dein privater Home-Ordner) zum Austausch von Dateien über die ganze Plattform. Dateien für ein Projekt gehören in den Ordner dieses Projekts, dort können seine Anwendungen sie nutzen.
 
 ## Hilfe benötigt?
 

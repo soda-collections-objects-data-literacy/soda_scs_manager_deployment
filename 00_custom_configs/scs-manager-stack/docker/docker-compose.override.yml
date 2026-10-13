@@ -24,6 +24,11 @@ services:
       NEXTCLOUD_MOUNTER_RC_USER: "${NEXTCLOUD_MOUNTER_RC_USER}"
       NEXTCLOUD_MOUNTER_RC_PASS: "${NEXTCLOUD_MOUNTER_RC_PASS}"
       NEXTCLOUD_MOUNTS_ROOT: "${NEXTCLOUD_MOUNTS_ROOT:-/var/lib/scs/nextcloud-mounts}"
+      # Service account for project Team Folder mounts (scs-nextcloud-stack
+      # hooks/post-installation/create-project-mount-user.sh).
+      NEXTCLOUD_PROJECT_MOUNT_USER: "${NEXTCLOUD_PROJECT_MOUNT_USER:-scs-jupyter}"
+      NEXTCLOUD_PROJECT_MOUNT_APP_PASSWORD: "${NEXTCLOUD_PROJECT_MOUNT_APP_PASSWORD:-}"
+      NEXTCLOUD_PROJECT_MOUNT_GROUP: "${NEXTCLOUD_PROJECT_MOUNT_GROUP:-scs-project-mounts}"
     volumes: !override
       - scs-manager--drupal-sites:/opt/drupal/web/sites
       - scs-manager--drupal-custom-modules:/opt/drupal/web/modules/custom

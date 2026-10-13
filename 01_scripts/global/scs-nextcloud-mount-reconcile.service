@@ -1,0 +1,12 @@
+[Unit]
+Description=Reconcile SCS Nextcloud FUSE mounts (user Drives and project Team Folders)
+# Drupal cron (automated_cron) runs only every few hours; this keeps mounts
+# current after sidecar restarts, renames and JupyterHub changes.
+After=docker.service scs-nextcloud-mounts.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+# "-": a failed user reconcile must not skip the project reconcile.
+ExecStart=-/usr/bin/docker exec manager--drupal--app drush scs:nextcloud-reconcile
+ExecStart=-/usr/bin/docker exec manager--drupal--app drush scs:nextcloud-project-reconcile

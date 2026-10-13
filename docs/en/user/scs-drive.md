@@ -20,14 +20,22 @@ Click **+ New** in the Files view to create a document, or open an existing one 
 
 Draw.io is available as a built-in app for diagrams, flowcharts, mind maps, and network diagrams. Click **+ New → New diagram**. Diagrams are saved as `.drawio` files in your drive.
 
-## The SCS-Share folder
+## Project folders
 
-The **`SCS-Share`** folder is a **shared Team Folder** (not a private home folder). It connects your drive with other SCS applications you can access, for example:
+Every SCS project has a **Team Folder** with the project's name. All project members see it in their drive and can work in it together. The project's applications use the same folder:
 
 - **WissKI** — semantic data management for cultural heritage and research data
 - **JupyterHub** — interactive computing for analysis and notebooks
 
-Files in `SCS-Share` are accessible across these applications without manual upload/download. Put shared files directly in this Team Folder (optionally under your user subfolder).
+In JupyterHub, each member works in their own notebook. The folder of every project you belong to that has JupyterHub appears under `nextcloud/<project name>`. Your personal files and other folders are not shown there.
+
+- A new project folder appears only after you stop your notebook server and start it again, for example after JupyterHub was added to a project or after you joined one.
+- Changes made in the drive appear in the notebook after about 30 seconds. If someone edits the same file in both places at once, the last save wins.
+- In the drive's activity list, changes made from notebooks appear as **SCS project mounts**.
+
+## The SCS-Share folder
+
+The **`SCS-Share`** folder is a **shared Team Folder** (not a private home folder) for exchanging files across the platform. Files for a project belong in that project's folder, where its applications can use them.
 
 ## Need help?
 

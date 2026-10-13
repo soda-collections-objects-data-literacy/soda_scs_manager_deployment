@@ -10,10 +10,13 @@ NEXTCLOUD_MOUNTS_ROOT="${NEXTCLOUD_MOUNTS_ROOT:-/var/lib/scs/nextcloud-mounts}"
 echo "Ensuring Nextcloud mounts root exists: ${NEXTCLOUD_MOUNTS_ROOT}"
 sudo mkdir -p "${NEXTCLOUD_MOUNTS_ROOT}"
 sudo mkdir -p "${NEXTCLOUD_MOUNTS_ROOT}/_disabled"
+# Project Team Folder mounts (service account): _projects/<gid>/<label>.
+# The SCS Manager (www-data) creates the per-project directories.
+sudo mkdir -p "${NEXTCLOUD_MOUNTS_ROOT}/_projects"
 sudo chown root:root "${NEXTCLOUD_MOUNTS_ROOT}"
 sudo chmod 755 "${NEXTCLOUD_MOUNTS_ROOT}"
-sudo chown 33:33 "${NEXTCLOUD_MOUNTS_ROOT}/_disabled"
-sudo chmod 755 "${NEXTCLOUD_MOUNTS_ROOT}/_disabled"
+sudo chown 33:33 "${NEXTCLOUD_MOUNTS_ROOT}/_disabled" "${NEXTCLOUD_MOUNTS_ROOT}/_projects"
+sudo chmod 755 "${NEXTCLOUD_MOUNTS_ROOT}/_disabled" "${NEXTCLOUD_MOUNTS_ROOT}/_projects"
 
 # Self-bind so propagation flags apply to the mount tree.
 # findmnt --target walks parents; compare TARGET to the path itself.
