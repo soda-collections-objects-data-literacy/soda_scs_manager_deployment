@@ -11,7 +11,6 @@ services:
         DOCKER_CLI_VERSION: ${DOCKER_CLI_VERSION:-29.9.2}
     environment:
       # Base images of local builds, checked in the Images section (service=image:tag).
-      # The JupyterHub base is pinned in jupyterhub/jupyterhub/Dockerfile; keep it in sync.
       SCS_HEALTH_BUILD_BASES: >-
         keycloak--keycloak--app=quay.io/keycloak/keycloak:${KC_VERSION:-26.8},
         jupyterhub--jupyterhub--app=jupyterhub/jupyterhub:${JUPYTERHUB_VERSION:-6.1.1}

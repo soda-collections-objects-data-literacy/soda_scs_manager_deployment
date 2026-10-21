@@ -43,7 +43,7 @@ WEBPROTEGE_MONGO_VERSION=4.4
 RDF4J_VERSION=5.1.2
 OPEN_GDB_NGINX_VERSION=latest
 OPEN_GDB_PROXY_VERSION=latest
-# Only reported by the health dashboard; the pin is in jupyterhub/jupyterhub/Dockerfile.
+# JupyterHub build arg (jupyterhub/jupyterhub/Dockerfile).
 JUPYTERHUB_VERSION=6.1.1
 # Static Docker CLI in the scs-health image (download.docker.com, full version).
 DOCKER_CLI_VERSION=29.9.2
