@@ -2,10 +2,12 @@
 # Wave H: {scope}--{service}--{function}. Aliases keep Today DNS (nginx upstreams,
 # REDIS_HOST, OnlyOffice DocumentServerInternalUrl) until cutover.
 # Traefik router label IDs lag on purpose.
+# Image tags come from the "Image versions" block in .env.
 
 services:
   nextcloud--nextcloud--app:
     container_name: nextcloud--nextcloud--app
+    image: nextcloud:${NEXTCLOUD_VERSION:-35}-fpm
     environment:
       - MYSQL_HOST=${SCS_CONTAINER_DATABASE:-scs--database}
     volumes: !override
@@ -25,6 +27,7 @@ services:
 
   nextcloud--ods--app:
     container_name: nextcloud--ods--app
+    image: onlyoffice/documentserver:${ONLYOFFICE_VERSION:-10.0}
     networks:
       nextcloud:
         aliases:
@@ -39,6 +42,7 @@ services:
 
   nextcloud--nginx--edge:
     container_name: nextcloud--nginx--edge
+    image: nginx:${NGINX_VERSION:-1.30}
     volumes:
       - ./scs-nextcloud-stack/reverse-proxy/nginx.conf:/etc/nginx/nginx.conf
     networks:
@@ -60,6 +64,7 @@ services:
 
   nextcloud--ods--edge:
     container_name: nextcloud--ods--edge
+    image: nginx:${NGINX_VERSION:-1.30}
     volumes:
       - ${SCS_ROOT_PATH}/scs-nextcloud-stack/onlyoffice-proxy/nginx.conf:/etc/nginx/nginx.conf
     networks:
@@ -92,6 +97,7 @@ services:
 
   nextcloud--redis--cache:
     container_name: nextcloud--redis--cache
+    image: redis:${NEXTCLOUD_REDIS_VERSION:-alpine}
     networks:
       nextcloud:
         aliases:

@@ -6,6 +6,7 @@
 services:
   webprotege--mongodb--db:
     container_name: webprotege--mongodb--db
+    image: mongo:${WEBPROTEGE_MONGO_VERSION:-4.4}-bionic
     networks:
       webprotege:
         aliases:

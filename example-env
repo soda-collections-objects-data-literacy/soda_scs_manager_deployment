@@ -13,6 +13,41 @@ SCS_SUBDOMAIN=scs
 SCS_ROOT_PATH=/var/deploy/soda_scs_manager_deployment
 SCS_SHARED_DATA=shared_data
 
+# --- Image versions ---
+# Every pin lives here; each compose file keeps the same value as
+# ${VAR:-default}, so a missing line never changes what runs. Bump both together.
+# Value = upstream version only; the variant (-alpine, -fpm, -bionic) stays in Compose.
+# Pins are major.minor where upstream publishes such tags, so patches arrive with
+# a pull; images that only publish full versions keep major.minor.patch.
+# The health dashboard (Images section) shows the running tag, newer tags and
+# newer builds under the same tag.
+# Shared: NGINX_VERSION (docs, nextcloud edge + ods edge).
+# core
+TRAEFIK_VERSION=3.7
+MARIADB_VERSION=11.8
+PORTAINER_VERSION=2.45.2
+PHPMYADMIN_VERSION=latest
+FORWARD_AUTH_VERSION=3.1.0
+RCLONE_VERSION=1.75
+# shared
+NGINX_VERSION=1.30
+OAUTH2_PROXY_VERSION=v7.15.5
+# apps
+# KC_VERSION is the Keycloak build arg (keycloak/keycloak/Dockerfile).
+KC_VERSION=26.8
+# Nextcloud major only: upgrades must go one major at a time.
+NEXTCLOUD_VERSION=35
+NEXTCLOUD_REDIS_VERSION=alpine
+ONLYOFFICE_VERSION=10.0
+WEBPROTEGE_MONGO_VERSION=4.4
+RDF4J_VERSION=5.1.2
+OPEN_GDB_NGINX_VERSION=latest
+OPEN_GDB_PROXY_VERSION=latest
+# Only reported by the health dashboard; the pin is in jupyterhub/jupyterhub/Dockerfile.
+JUPYTERHUB_VERSION=6.1.1
+# Static Docker CLI in the scs-health image (download.docker.com, full version).
+DOCKER_CLI_VERSION=29.9.2
+
 # Database.
 SCS_DB_PORT=3306
 SCS_DB_ROOT_PASSWORD=
@@ -105,7 +140,6 @@ KC_REALM=main
 KC_SERVICE_NAME=auth
 KC_URL=https://auth.scs.localhost
 KC_USER_GROUPS=user
-KC_VERSION=26.0.0
 KC_DIDMOS_CLIENT_SECRET=
 KC_DIDMOS_CLIENT_ID=didmos
 
