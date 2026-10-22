@@ -1,19 +1,19 @@
 # Voyager 3D viewer
 
-**Smithsonian DPO Voyager** ([github.com/Smithsonian/dpo-voyager](https://github.com/Smithsonian/dpo-voyager)) is a browser-based 3D viewer for scenes (`*.svx.json`) and glTF models. The deployment builds it from the git submodule at `voyager/` and serves it as static files from container `voyager--voyager--app` (alias `scs--voyager`) behind Traefik. Drupal sites (SCS Manager, WissKI instances) embed it via iframe or as a web component.
+**Smithsonian DPO Voyager** ([github.com/Smithsonian/dpo-voyager](https://github.com/Smithsonian/dpo-voyager)) is a browser-based 3D viewer for scenes (`*.svx.json`) and glTF models. The deployment builds it from the git submodule at `scs-voyager/` and serves it as static files from container `voyager--voyager--app` (alias `scs--voyager`) behind Traefik. Drupal sites (SCS Manager, WissKI instances) embed it via iframe or as a web component.
 
 ## Stack wiring
 
 | Piece | Location |
 | --- | --- |
-| Submodule | `voyager/` → `https://github.com/Smithsonian/dpo-voyager.git` (pinned to a release tag) |
+| Submodule | `scs-voyager/` → `https://github.com/Smithsonian/dpo-voyager.git` (pinned to a release tag) |
 | Image build | `00_custom_configs/voyager/docker/Dockerfile` (Node build → `nginx:${NGINX_VERSION}-alpine`) |
 | Compose service | `00_custom_configs/voyager/docker/docker-compose.override.yml` |
 | nginx config | `00_custom_configs/voyager/nginx/default.conf.template` |
 | Model volume | `voyager--files` → `/usr/share/nginx/html/files` (read-only) |
 | `COMPOSE_FILE` entry | `00_custom_configs/voyager/docker/docker-compose.override.yml` |
 
-The upstream `voyager/docker-compose.yml` is a development server with WebDAV write access and is **not** part of `COMPOSE_FILE`.
+The upstream `scs-voyager/docker-compose.yml` is a development server with WebDAV write access and is **not** part of `COMPOSE_FILE`.
 
 The Dockerfile changes two things in the upstream source before building:
 
@@ -90,12 +90,12 @@ Further attributes (also usable as iframe query parameters): `model`, `quality`,
 ## Updating Voyager
 
 ```bash
-git -C voyager fetch --tags
-git -C voyager checkout v0.xx.y
-git add voyager && git commit -m "chore(voyager): bump to v0.xx.y"
+git -C scs-voyager fetch --tags
+git -C scs-voyager checkout v0.xx.y
+git add scs-voyager && git commit -m "chore(voyager): bump to v0.xx.y"
 docker compose build voyager--voyager--app && docker compose up -d voyager--voyager--app
 ```
 
-`start.sh` runs `git submodule update --remote`, which moves `voyager/` to upstream `master`. Check out the release tag again before building if you need a pinned version.
+`start.sh` runs `git submodule update --remote`, which moves `scs-voyager/` to upstream `master`. Check out the release tag again before building if you need a pinned version.
 
 The Dockerfile fails the build if upstream renames the patched strings (`CVAssetReader.ts` default asset path, Analytics block in `explorer.hbs`); adjust the `sed` patterns in that case.

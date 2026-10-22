@@ -1,5 +1,5 @@
-# Smithsonian DPO Voyager (3D viewer), built from the voyager/ submodule.
-# Build context: ${SCS_ROOT_PATH}/voyager (see docker-compose.override.yml).
+# Smithsonian DPO Voyager (3D viewer), built from the scs-voyager/ submodule.
+# Build context: ${SCS_ROOT_PATH}/scs-voyager (see docker-compose.override.yml).
 
 ARG NODE_VERSION=22
 ARG NGINX_VERSION=1.30

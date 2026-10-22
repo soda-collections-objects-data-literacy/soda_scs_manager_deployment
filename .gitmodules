@@ -28,6 +28,6 @@
 [submodule "scs-health"]
 	path = scs-health
 	url = git@github.com:rnsrk/scs-health.git
-[submodule "voyager"]
-	path = voyager
+[submodule "scs-voyager"]
+	path = scs-voyager
 	url = https://github.com/Smithsonian/dpo-voyager.git

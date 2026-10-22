@@ -349,7 +349,7 @@ WEBPROTEGE_MAIL_SMTP_STARTTLS_ENABLE=true
 # Enable SSL/TLS (use with port 465).
 WEBPROTEGE_MAIL_SMTP_SSL_ENABLE=false
 
-# Smithsonian Voyager 3D viewer (voyager/ submodule, built locally).
+# Smithsonian Voyager 3D viewer (scs-voyager/ submodule, built locally).
 # Baked into the build as asset base URL: rebuild after changing it
 # (docker compose build voyager--voyager--app).
 VOYAGER_DOMAIN=3d.scs.localhost
