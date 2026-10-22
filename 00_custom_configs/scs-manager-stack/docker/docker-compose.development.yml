@@ -1,0 +1,28 @@
+# Development additions for the SCS Manager (not for production servers).
+# Load after docker-compose.override.yml via COMPOSE_FILE in .env, with
+# SCS_MANAGER_MODE=development:
+#   …:scs-manager-stack/docker-compose.override.yml:00_custom_configs/scs-manager-stack/docker/docker-compose.development.yml:…
+#
+# Core, contrib and vendor (with PHPUnit, PHPStan, PHPCS) come from the
+# development image. Only the custom code and the site directory are host
+# binds, so git branches and edits stay on the host.
+
+services:
+  manager--drupal--app:
+    environment:
+      # `developer` in the container gets these IDs (host user for the clones).
+      DEV_UID: ${SCS_MANAGER_DEV_UID:-1000}
+      DEV_GID: ${SCS_MANAGER_DEV_GID:-1000}
+      # Xdebug for Cursor on the host (trigger mode).
+      XDEBUG_MODE: "debug,develop"
+      XDEBUG_CONFIG: "idekey=CURSOR trigger_value=CURSOR client_host=host.docker.internal client_port=9003"
+    volumes:
+      # Site settings and public files (replaces the named sites volume).
+      - ./scs-manager-stack/volumes/drupal-root/web/sites:/opt/drupal/web/sites
+      # Custom module and themes as host git clones.
+      - ./scs-manager-stack/volumes/drupal-root/web/modules/custom/soda_scs_manager:/opt/drupal/web/modules/contrib/soda_scs_manager
+      - ./scs-manager-stack/volumes/drupal-root/web/themes/custom/soda_scs_manager_theme:/opt/drupal/web/themes/custom/soda_scs_manager_theme
+      - ./scs-manager-stack/volumes/drupal-root/web/themes/custom/scs_custom_theme:/opt/drupal/web/themes/custom/scs_custom_theme
+      # Xdebug settings for the host IDE (replaces the image's file).
+      - ./scs-manager-stack/configs/php/zz-xdebug-debug.ini:/usr/local/etc/php/conf.d/zz-xdebug-custom.ini:ro
+    ports: !override ["8080:80"]  # 8080 for direct debugging (bypass Traefik timeout)

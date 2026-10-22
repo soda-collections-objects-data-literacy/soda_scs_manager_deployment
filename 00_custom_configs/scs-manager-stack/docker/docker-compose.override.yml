@@ -35,11 +35,13 @@ services:
     volumes: !override
       - scs-manager--drupal-sites:/opt/drupal/web/sites
       - scs-manager--drupal-custom-modules:/opt/drupal/web/modules/custom
+      # Private files (file_private_path); snapshots are mounted below it.
+      - scs-manager--private-files:/var/scs-manager
       - ./scs-manager-stack/custom_configs:/opt/drupal/custom_configs
       - ./scs-manager-stack/configs/php-fpm/zz-docker.conf:/usr/local/etc/php-fpm.d/zz-docker.conf:ro
       - ./scs-manager-stack/configs/nginx/drupal.conf:/etc/nginx/conf.d/drupal.conf:ro
-      # Xdebug debug overlay (scs-manager-stack/configs/php/zz-xdebug-debug.ini) is for
-      # local development only — do not mount in production (disables OPcache).
+      # Development servers add Xdebug and binds for the custom code with
+      # 00_custom_configs/scs-manager-stack/docker/docker-compose.development.yml.
       - /srv/backups/scs-manager/snapshots:/var/scs-manager/snapshots
       - type: bind
         source: ${NEXTCLOUD_MOUNTS_ROOT:-/var/lib/scs/nextcloud-mounts}
@@ -129,4 +131,6 @@ volumes:
     name: scs-manager--redis-data
   scs-manager--drupal-custom-modules:
     name: scs-manager--drupal-custom-modules
+  scs-manager--private-files:
+    name: scs-manager--private-files
 

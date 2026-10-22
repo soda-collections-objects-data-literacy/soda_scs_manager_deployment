@@ -253,7 +253,13 @@ SCS_MANAGER_DB_ROOT_PASSWORD=scsmanagerrootpass
 SCS_MANAGER_DB_USER=scsmanager
 SCS_MANAGER_DRUPAL_PORT=8080
 SCS_MANAGER_IMAGE_VERSION=latest
+# production on production servers. development additionally needs
+# :00_custom_configs/scs-manager-stack/docker/docker-compose.development.yml
+# in COMPOSE_FILE after scs-manager-stack/docker-compose.override.yml (custom
+# module and themes as host binds, Xdebug) and the host user's IDs below.
 SCS_MANAGER_MODE=development
+SCS_MANAGER_DEV_UID=1000
+SCS_MANAGER_DEV_GID=1000
 SCS_MANAGER_DRUPAL_PASSWORD=drupalpass
 SCS_MANAGER_REDIS_IMAGE_VERSION=8-alpine
 SCS_MANAGER_SERVICE_NAME=manager
