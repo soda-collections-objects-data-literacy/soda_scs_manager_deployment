@@ -6,7 +6,7 @@
 
 | Piece | Location |
 | --- | --- |
-| Submodule | `scs-voyager/` → `https://github.com/Smithsonian/dpo-voyager.git` (pinned to a release tag) |
+| Submodule | `scs-voyager/` → `git@github.com:soda-collections-objects-data-literacy/scs-voyager.git` (fork of `Smithsonian/dpo-voyager`, pinned to a release tag) |
 | Image build | `00_custom_configs/voyager/docker/Dockerfile` (Node build → `nginx:${NGINX_VERSION}-alpine`) |
 | Compose service | `00_custom_configs/voyager/docker/docker-compose.override.yml` |
 | nginx config | `00_custom_configs/voyager/nginx/default.conf.template` |
@@ -89,13 +89,16 @@ Further attributes (also usable as iframe query parameters): `model`, `quality`,
 
 ## Updating Voyager
 
+The fork tracks Smithsonian as remote `upstream` (add it after a fresh clone: `git -C scs-voyager remote add upstream https://github.com/Smithsonian/dpo-voyager.git`).
+
 ```bash
-git -C scs-voyager fetch --tags
+git -C scs-voyager fetch upstream --tags
 git -C scs-voyager checkout v0.xx.y
+git -C scs-voyager push origin v0.xx.y "v0.xx.y^{commit}:refs/heads/master"
 git add scs-voyager && git commit -m "chore(voyager): bump to v0.xx.y"
 docker compose build voyager--voyager--app && docker compose up -d voyager--voyager--app
 ```
 
-`start.sh` runs `git submodule update --remote`, which moves `scs-voyager/` to upstream `master`. Check out the release tag again before building if you need a pinned version.
+`start.sh` runs `git submodule update --remote`, which moves `scs-voyager/` to the fork's `master`. Keep `master` on the release you want to deploy.
 
 The Dockerfile fails the build if upstream renames the patched strings (`CVAssetReader.ts` default asset path, Analytics block in `explorer.hbs`); adjust the `sed` patterns in that case.

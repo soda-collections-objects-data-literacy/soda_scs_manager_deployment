@@ -1,4 +1,4 @@
-# Smithsonian DPO Voyager 3D viewer (submodule scs-voyager/ → github.com/Smithsonian/dpo-voyager).
+# Smithsonian DPO Voyager 3D viewer (submodule scs-voyager/ → fork of github.com/Smithsonian/dpo-voyager).
 # The upstream docker-compose.yml is a dev server with WebDAV; this file defines
 # the production service: static nginx built from the submodule source.
 

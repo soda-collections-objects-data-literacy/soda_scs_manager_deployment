@@ -30,4 +30,4 @@
 	url = git@github.com:rnsrk/scs-health.git
 [submodule "scs-voyager"]
 	path = scs-voyager
-	url = https://github.com/Smithsonian/dpo-voyager.git
+	url = git@github.com:soda-collections-objects-data-literacy/scs-voyager.git
