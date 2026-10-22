@@ -1,0 +1,54 @@
+# Voyager static server. Rendered by the nginx image's envsubst step
+# (/etc/nginx/templates → /etc/nginx/conf.d); only defined env vars are replaced.
+
+server {
+    listen 80;
+    server_name _;
+
+    root /usr/share/nginx/html;
+
+    gzip on;
+    gzip_vary on;
+    gzip_types text/plain text/css application/json application/javascript image/svg+xml model/gltf+json model/gltf-binary application/octet-stream;
+
+    # Drupal pages load the web component, fonts and models cross-origin.
+    add_header Access-Control-Allow-Origin "${VOYAGER_CORS_ORIGIN}" always;
+    add_header Access-Control-Allow-Methods "GET, HEAD, OPTIONS" always;
+    add_header Access-Control-Allow-Headers "Range" always;
+    # Which sites may embed voyager-*.html in an iframe.
+    add_header Content-Security-Policy "frame-ancestors ${VOYAGER_FRAME_ANCESTORS}" always;
+
+    location = / {
+        return 302 /voyager-explorer.html$is_args$args;
+    }
+
+    location / {
+        if ($request_method = OPTIONS) {
+            return 204;
+        }
+        try_files $uri =404;
+    }
+
+    # Versioned bundles: cache briefly, the file names carry no hash.
+    location ~* \.(js|css|woff2?|ttf|wasm)$ {
+        add_header Access-Control-Allow-Origin "${VOYAGER_CORS_ORIGIN}" always;
+        add_header Content-Security-Policy "frame-ancestors ${VOYAGER_FRAME_ANCESTORS}" always;
+        add_header Cache-Control "public, max-age=3600";
+        try_files $uri =404;
+    }
+
+    # Scenes and models (svx.json, glb, textures) from the voyager--files volume.
+    location /files/ {
+        if ($request_method = OPTIONS) {
+            return 204;
+        }
+        autoindex off;
+        try_files $uri =404;
+    }
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+}

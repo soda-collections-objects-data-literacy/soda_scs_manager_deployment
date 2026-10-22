@@ -1,0 +1,43 @@
+# Smithsonian DPO Voyager 3D viewer (submodule voyager/ → github.com/Smithsonian/dpo-voyager).
+# The upstream docker-compose.yml is a dev server with WebDAV; this file defines
+# the production service: static nginx built from the submodule source.
+
+services:
+  voyager--voyager--app:
+    build:
+      context: ${SCS_ROOT_PATH}/voyager
+      dockerfile: ${SCS_ROOT_PATH}/00_custom_configs/voyager/docker/Dockerfile
+      args:
+        NGINX_VERSION: ${NGINX_VERSION:-1.30}
+        VOYAGER_ASSET_URL: https://${VOYAGER_DOMAIN:-3d.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}}/
+    container_name: voyager--voyager--app
+    restart: unless-stopped
+    environment:
+      VOYAGER_CORS_ORIGIN: ${VOYAGER_CORS_ORIGIN:-*}
+      VOYAGER_FRAME_ANCESTORS: ${VOYAGER_FRAME_ANCESTORS:-'self' https://${SCS_BASE_DOMAIN:-localhost} https://*.${SCS_BASE_DOMAIN:-localhost}}
+    volumes:
+      - ${SCS_ROOT_PATH}/00_custom_configs/voyager/nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - voyager--files:/usr/share/nginx/html/files:ro
+    networks:
+      reverse-proxy:
+        aliases:
+          - scs--voyager
+    depends_on:
+      - core--traefik--edge
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy"
+      - "traefik.http.routers.scs--voyager.rule=Host(`${VOYAGER_DOMAIN:-3d.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}}`)"
+      - "traefik.http.routers.scs--voyager.entrypoints=websecure"
+      - "traefik.http.routers.scs--voyager.tls=true"
+      - "traefik.http.routers.scs--voyager.tls.certresolver=le"
+      - "traefik.http.services.scs--voyager.loadbalancer.server.port=80"
+
+volumes:
+  voyager--files:
+    name: voyager--files

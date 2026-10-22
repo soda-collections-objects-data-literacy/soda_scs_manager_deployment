@@ -37,6 +37,7 @@ nav = [
       { "Naming migration plan" = "technical/service-infrastructure/naming-migration-plan.md" },
       { "PHP debugging (Xdebug)" = "technical/service-infrastructure/php-xdebug.md" },
       { "SCS Health dashboard" = "technical/service-infrastructure/scs-health.md" },
+      { "Voyager 3D viewer" = "technical/service-infrastructure/voyager.md" },
       { "SCS Manager user lifecycle" = "technical/service-infrastructure/scs-manager-user-lifecycle.md" },
       { "Nextcloud mount sidecar" = "technical/service-infrastructure/nextcloud-mount-sidecar.md" },
     ] },
