@@ -15,7 +15,7 @@ services:
     profiles: ["opengdb-legacy-keys"]
 
   opengdb--rdf4j--db:
-    image: eclipse/rdf4j-workbench:${RDF4J_VERSION:-5.1.2}
+    image: eclipse/rdf4j-workbench:${RDF4J_VERSION:-6.1.0-tomcat}
     container_name: opengdb--rdf4j--db
     restart: always
     environment:
