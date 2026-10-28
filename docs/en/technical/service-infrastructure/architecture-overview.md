@@ -278,6 +278,7 @@ flowchart TB
 | WebProtégé patches | `00_custom_configs/webprotege/patches/` | OIDC, project API, Docker build |
 | Default landing page | `00_custom_configs/default-page/` | Optional nginx static |
 | Host systemd (FUSE) | `01_scripts/global/scs-nextcloud-mounts.service` | Keeps mounts root `shared` |
+| Host systemd (reconcile) | `01_scripts/global/scs-nextcloud-mount-reconcile.{service,timer}` | Re-creates user and project mounts every minute |
 
 Overrides use `${SCS_ROOT_PATH}/…` for host volume paths and `volumes: !override` / `networks: !override` where the base list must be replaced.
 
@@ -291,7 +292,7 @@ Overrides use `${SCS_ROOT_PATH}/…` for host volume paths and `volumes: !overri
 %%{init: {"flowchart": {"curve": "linear"}} }%%
 flowchart TD
   A[Clone + submodule init] --> B[cp example-env → .env]
-  B --> C[setup-nextcloud-mounts.sh<br/>+ optional systemd unit]
+  B --> C[setup-nextcloud-mounts.sh<br/>+ systemd mount unit + reconcile timer]
   C --> D[./start.sh]
   D --> D1[reverse-proxy network]
   D --> D2[Copy compose overrides]

@@ -6,6 +6,26 @@ The script `start.sh` at the repository root performs all setup that must happen
 ./start.sh
 ```
 
+## Host preparation (once per host, before `start.sh`)
+
+`start.sh` aborts if the Nextcloud mounts root is not a shared bind. Install the two host units from `01_scripts/global/` (absolute paths, so this works from any directory):
+
+```bash
+REPO=/var/www/deploy/soda_scs_manager_deployment
+
+# Shared bind for the FUSE mounts root (must exist before Docker starts)
+bash "$REPO/01_scripts/global/setup-nextcloud-mounts.sh"
+sudo cp "$REPO/01_scripts/global/scs-nextcloud-mounts.service" /etc/systemd/system/
+
+# Reconcile user and project mounts every minute
+sudo cp "$REPO"/01_scripts/global/scs-nextcloud-mount-reconcile.{service,timer} /etc/systemd/system/
+
+sudo systemctl daemon-reload
+sudo systemctl enable --now scs-nextcloud-mounts.service scs-nextcloud-mount-reconcile.timer
+```
+
+The reconcile timer is needed because the rclone sidecar loses all mounts when it restarts, and only the SCS Manager can re-create them. Drupal's `automated_cron` runs only every few hours (and only after a page request), so without the timer, Drives and project folders stay missing that long. Until the Manager is installed, the timer's runs fail harmlessly. Re-copy the files and run `daemon-reload` when the unit files change. See [Nextcloud mount sidecar](../service-infrastructure/nextcloud-mount-sidecar.md).
+
 ## What `start.sh` does
 
 ### Step 0: Check prerequisites

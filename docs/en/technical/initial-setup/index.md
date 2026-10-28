@@ -14,7 +14,7 @@ The deployment expects:
 ## Steps
 
 1. **[Prerequisites](prerequisites.md)** — Install Docker, configure GitHub access, copy and edit `.env`.
-2. **[Pre-start steps](pre-start-steps.md)** — Run `./start.sh` and understand what it does (network, overrides, database, pre-install scripts).
+2. **[Pre-start steps](pre-start-steps.md)** — Once per host, install the Nextcloud mount units (shared bind + reconcile timer, `sudo` required). Then run `./start.sh` and understand what it does (network, overrides, database, pre-install scripts).
 3. After that, run `docker compose up -d` to start all services.
 4. Then follow the [Post-configuration checklist](../post-configuration/checklist.md) to configure each service (Keycloak, SCS Manager, Nextcloud, JupyterHub, etc.).
 

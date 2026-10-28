@@ -41,6 +41,7 @@ Use this checklist after the whole environment has started (`docker compose up -
 ## Nextcloud mount sidecar
 
 - [ ] **Host rshared bind** — `/var/lib/scs/nextcloud-mounts` exists and `findmnt -o PROPAGATION --target /var/lib/scs/nextcloud-mounts` contains `shared`. Prefer `systemctl enable --now scs-nextcloud-mounts.service` (unit file under `01_scripts/global/`). See [Nextcloud mount sidecar](../service-infrastructure/nextcloud-mount-sidecar.md).
+- [ ] **Reconcile timer** — `systemctl list-timers scs-nextcloud-mount-reconcile.timer` lists the timer, and `systemctl status scs-nextcloud-mount-reconcile.service` shows both `drush` calls with `status=0/SUCCESS`. Without it, mounts stay missing after a sidecar restart until the next Drupal cron (every few hours). Install: see [Pre-start steps](../initial-setup/pre-start-steps.md#host-preparation-once-per-host-before-startsh).
 - [ ] **Sidecar healthy** — `docker compose ps nextcloud-mounter` is healthy; no host port for `:5572`.
 - [ ] **Manager wiring** — `scs-manager--drupal` is on `nextcloud-mounter-net`, has `NEXTCLOUD_MOUNTER_RC_*` / `NEXTCLOUD_MOUNTS_ROOT`, and binds mounts root → `/mnt/nextcloud-mounts` (`rslave`). Override lives in `00_custom_configs/scs-manager-stack/docker/`.
 - [ ] **rc-API from Manager only** — `scs-drush scs:nextcloud-status` (or `curl` to `http://nextcloud-mounter:5572/core/pid`); WissKI containers cannot reach that host.
