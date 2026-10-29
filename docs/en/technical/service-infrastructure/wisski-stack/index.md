@@ -397,6 +397,8 @@ When SCS Manager creates a WissKI stack via Portainer:
 
 Configure at: `/admin/config/soda-scs-manager/settings` → **WissKI** → **Drupal reverse proxy addresses**.
 
+SCS administrators can clear one instance's Varnish cache from the instance page (**Clear Varnish cache**) and from the component and stack operation menus. That runs `varnishadm ban req.url ~ .` inside `{SERVICE_NAME}--varnish`, so the next request is a cache miss. The Drupal container and Redis are left running.
+
 Existing stacks keep their Portainer env until updated; changing SCS Manager settings alone does not rewrite running stacks.
 
 ## Standalone use (without Traefik)
