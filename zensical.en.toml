@@ -24,8 +24,12 @@ nav = [
   { "Welcome" = "index.md" },
   { "User guide" = [
     { "Overview" = "user/index.md" },
-    { "Available services" = "user/services.md" },
-    { "SCS Drive" = "user/scs-drive.md" },
+    { "Registration" = "user/registration.md" },
+    { "Sign in" = "user/sign-in.md" },
+    { "Create a project" = "user/create-project.md" },
+    { "Applications" = "user/applications.md" },
+    { "Project members" = "user/members.md" },
+    { "Project files" = "user/project-files.md" },
   ] },
   { "Technical" = [
     { "Overview" = "technical/index.md" },

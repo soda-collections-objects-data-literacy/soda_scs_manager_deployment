@@ -12,7 +12,15 @@ acme.json
 *.key
 
 # Data, backups, archives (large and may contain personal data)
-volumes/
+volumes/*
+scs-manager-stack/volumes/*
+!scs-manager-stack/volumes/drupal-root/
+scs-manager-stack/volumes/drupal-root/*
+!scs-manager-stack/volumes/drupal-root/web/
+scs-manager-stack/volumes/drupal-root/web/*
+!scs-manager-stack/volumes/drupal-root/web/modules/
+scs-manager-stack/volumes/drupal-root/web/modules/*
+!scs-manager-stack/volumes/drupal-root/web/modules/custom/
 backups/
 exports/
 *.tar.gz

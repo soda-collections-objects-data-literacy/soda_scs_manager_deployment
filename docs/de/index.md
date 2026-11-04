@@ -6,7 +6,7 @@ Wähle den Bereich, den du brauchst:
 
 ## [Benutzerhandbuch](user/index.md)
 
-Alltagsanleitungen für die Plattform: verfügbare Dienste, SCS Drive, Freigaben und Zusammenarbeit.
+Alltagsanleitungen für die Plattform: Registrierung, Projekte, Anwendungen, Team und Projektdateien.
 
 - Für alle offen — **keine Anmeldung nötig**
 

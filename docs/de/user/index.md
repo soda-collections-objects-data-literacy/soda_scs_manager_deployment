@@ -2,10 +2,25 @@
 
 Wie du die SCS-Plattform im Alltag nutzt. Deployment und Server-Interna stehen in der [Technischen Dokumentation](../technical/index.md).
 
+Die Bilder zeigen das Demo-Projekt **robert Demo**. Ein Demo-Projekt bringt WissKI, JupyterHub und WebProtégé mit Beispieldaten mit. Jedes Konto kann genau eines anlegen.
+
+```mermaid
+flowchart LR
+  registrierung[Registrieren] --> freigabe[Freigabe abwarten]
+  freigabe --> anmeldung[Anmelden]
+  anmeldung --> projekt[Projekt anlegen]
+  projekt --> anwendungen[Anwendungen]
+  projekt --> team[Team einladen]
+```
+
 ## Anleitungen
 
-- **[Verfügbare Dienste](services.md)** — welche SCS-Dienste es gibt und wofür sie da sind.
-- **[SCS Drive](scs-drive.md)** — Nextcloud-Dateispeicher, OnlyOffice, Draw.io und der geteilte Ordner `SCS-Share`.
+1. [Registrierung](registrierung.md) — Konto beantragen und auf die Freigabe warten.
+2. [Anmeldung](anmeldung.md) — mit dem SCS-Login auf die Projektseite kommen.
+3. [Projekt anlegen](projekt-anlegen.md) — eigenes Projekt oder Demo-Projekt.
+4. [Anwendungen](anwendungen.md) — WissKI, JupyterHub, WebProtégé, SQL-Datenbank und Triplestore.
+5. [Projektmitglieder](mitglieder.md) — Personen einladen, annehmen, entfernen.
+6. [Projektdateien](projektdateien.md) — der gemeinsame Ordner in Drive, JupyterHub und WissKI.
 
 ## Hilfe benötigt?
 

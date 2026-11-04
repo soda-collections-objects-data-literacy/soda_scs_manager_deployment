@@ -22,17 +22,7 @@ Draw.io is available as a built-in app for diagrams, flowcharts, mind maps, and 
 
 ## Project folders
 
-Every SCS project has a **Team Folder** with the project's name. All project members see it in their drive and can work in it together. The project's applications use the same folder:
-
-- **WissKI** — semantic data management for cultural heritage and research data
-- **JupyterHub** — interactive computing for analysis and notebooks
-
-In JupyterHub, every project has one shared JupyterLab. All members work in it at the same time and see each other's edits live. Open it from the project's **JupyterHub** card in the SCS Manager; it starts on its own and stops after an hour without use. The project folder is under `nextcloud/<project name>`. Your personal files and other folders are not shown there.
-
-- New members can open the Lab right away, no restart needed.
-- Members share the Lab: they see each other's terminals and running kernels, and stopping or restarting it affects everyone.
-- Changes made in the drive appear in the Lab after about 30 seconds. If someone edits the same file in the drive and in the Lab at once, the last save wins.
-- In the drive's activity list, changes made from the Lab appear as **SCS project mounts**.
+Every project has a folder with the project's name. Every member sees it in the drive. JupyterHub and WissKI use that same folder. Where it shows up in the applications is described in [Project files](project-files.md).
 
 ## The SCS-Share folder
 

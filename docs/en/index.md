@@ -6,7 +6,7 @@ Choose the section that matches what you need:
 
 ## [User guide](user/index.md)
 
-Everyday how-tos for working with the platform: available services, SCS Drive, sharing, and collaboration.
+Everyday how-tos for working with the platform: registration, projects, applications, the team, and project files.
 
 - Open to everyone — **no login required**
 
