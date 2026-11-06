@@ -22,6 +22,15 @@ flowchart LR
 5. [Projektmitglieder](mitglieder.md) — Personen einladen, annehmen, entfernen.
 6. [Projektdateien](projektdateien.md) — der gemeinsame Ordner in Drive, JupyterHub und WissKI.
 
+## Verfügbare Anwendungen
+
+- [JupyterHub mit OpenRefine](apps/jupyter.md)
+- [MariaDB mit phpMyAdmin](apps/mariadb.md)
+- [Nextcloud mit OnlyOffice und draw.io](apps/nextcloud.md)
+- [OpenGDB](apps/opengdb.md)
+- [WebProtégé](apps/webprotege.md)
+- [WissKI-Umgebung](apps/wisski.md)
+
 ## Hilfe benötigt?
 
 Bei Fragen zu Zugriff, Freigaben oder Speicherplatz wende dich an deine Systemadministration.

@@ -1,0 +1,64 @@
+{#-
+  Outline previous/next buttons, then the light SODa footer.
+-#}
+{% set lang_code = config.theme.language %}
+{% set manager = "https://manager.dev-scs.sammlungen.io/" ~ lang_code %}
+<footer class="md-footer scs-footer">
+  {% if page.previous_page or page.next_page %}
+    <nav class="scs-pager" aria-label="{{ lang.t('footer') }}">
+      {% if page.previous_page %}
+        <a class="scs-pager__link scs-pager__link--prev" href="{{ page.previous_page.url | url }}">
+          <span aria-hidden="true">‹</span> {{ page.previous_page.title }}
+        </a>
+      {% else %}
+        <span></span>
+      {% endif %}
+      {% if page.next_page %}
+        <a class="scs-pager__link scs-pager__link--next" href="{{ page.next_page.url | url }}">
+          {{ page.next_page.title }} <span aria-hidden="true">›</span>
+        </a>
+      {% endif %}
+    </nav>
+  {% endif %}
+  <div class="scs-footer__bar">
+    <a class="scs-footer__logo" href="{{ nav.homepage.url | url }}">
+      {% include "partials/logo.html" %}
+    </a>
+    <nav class="scs-footer__col" aria-label="{% if lang_code == 'de' %}Dokumentation{% else %}Documentation{% endif %}">
+      <h2>{% if lang_code == "de" %}Dokumentation{% else %}Documentation{% endif %}</h2>
+      <ul>
+        {% if lang_code == "de" %}
+          <li><a href="{{ config.site_url }}user/">Benutzerhandbuch</a></li>
+          <li><a href="{{ config.site_url }}user/apps/jupyter/">JupyterHub</a></li>
+          <li><a href="{{ config.site_url }}user/apps/webprotege/">WebProtégé</a></li>
+          <li><a href="{{ config.site_url }}user/apps/wisski/">WissKI-Umgebung</a></li>
+          <li><a href="{{ config.site_url }}user/projekt-anlegen/">Projekt anlegen</a></li>
+        {% else %}
+          <li><a href="{{ config.site_url }}user/">User guide</a></li>
+          <li><a href="{{ config.site_url }}user/apps/jupyter/">JupyterHub</a></li>
+          <li><a href="{{ config.site_url }}user/apps/webprotege/">WebProtégé</a></li>
+          <li><a href="{{ config.site_url }}user/apps/wisski/">WissKI Environment</a></li>
+          <li><a href="{{ config.site_url }}user/create-project/">Create a project</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+    <nav class="scs-footer__col" aria-label="{% if lang_code == 'de' %}Rechtliches{% else %}Legal{% endif %}">
+      <h2>{% if lang_code == "de" %}Rechtliches{% else %}Legal{% endif %}</h2>
+      <ul>
+        <li><a href="{{ manager }}/imprint">{% if lang_code == "de" %}Impressum{% else %}Imprint{% endif %}</a></li>
+        <li><a href="{{ manager }}/privacy-policy">{% if lang_code == "de" %}Datenschutz{% else %}Privacy policy{% endif %}</a></li>
+        <li><a href="{{ manager }}/terms-of-service">{% if lang_code == "de" %}Nutzungsbedingungen{% else %}Terms of use{% endif %}</a></li>
+        <li><a href="{{ manager }}/accessibility">{% if lang_code == "de" %}Barrierefreiheit{% else %}Accessibility{% endif %}</a></li>
+      </ul>
+    </nav>
+    <nav class="scs-footer__col" aria-label="{% if lang_code == 'de' %}Kontakt{% else %}Reach out{% endif %}">
+      <h2>{% if lang_code == "de" %}Kontakt{% else %}Reach out{% endif %}</h2>
+      <ul>
+        <li><a href="mailto:soda@sammlungen.io">{% if lang_code == "de" %}Kontakt{% else %}Contact{% endif %}</a></li>
+        <li><a class="scs-footer__external" href="https://fedihum.org/@SODa">Mastodon</a></li>
+        <li><a class="scs-footer__external" href="https://zenodo.org/communities/soda/">Zenodo</a></li>
+        <li><a class="scs-footer__external" href="https://sammlungen.io">{% if lang_code == "de" %}SODa-Projekt{% else %}SODa project{% endif %}</a></li>
+      </ul>
+    </nav>
+  </div>
+</footer>

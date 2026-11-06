@@ -10,14 +10,15 @@ docs_dir = "docs/en"
 site_dir = "site/en"
 
 extra_css = [
-  "stylesheets/scs-theme.css?v=4",
-  "stylesheets/auth-status.css?v=4",
-  "stylesheets/mermaid-enhance.css?v=4",
+  "stylesheets/scs-theme.css?v=11",
+  "stylesheets/auth-status.css?v=7",
+  "stylesheets/mermaid-enhance.css?v=7",
 ]
 
 extra_javascript = [
-  "javascripts/mermaid-enhance.js?v=4",
-  "javascripts/auth-status.js?v=4",
+  "javascripts/mermaid-enhance.js?v=7",
+  "javascripts/auth-status.js?v=7",
+  "javascripts/docs-layout.js?v=10",
 ]
 
 nav = [
@@ -28,6 +29,14 @@ nav = [
     { "Sign in" = "user/sign-in.md" },
     { "Create a project" = "user/create-project.md" },
     { "Applications" = "user/applications.md" },
+    { "Available applications" = [
+      { "JupyterHub with OpenRefine" = "user/apps/jupyter.md" },
+      { "MariaDB with phpMyAdmin" = "user/apps/mariadb.md" },
+      { "Nextcloud with OnlyOffice and draw.io" = "user/apps/nextcloud.md" },
+      { "OpenGDB" = "user/apps/opengdb.md" },
+      { "WebProtégé" = "user/apps/webprotege.md" },
+      { "WissKI Environment" = "user/apps/wisski.md" },
+    ] },
     { "Project members" = "user/members.md" },
     { "Project files" = "user/project-files.md" },
   ] },
@@ -82,6 +91,7 @@ nav = [
 ]
 
 [project.theme]
+custom_dir = "docs/overrides"
 variant = "modern"
 language = "en"
 logo = "assets/images/logo.png"

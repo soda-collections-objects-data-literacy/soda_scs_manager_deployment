@@ -1,0 +1,22 @@
+{#-
+  Search field above the page, then the dashboard button in the right columns.
+-#}
+{% if "search" in config.plugins %}
+  <label class="scs-content-search" for="__search">
+    {% if config.theme.language == "de" %}In der Dokumentation suchen…{% else %}Search in the documentation…{% endif %}
+  </label>
+{% endif %}
+<p class="scs-cta">
+  <a href="https://manager.dev-scs.sammlungen.io/{{ config.theme.language }}/soda-scs-manager/dashboard">
+    {% if config.theme.language == "de" %}Zum Dashboard{% else %}Go to dashboard{% endif %}
+  </a>
+</p>
+{% include "partials/actions.html" %}
+{% if "\u003ch1" not in page.content %}
+  <h1>{{ page.title | d(config.site_name, true)}}</h1>
+{% endif %}
+{{ page.content }}
+{% include "partials/tags.html" %}
+{% include "partials/source-file.html" %}
+{% include "partials/feedback.html" %}
+{% include "partials/comments.html" %}

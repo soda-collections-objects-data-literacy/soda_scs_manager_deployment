@@ -22,6 +22,15 @@ flowchart LR
 5. [Project members](members.md) — invite people, accept, remove.
 6. [Project files](project-files.md) — the shared folder in Drive, JupyterHub, and WissKI.
 
+## Available applications
+
+- [JupyterHub with OpenRefine](apps/jupyter.md)
+- [MariaDB with phpMyAdmin](apps/mariadb.md)
+- [Nextcloud with OnlyOffice and draw.io](apps/nextcloud.md)
+- [OpenGDB](apps/opengdb.md)
+- [WebProtégé](apps/webprotege.md)
+- [WissKI Environment](apps/wisski.md)
+
 ## Need help?
 
 Contact your system administrator for access, sharing, or quota questions.
