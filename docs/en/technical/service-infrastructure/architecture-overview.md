@@ -144,7 +144,7 @@ flowchart TB
   subgraph Manager["manager--drupal--app"]
     SM[soda_scs_manager]
     OIDC_D[openid_connect]
-    Theme[soda_scs_manager_theme]
+    Theme[scs_custom_theme]
     SM --> PortAPI[Portainer API]
     SM --> MountAPI[NextcloudMountManager]
     SM --> WPAPI[WebProtégé REST]
