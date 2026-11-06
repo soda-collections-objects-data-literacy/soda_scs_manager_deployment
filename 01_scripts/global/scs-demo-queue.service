@@ -1,0 +1,10 @@
+[Unit]
+Description=Run SCS demo project jobs (template builds, demo provisioning and resets)
+# Jobs take minutes, so they run outside Drupal cron. The lease outlasts the
+# longest job, otherwise the next run would claim the item a second time.
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/docker exec manager--drupal--app drush queue:run soda_scs_manager_demo --time-limit=900 --lease-time=7200
