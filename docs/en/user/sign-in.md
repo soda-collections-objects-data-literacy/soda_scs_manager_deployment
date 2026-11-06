@@ -19,7 +19,7 @@ Use **Sign in with DIDMOS** when your institution offers sign-in through DIDMOS.
 
 You land on **Projekte**. There you see your project cards, the search field, and **Projekt anlegen**.
 
-On the very first sign-in an introduction may cover the platform. **Einführung überspringen** closes it. Otherwise it walks through the idea of the platform and offers to create the first project or a demo project immediately. The connection to file storage runs in the background. Only if that fails does a step **Nextcloud verbinden** ask you to sign in to Drive once more. Pop-ups must be allowed for that.
+On the very first sign-in an introduction may cover the platform. **Einführung überspringen** closes it. Otherwise it walks through the idea of the platform. Your demo project is created in the background during that. The connection to file storage also runs in the background. Only if that fails does a step **Nextcloud verbinden** ask you to sign in to Drive once more. Pop-ups must be allowed for that.
 
 The introduction appears only once. The pictures in the next chapters show the interface after that, on the demo project **robert Demo**.
 

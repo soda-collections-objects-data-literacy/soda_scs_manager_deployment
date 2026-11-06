@@ -19,7 +19,7 @@ Nach der Freigabe meldest du dich mit dem Username oder der E-Mail-Adresse und d
 
 Du landest auf **Projekte**. Dort siehst du deine Projektkarten, die Suche und **Projekt anlegen**.
 
-Beim allerersten Login kann eine Einführung über die Plattform liegen. Mit **Einführung überspringen** schließt du sie. Sie führt sonst durch die Idee der Plattform und bietet an, gleich das erste Projekt oder ein Demo-Projekt anzulegen. Die Verbindung zum Dateispeicher läuft dabei im Hintergrund. Nur wenn das nicht klappt, bittet dich ein Schritt **Nextcloud verbinden**, dich einmal zusätzlich im Drive anzumelden. Pop-ups müssen dafür erlaubt sein.
+Beim allerersten Login kann eine Einführung über die Plattform liegen. Mit **Einführung überspringen** schließt du sie. Sie führt sonst durch die Idee der Plattform. Dein Demo-Projekt wird dabei im Hintergrund angelegt. Die Verbindung zum Dateispeicher läuft ebenfalls im Hintergrund. Nur wenn das nicht klappt, bittet dich ein Schritt **Nextcloud verbinden**, dich einmal zusätzlich im Drive anzumelden. Pop-ups müssen dafür erlaubt sein.
 
 Die Einführung erscheint nur einmal. Die Bilder in den nächsten Kapiteln zeigen die Oberfläche danach, am Demo-Projekt **robert Demo**.
 

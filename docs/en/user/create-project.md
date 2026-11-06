@@ -65,7 +65,7 @@ The check lists name, note, applications, and people. In the picture, applicatio
 
 ## Demo project
 
-As long as you do not have a demo project yet, the first step has two tabs: **Neu** and **Demo**. **Demo** does not create an empty project. It creates one with WissKI, JupyterHub, and WebProtégé, and with sample data. The button is **Demo-Projekt anlegen**. Setup takes a few minutes. The tab then disappears. There is no second demo project per account.
+When your account is approved you get a demo project. It is created on the first sign-in, already during the introduction, and you do not choose it. It includes WissKI, JupyterHub, and WebProtégé, with sample data. Setup takes a few minutes. There is no second demo project per account. You still create a project of your own with **Projekt anlegen**.
 
 The result looks like this:
 
@@ -75,5 +75,3 @@ At the top right are the status **Demo**, the version, and **Demo zurücksetzen*
 
 !!! warning "Reset the demo"
     Reset overwrites every change in the WissKI, the databases, the triplestores, the Jupyter home directory, the team folder, and the WebProtégé ontology of this project with the demo data. Applications you added yourself stay. This cannot be undone.
-
-The introduction on first sign-in offers the same start (**Oder mit einem Demo-Projekt starten**).

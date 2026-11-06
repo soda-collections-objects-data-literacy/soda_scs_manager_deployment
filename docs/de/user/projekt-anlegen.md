@@ -65,7 +65,7 @@ Die Prüfung listet Name, Notiz, Anwendungen und Personen. Im Bild sind Anwendun
 
 ## Demo-Projekt
 
-Solange du noch kein Demo-Projekt hast, hat der erste Schritt zwei Reiter: **Neu** und **Demo**. **Demo** legt kein leeres Projekt an, sondern eines mit WissKI, JupyterHub und WebProtégé und mit Beispieldaten. Die Schaltfläche heißt **Demo-Projekt anlegen**. Das Einrichten dauert einige Minuten. Danach verschwindet der Reiter. Ein zweites Demo-Projekt pro Konto gibt es nicht.
+Mit der Freigabe deines Kontos bekommst du ein Demo-Projekt. Es wird beim ersten Login angelegt, schon während der Einführung, und du musst es nicht auswählen. Es enthält WissKI, JupyterHub und WebProtégé mit Beispieldaten. Das Einrichten dauert einige Minuten. Ein zweites Demo-Projekt pro Konto gibt es nicht. Ein eigenes Projekt legst du zusätzlich über **Projekt anlegen** an.
 
 Das Ergebnis sieht so aus:
 
@@ -75,5 +75,3 @@ Oben rechts stehen der Status **Demo**, die Version und **Demo zurücksetzen**.
 
 !!! warning "Demo zurücksetzen"
     Zurücksetzen überschreibt alle Änderungen in WissKI, den Datenbanken, den Triplestores, dem Jupyter-Home-Verzeichnis, dem Team-Ordner und der WebProtégé-Ontologie dieses Projekts mit den Demo-Daten. Anwendungen, die du selbst hinzugefügt hast, bleiben. Das lässt sich nicht rückgängig machen.
-
-Dieselbe Möglichkeit, ein Demo-Projekt zu starten, bietet die Einführung beim ersten Login (**Oder mit einem Demo-Projekt starten**).

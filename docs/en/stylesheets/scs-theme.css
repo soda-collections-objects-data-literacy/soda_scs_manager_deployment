@@ -69,7 +69,36 @@
   background-color: var(--scs-white);
   color: var(--scs-slate-900);
   box-shadow: none;
-  border-bottom: 1px solid var(--scs-slate-300);
+  border-bottom: 0;
+  overflow: visible;
+}
+
+/* Full-width rule with the orange circle, under the header and above the footer. */
+.scs-rule {
+  position: relative;
+  height: 0;
+  border-top: 1px solid #7c838e;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.md-header > .scs-rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.scs-rule::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--scs-orange-500);
+  transform: translate(-50%, -50%);
 }
 
 .md-header__title,
@@ -252,7 +281,6 @@
   max-width: 68rem;
   margin: 0 auto;
   padding: 2.5rem 1rem 3rem;
-  border-top: 1px solid var(--scs-slate-300);
 }
 
 .scs-footer__logo img {

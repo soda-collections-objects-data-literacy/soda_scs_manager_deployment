@@ -2,7 +2,7 @@
 
 How to use the SCS platform day to day. No deployment or server internals — those live in the [Technical documentation](../technical/index.md).
 
-The pictures show the demo project **robert Demo** on the German interface. A demo project includes WissKI, JupyterHub, and WebProtégé with sample data. Each account can create exactly one.
+The pictures show the demo project **robert Demo** on the German interface. A demo project includes WissKI, JupyterHub, and WebProtégé with sample data. Each approved account gets exactly one, in addition to a project of their own.
 
 ```mermaid
 flowchart LR
@@ -17,7 +17,7 @@ flowchart LR
 
 1. [Registration](registration.md) — request an account and wait for approval.
 2. [Sign in](sign-in.md) — reach the project page with the SCS login.
-3. [Create a project](create-project.md) — your own project or a demo project.
+3. [Create a project](create-project.md) — your own project. The demo project is already there.
 4. [Applications](applications.md) — WissKI, JupyterHub, WebProtégé, SQL database, and triplestore.
 5. [Project members](members.md) — invite people, accept, remove.
 6. [Project files](project-files.md) — the shared folder in Drive, JupyterHub, and WissKI.
