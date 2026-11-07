@@ -190,6 +190,8 @@ docker exec nextcloud--nextcloud--app php /var/www/html/occ app:enable <app-name
 
 If an app is incompatible, wait for an update or disable it until a compatible version is available.
 
+Team Folders (`groupfolders`) and `scs_manager_integration` are re-enabled by `scs-nextcloud-stack/hooks/post-upgrade/ensure-scs-apps.sh` on the next image upgrade. On an instance where those apps were never installed, run `install-scs-manager-integration.sh` once as described in the [post-configuration checklist](../post-configuration/checklist.md).
+
 #### OnlyOffice or SSO broken after upgrade
 
 **Symptom:** OnlyOffice documents fail to open, or Keycloak login fails.

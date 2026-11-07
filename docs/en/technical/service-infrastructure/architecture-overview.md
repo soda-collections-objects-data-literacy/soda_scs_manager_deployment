@@ -185,8 +185,8 @@ flowchart TB
 
 | Stack | Notable modules / apps | Configured by |
 |-------|------------------------|---------------|
-| SCS Manager | `soda_scs_manager`, OpenID Connect, custom theme | Pre-install OIDC YAML; Drupal settings under `00_custom_configs/scs-manager-stack/drupal/` |
-| Nextcloud | `user_oidc`, Social Login, OnlyOffice, Draw.io, Team Folders | `scs-nextcloud-stack/hooks/post-installation/*` (first install only) |
+| SCS Manager | `soda_scs_manager`, OpenID Connect, `scs_custom_theme` | Pre-install OIDC YAML; Drupal settings under `00_custom_configs/scs-manager-stack/drupal/`; theme clone bind-mounted (see [SCS Manager](index.md#scs-manager)) |
+| Nextcloud | `user_oidc`, OnlyOffice, Draw.io, `groupfolders`, `scs_manager_integration` | `scs-nextcloud-stack/hooks/post-installation/*` (first install only). `hooks/post-upgrade/ensure-scs-apps.sh` re-enables Team Folders after an upgrade. |
 | JupyterHub | OAuthenticator, Linux GIDs from Keycloak groups | `jupyterhub/jupyterhub/jupyterhub_config.py` + env |
 | WebProtégé | OIDC SSO, project REST API patches | `00_custom_configs/webprotege/patches/` |
 | WissKI (per project) | WissKI, Redis, external Nextcloud mount | Portainer env from Manager; `wisski-base-image` |

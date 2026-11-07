@@ -2,7 +2,7 @@
 
 Technical reference for how the SCS Manager (`soda_scs_manager` Drupal module) provisions and tears down users across Keycloak, Nextcloud, MariaDB, OpenGDB, WebProtégé, and related SCS entities.
 
-Implementation lives in the `scs-manager-stack` submodule under `volumes/drupal/web/modules/custom/soda_scs_manager/`.
+The host clone `scs-manager-stack/volumes/drupal-root/web/modules/custom/soda_scs_manager/` tracks `4.x` on `https://git.drupalcode.org/project/soda_scs_manager.git` and is not bind-mounted. Production loads `drupal/soda_scs_manager` `4.0.0` from `modules/contrib` (`composer require 'drupal/soda_scs_manager:^4.0'` inside `manager--drupal--app`). The previous `modules/custom` checkout is kept at `/var/scs-manager/soda_scs_manager-2x-before-4.0.0` so it no longer shadows contrib. That Composer change lives in the container layer and is gone after a recreate from the current image. Updates `11026`–`11036` were still pending after the switch.
 
 ## Identity model
 

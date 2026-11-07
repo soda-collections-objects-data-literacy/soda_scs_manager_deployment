@@ -263,6 +263,7 @@ in Nextcloud and in the Lab at once, the last write wins.
 | `Transport endpoint is not connected` | Sidecar crashed; stale FUSE node | `docker compose restart core--rclone--sidecar`; then `scs-drush scs:nextcloud-reconcile` |
 | Mount empty in running WissKI | Source dir missing at stack start, or wrong `NEXTCLOUD_USER_MOUNT_SOURCE` | Ensure owner mount + project folder exist; redeploy stack with correct source |
 | WissKI shows disconnected / not mounted | Module not in `external` mode, or bind still `_disabled` | Check `NEXTCLOUD_MOUNT_MODE` / `operation_mode`; redeploy after Team Folder exists |
+| Stack create: Team Folder is not available under the owner mount | `groupfolders` is not installed, or the project was never registered | `occ app:list` must show `groupfolders` and `scs_manager_integration` enabled. Then `soda_scs_manager:backfill-project-team-folders`. See [Post-configuration](../post-configuration/checklist.md) |
 | `start.sh` aborts on propagation | Host bind not rshared | Re-run setup script / enable systemd unit |
 | rc-API 401 | Password drift between sidecar and Manager | Align `.env` and recreate both services |
 | Manager cannot resolve `nextcloud-mounter` | Not on `nextcloud-mounter-net` | Fix override (network + `depends_on`) and recreate Manager |

@@ -416,6 +416,53 @@ services:
       - --api.dashboard=true
 
 
+  # WissKI public hosts without the legacy "wisski-" prefix.
+  # SCS Prime stored every instance as wisski-<slug>, and the stacks still
+  # running here route Host(`wisski-<slug>.wisski.<zone>`). The manager links
+  # to <slug>.wisski.<zone> (exactly one leading wisski- or stack- removed).
+  # A 302 sends that host to the hostname Drupal already trusts.
+  # Priority 5 stays under the stack routers (priority 10): after a stack is
+  # redeployed with the unprefixed DRUPAL_DOMAIN, that router owns the host.
+  # Traefik requests one certificate per router and adds every Host() in the
+  # rule. Do not set tls.domains: an explicit domain list replaces the hosts
+  # from the rule. The nginx process is only the label carrier.
+  # Slugs: teaching, wisskibits-module3-ue2, praeparatorenschule,
+  # provenienzangaben-testen, datenbank, june-2026, development,
+  # fau-sammlungen, sammlungen-fau, conservationgraph, khm-projektarchiv-test,
+  # medienarchaeologie, rave-racer-projekt, johannes-neues-wisski,
+  # jc-wisski-test, test-recht-und-ethik, soda-koord-wisski.
+  core--wisski-alias--edge:
+    image: nginx:${NGINX_VERSION:-1.30}-alpine
+    container_name: core--wisski-alias--edge
+    restart: unless-stopped
+    networks:
+      - reverse-proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=reverse-proxy"
+      - "traefik.http.middlewares.wisski-public-prefix.redirectregex.regex=^https://([a-z0-9-]+)\\.wisski\\.${SCS_SUBDOMAIN:-scs}\\.${SCS_BASE_DOMAIN:-localhost}(.*)"
+      - "traefik.http.middlewares.wisski-public-prefix.redirectregex.replacement=https://wisski-$${1}.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}$${2}"
+      - "traefik.http.middlewares.wisski-public-prefix.redirectregex.permanent=false"
+      - "traefik.http.middlewares.wisski-raw-prefix.redirectregex.regex=^https://raw\\.([a-z0-9-]+)\\.wisski\\.${SCS_SUBDOMAIN:-scs}\\.${SCS_BASE_DOMAIN:-localhost}(.*)"
+      - "traefik.http.middlewares.wisski-raw-prefix.redirectregex.replacement=https://raw.wisski-$${1}.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}$${2}"
+      - "traefik.http.middlewares.wisski-raw-prefix.redirectregex.permanent=false"
+      - "traefik.http.services.wisski-public-alias.loadbalancer.server.port=80"
+      - "traefik.http.routers.wisski-public-alias.rule=Host(`teaching.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`wisskibits-module3-ue2.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`praeparatorenschule.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`provenienzangaben-testen.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`datenbank.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`june-2026.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`development.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`fau-sammlungen.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`sammlungen-fau.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`conservationgraph.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`khm-projektarchiv-test.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`medienarchaeologie.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`rave-racer-projekt.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`johannes-neues-wisski.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`jc-wisski-test.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`test-recht-und-ethik.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`soda-koord-wisski.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`)"
+      - "traefik.http.routers.wisski-public-alias.entrypoints=websecure"
+      - "traefik.http.routers.wisski-public-alias.priority=5"
+      - "traefik.http.routers.wisski-public-alias.middlewares=wisski-public-prefix"
+      - "traefik.http.routers.wisski-public-alias.tls=true"
+      - "traefik.http.routers.wisski-public-alias.tls.certresolver=le"
+      - "traefik.http.routers.wisski-public-alias.service=wisski-public-alias"
+      - "traefik.http.routers.wisski-raw-alias.rule=Host(`raw.teaching.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`raw.wisskibits-module3-ue2.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`raw.praeparatorenschule.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`raw.provenienzangaben-testen.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`raw.datenbank.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`raw.june-2026.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`raw.development.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`raw.fau-sammlungen.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`raw.sammlungen-fau.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`raw.conservationgraph.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`raw.khm-projektarchiv-test.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`raw.medienarchaeologie.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`raw.rave-racer-projekt.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`raw.johannes-neues-wisski.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`raw.jc-wisski-test.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`raw.test-recht-und-ethik.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`) || Host(`raw.soda-koord-wisski.wisski.${SCS_SUBDOMAIN:-scs}.${SCS_BASE_DOMAIN:-localhost}`)"
+      - "traefik.http.routers.wisski-raw-alias.entrypoints=websecure"
+      - "traefik.http.routers.wisski-raw-alias.priority=5"
+      - "traefik.http.routers.wisski-raw-alias.middlewares=wisski-raw-prefix"
+      - "traefik.http.routers.wisski-raw-alias.tls=true"
+      - "traefik.http.routers.wisski-raw-alias.tls.certresolver=le"
+      - "traefik.http.routers.wisski-raw-alias.service=wisski-public-alias"
+
+
   # Nextcloud FUSE mounter sidecar (rclone rcd). SYS_ADMIN + /dev/fuse live only here.
   # Wave B: {scope}--{service}--{function}; alias nextcloud-mounter until env/settings flip.
   # rc-API is reachable solely via nextcloud-mounter-net (internal). reverse-proxy

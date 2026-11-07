@@ -77,7 +77,20 @@ Use this checklist after the whole environment has started (`docker compose up -
 
 - [ ] **Check logs** — Visit Settings → Administration → Logging to review any warnings or errors. Address issues as they appear. Common items: missing indices (run repair script), caching warnings (ensure Redis is running), background job warnings (check cron is working).
 
-- [ ] **Plugins** — Post-install hooks install Social Login, configure Nextcloud, OnlyOffice, and Draw.io. Verify with `occ app:list` (inside the Nextcloud container) that `sociallogin` (and other expected apps) are enabled. If the hooks did not run, run them manually or install the apps via the Nextcloud UI.
+- [ ] **Apps** — Post-install hooks install `user_oidc`, OnlyOffice, Draw.io, Team Folders (`groupfolders`), and `scs_manager_integration`. Social Login is removed once `user_oidc` is configured. Verify with `occ app:list` that `groupfolders` and `scs_manager_integration` are enabled. Hooks do not run again on an existing instance. If Team Folders are missing, run the hook once (it installs `groupfolders` before enabling the integration app):
+
+  ```bash
+  docker exec -u www-data nextcloud--nextcloud--app \
+    bash /docker-entrypoint-hooks.d/post-installation/install-scs-manager-integration.sh --apps-only
+  ```
+
+  `--apps-only` does not create the platform Team Folder `SCS-Share`. On an existing Drive that folder name is still the private skeleton directory. Create the platform folder only after the private-folder migration (`occ scs_manager_integration:migrate-private-scs-share`), by running the same script without `--apps-only`.
+
+  Then register folders for projects that already exist:
+
+  ```bash
+  docker exec manager--drupal--app drush soda_scs_manager:backfill-project-team-folders --all --grant-nc-access
+  ```
 
 - [ ] **OpenID / Social Login** — Configure the Social Login app with Keycloak:
   - Discovery URL or issuer: `https://&lt;KC_DOMAIN&gt;/realms/&lt;KC_REALM&gt;` (e.g. `https://auth.scs.localhost/realms/main`).

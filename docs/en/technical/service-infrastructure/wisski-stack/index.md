@@ -92,6 +92,12 @@ From `wisski-base-stack/docker-compose.yml`:
 | `https://{instance}.wisski.{scs-subdomain}.{domain}` | `{SERVICE_NAME}--varnish:80` | Normal traffic (cached) |
 | `https://raw.{instance}.wisski.{scs-subdomain}.{domain}` | `{SERVICE_NAME}--drupal:80` | Bypass Varnish (debug, health semantics) |
 
+`{instance}` in a stack created by the current manager is the machine name with one leading `wisski-` or `stack-` removed. Stacks migrated from SCS Prime still have `DRUPAL_DOMAIN=wisski-<slug>.wisski.…`, because that was the public host when they were deployed. The manager now links to `<slug>.wisski.…`.
+
+`core--wisski-alias--edge` in the root `docker-compose.yml` answers those new hosts with a **302** to the host the running stack already serves (`wisski-<slug>.wisski.…`, and the same for `raw.`). The redirect is temporary, so a later stack redeploy can take the unprefixed host over: stack routers use priority 10, the alias uses priority 5. Drupal trusted hosts stay on the prefixed name, which is why this is a redirect and not a second backend route. Traefik requests one certificate per router and puts every `Host()` from that rule on it.
+
+When a new Prime instance appears, add its public slug to both routers on `core--wisski-alias--edge`, then `docker compose up -d core--wisski-alias--edge`. Do not set `tls.domains`: an explicit domain list replaces the hosts Traefik takes from the router rule.
+
 Traefik terminates TLS and sets `X-Forwarded-For`, `X-Forwarded-Proto`, `X-Forwarded-Host`, and `X-Forwarded-Port` on the HTTP connection to the backend.
 
 SCS Manager sets `DRUPAL_TRUSTED_HOSTS` to allow both hostnames (public and `raw.*`).
