@@ -71,6 +71,7 @@ nav = [
     { "Maintenance" = [
       { "Overview" = "technical/maintenance/index.md" },
       { "Updates" = "technical/maintenance/updates.md" },
+      { "SCS Manager image update" = "technical/maintenance/scs-manager-image-update.md" },
     ] },
     { "Troubleshooting" = [
       { "Overview" = "technical/troubleshooting/index.md" },
