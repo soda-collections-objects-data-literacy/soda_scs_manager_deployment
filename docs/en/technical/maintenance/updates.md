@@ -259,7 +259,11 @@ Important:
 - Check for breaking changes in the [release notes](https://www.keycloak.org/docs/latest/release_notes/index.html).
 - Re-import realm if schema changes require it (uncommon).
 
-### JupyterHub, Drupal, OpenGDB
+### SCS Manager (Drupal)
+
+Package versions and shipped pages are baked into `scs-manager-image`. Prime pulls that image and recreates the container. The entrypoint runs database updates and the content import. Existing site config stays. The steps are in [Update the SCS Manager image](scs-manager-image-update.md).
+
+### JupyterHub, OpenGDB
 
 Each service has its own upgrade process. General steps:
 

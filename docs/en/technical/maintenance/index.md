@@ -5,6 +5,7 @@ This section covers ongoing maintenance tasks for the SODa SCS Manager deploymen
 ## Topics
 
 - **[Updates and maintenance](updates.md)** — How to update services (especially Nextcloud), handle post-update tasks, troubleshoot common issues, and use backup/restore scripts.
+- **[SCS Manager image update](scs-manager-image-update.md)** — What to publish from dev, and what Prime's container entrypoint applies on start without replacing site config.
 
 ## Overview
 
