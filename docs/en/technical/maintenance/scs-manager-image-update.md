@@ -29,11 +29,11 @@ git push origin main
 
 A new `4.0.x` release on Drupal.org is picked up by the existing `^4.0` constraint. No workflow edit is required for that. Change the constraint only in `repos/scs-manager-image/.github/workflows/build-image.yml` when the line itself changes (`SODA_SCS_MANAGER_VERSION`, `SODA_SCS_MANAGER_DEV_VERSION`, `SCS_CUSTOM_THEME_REF`), commit that file, and push it with the commands below.
 
-Pushing branch `3.x` publishes the tags `scs-manager-image-production:3.x` and `scs-manager-image-development:3.x`. The version tag is what Prime pins.
+`main` is the rolling development line: pushing it publishes the tags `scs-manager-image-production:main` and `scs-manager-image-development:main`. Releases are plain version tags taken from `main`; the version tag is what Prime pins. A `X.x` branch is only cut from a release tag to maintain an older major.
 
 ```bash
 cd /var/www/deploy/soda_scs_manager_deployment/repos/scs-manager-image
-git push origin 3.x
+git push origin main
 git tag 3.3.0
 git push origin 3.3.0
 ```

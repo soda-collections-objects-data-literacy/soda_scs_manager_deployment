@@ -336,7 +336,7 @@ Each: introduce+alias → flip env/scripts (`docker exec` / compose keys) → sm
 
 Why it is harder than Waves A–H:
 
-1. **External Compose**, not root `COMPOSE_FILE`: [wisski-base-stack `docker-compose.yml`](https://github.com/soda-collections-objects-data-literacy/wisski-base-stack/blob/3.x/docker-compose.yml) (local checkout `repos/wisski-base-stack`). Container names are `${SERVICE_NAME}--drupal` / `--varnish` / `--redis`; Varnish `VARNISH_BACKEND_HOST=${SERVICE_NAME}--drupal`.
+1. **External Compose**, not root `COMPOSE_FILE`: [wisski-base-stack `docker-compose.yml`](https://github.com/soda-collections-objects-data-literacy/wisski-base-stack/blob/main/docker-compose.yml) (local checkout `repos/wisski-base-stack`). Container names are `${SERVICE_NAME}--drupal` / `--varnish` / `--redis`; Varnish `VARNISH_BACKEND_HOST=${SERVICE_NAME}--drupal`.
 2. **Needs its own release** of `wisski-base-stack` (and likely Manager Portainer template / env wiring) before any live cutover.
 3. **Many living stacks** via Portainer — rename is rolling redeploy, not one `docker compose up`.
 4. **Scope token still open** — early draft used `proj-{id}--drupal--app`. Prefer something closer to Today’s `SERVICE_NAME`, e.g. `wisski--{id}--drupal--app` / `wisski--{id}--varnish--edge` / `wisski--{id}--redis--cache` (three segments, function vocabulary). Exact `{id}` mapping (slug vs Drupal project id vs current `SERVICE_NAME`) is undecided.

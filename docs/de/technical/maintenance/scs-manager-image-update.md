@@ -29,11 +29,11 @@ git push origin main
 
 Ein neues Release `4.0.x` auf Drupal.org fällt unter die bestehende Vorgabe `^4.0`. Dafür muss der Workflow nicht geändert werden. Die Vorgabe nur in `repos/scs-manager-image/.github/workflows/build-image.yml` ändern, wenn sich die Zeile selbst ändert (`SODA_SCS_MANAGER_VERSION`, `SODA_SCS_MANAGER_DEV_VERSION`, `SCS_CUSTOM_THEME_REF`). Diese Datei committen und mit den Befehlen unten pushen.
 
-Ein Push des Branch `3.x` veröffentlicht die Tags `scs-manager-image-production:3.x` und `scs-manager-image-development:3.x`. Prime pinnt den Versions-Tag.
+`main` ist die laufende Entwicklungslinie: Ein Push veröffentlicht die Tags `scs-manager-image-production:main` und `scs-manager-image-development:main`. Releases sind reine Versions-Tags von `main`; Prime pinnt den Versions-Tag. Einen Branch `X.x` gibt es nur, wenn eine ältere Major-Version vom Release-Tag aus weiter gepflegt wird.
 
 ```bash
 cd /var/www/deploy/soda_scs_manager_deployment/repos/scs-manager-image
-git push origin 3.x
+git push origin main
 git tag 3.3.0
 git push origin 3.3.0
 ```
