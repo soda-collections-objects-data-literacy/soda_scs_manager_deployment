@@ -261,7 +261,7 @@ Important:
 
 ### SCS Manager (Drupal)
 
-Package versions and shipped pages are baked into `scs-manager-image`. Prime pulls that image and recreates the container. The entrypoint runs database updates and the content import. Existing site config stays. The steps are in [Update the SCS Manager image](scs-manager-image-update.md).
+Package versions and shipped pages are baked into `scs-manager-image`. Prime pulls that image and recreates the container. The entrypoint runs database updates and the content import. Existing site config stays. Deployment and submodule changes are a git pull on Prime and do not need a new image. The full order, including JupyterHub, Nextcloud, the module release, and packing the shipped pages, is in [Ship changes from dev to Prime](dev-to-prime.md).
 
 ### JupyterHub, OpenGDB
 

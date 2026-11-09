@@ -19,7 +19,7 @@ How the SODa SCS Manager deployment is built, installed, and operated. For end-u
 - **[Initial setup](initial-setup/index.md)** — before the first `docker compose up`
 - **[Post-start](post-start/index.md)** — health checks after compose up
 - **[Post-configuration](post-configuration/index.md)** — one-time service configuration
-- **[Maintenance](maintenance/index.md)** — updates and backups ([update guide](maintenance/updates.md))
+- **[Maintenance](maintenance/index.md)** — updates and backups ([dev to Prime](maintenance/dev-to-prime.md), [update guide](maintenance/updates.md))
 - **[Troubleshooting](troubleshooting/index.md)** — common failures and test scripts
 
 ## Reference

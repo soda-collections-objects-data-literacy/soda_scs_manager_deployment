@@ -4,8 +4,8 @@ This section covers ongoing maintenance tasks for the SODa SCS Manager deploymen
 
 ## Topics
 
+- **[Dev to Prime](dev-to-prime.md)** — Step by step for a deployment or submodule change (JupyterHub, Nextcloud, Keycloak, and the others), and for the SCS Manager module, themes, and shipped pages.
 - **[Updates and maintenance](updates.md)** — How to update services (especially Nextcloud), handle post-update tasks, troubleshoot common issues, and use backup/restore scripts.
-- **[SCS Manager image update](scs-manager-image-update.md)** — What to publish from dev, and what Prime's container entrypoint applies on start without replacing site config.
 
 ## Overview
 

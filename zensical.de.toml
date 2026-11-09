@@ -70,8 +70,8 @@ nav = [
     ] },
     { "Wartung" = [
       { "Übersicht" = "technical/maintenance/index.md" },
+      { "Dev nach Prime" = "technical/maintenance/dev-to-prime.md" },
       { "Updates" = "technical/maintenance/updates.md" },
-      { "SCS-Manager-Image" = "technical/maintenance/scs-manager-image-update.md" },
     ] },
     { "Troubleshooting" = [
       { "Übersicht" = "technical/troubleshooting/index.md" },
