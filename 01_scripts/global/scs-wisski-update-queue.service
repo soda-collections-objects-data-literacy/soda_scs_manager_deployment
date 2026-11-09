@@ -1,0 +1,13 @@
+[Unit]
+Description=Run queued SCS WissKI updates
+# Updates take minutes, so they run outside Drupal cron and outside the web
+# request. The web UI starts a background run when it queues an update; this
+# unit picks up updates whose run did not start or stopped early. The lease
+# outlasts the longest update, otherwise the next run would claim the item a
+# second time. It runs as www-data like the runner the web UI starts.
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/docker exec -u www-data manager--drupal--app /usr/local/bin/drush --root=/opt/drupal queue:run soda_scs_manager_wisski_update --time-limit=3600 --lease-time=7200

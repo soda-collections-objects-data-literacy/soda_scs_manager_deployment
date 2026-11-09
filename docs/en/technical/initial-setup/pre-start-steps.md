@@ -23,11 +23,14 @@ sudo cp "$REPO"/01_scripts/global/scs-nextcloud-mount-reconcile.{service,timer} 
 # Run demo template builds, demo creation and resets every minute
 sudo cp "$REPO"/01_scripts/global/scs-demo-queue.{service,timer} /etc/systemd/system/
 
+# Run queued WissKI updates every minute
+sudo cp "$REPO"/01_scripts/global/scs-wisski-update-queue.{service,timer} /etc/systemd/system/
+
 sudo systemctl daemon-reload
-sudo systemctl enable --now scs-nextcloud-mounts.service scs-nextcloud-mount-reconcile.timer scs-demo-queue.timer
+sudo systemctl enable --now scs-nextcloud-mounts.service scs-nextcloud-mount-reconcile.timer scs-demo-queue.timer scs-wisski-update-queue.timer
 ```
 
-The reconcile timer is needed because the rclone sidecar loses all mounts when it restarts, and only the SCS Manager can re-create them. Drupal's `automated_cron` runs only every few hours (and only after a page request), so without the timer, Drives and project folders stay missing that long. Until the Manager is installed, the timer's runs fail harmlessly. The demo queue timer picks up demo jobs when the background run the web UI starts did not start or stopped early. Re-copy the files and run `daemon-reload` when the unit files change. See [Nextcloud mount sidecar](../service-infrastructure/nextcloud-mount-sidecar.md).
+The reconcile timer is needed because the rclone sidecar loses all mounts when it restarts, and only the SCS Manager can re-create them. Drupal's `automated_cron` runs only every few hours (and only after a page request), so without the timer, Drives and project folders stay missing that long. Until the Manager is installed, the timer's runs fail harmlessly. The demo queue timer picks up demo jobs when the background run the web UI starts did not start or stopped early. The WissKI update queue timer does the same for WissKI updates, which the web UI queues instead of running them inside the request. Re-copy the files and run `daemon-reload` when the unit files change. See [Nextcloud mount sidecar](../service-infrastructure/nextcloud-mount-sidecar.md).
 
 ## What `start.sh` does
 
