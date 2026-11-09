@@ -55,10 +55,10 @@ Set:
 
 ```bash
 SCS_MANAGER_MODE=production
-SCS_MANAGER_IMAGE_VERSION=3.3.0
+SCS_MANAGER_IMAGE_VERSION=3
 ```
 
-Use the same tag as in `git tag` on dev. `.env` is not committed.
+`3` always points to the newest release of major version 3 (3.3.0, 3.3.1, 3.4.0, …). Patch and minor releases therefore leave `.env` unchanged; step 5 (pull and recreate) is enough. Change the tag here only for a new major release (4.0). For a fixed state, for example when rolling back, set the full version instead (`3.3.0`). `.env` is not committed.
 
 ### 4. Confirm the image is what the container will run
 

@@ -55,10 +55,10 @@ Setzen:
 
 ```bash
 SCS_MANAGER_MODE=production
-SCS_MANAGER_IMAGE_VERSION=3.3.0
+SCS_MANAGER_IMAGE_VERSION=3
 ```
 
-Denselben Tag wie bei `git tag` auf Dev verwenden. Die `.env` wird nicht committet.
+`3` zeigt immer auf das neueste Release der Major-Version 3 (3.3.0, 3.3.1, 3.4.0 …). Bei Patch- und Minor-Releases bleibt die `.env` daher unverändert; es reicht Schritt 5 (`pull` und neu erzeugen). Nur bei einem neuen Major-Release (4.0) wird der Tag hier angepasst. Für einen festen Stand, etwa beim Zurückrollen, stattdessen die volle Version eintragen (`3.3.0`). Die `.env` wird nicht committet.
 
 ### 4. Prüfen, dass das Image wirklich läuft
 
