@@ -37,6 +37,8 @@ services:
       - scs-manager--drupal-custom-modules:/opt/drupal/web/modules/custom
       # Private files (file_private_path); snapshots are mounted below it.
       - scs-manager--private-files:/var/scs-manager
+      # config_sync_directory from settings.php; holds Drupal's .htaccess.
+      - scs-manager--drupal-config-sync:/opt/drupal/config/sync
       - ./scs-manager-stack/custom_configs:/opt/drupal/custom_configs
       - ./scs-manager-stack/configs/php-fpm/zz-docker.conf:/usr/local/etc/php-fpm.d/zz-docker.conf:ro
       - ./scs-manager-stack/configs/nginx/drupal.conf:/etc/nginx/conf.d/drupal.conf:ro
@@ -133,4 +135,6 @@ volumes:
     name: scs-manager--drupal-custom-modules
   scs-manager--private-files:
     name: scs-manager--private-files
+  scs-manager--drupal-config-sync:
+    name: scs-manager--drupal-config-sync
 
