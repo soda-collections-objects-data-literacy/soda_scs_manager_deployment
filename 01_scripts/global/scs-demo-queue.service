@@ -10,3 +10,5 @@ Requires=docker.service
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/docker exec -u www-data manager--drupal--app /usr/local/bin/drush --root=/opt/drupal queue:run soda_scs_manager_demo --time-limit=900 --lease-time=7200
+# Tell the SCS system check (drush scs:check, status report) that the timer runs.
+ExecStartPost=/usr/bin/docker exec -u www-data manager--drupal--app /usr/local/bin/drush --root=/opt/drupal scs:heartbeat demo-queue

@@ -1,5 +1,7 @@
 # Post-configuration checklist
 
+> **Quick check:** `scs-drush scs:check --problems` (or *Reports → Status report* in the SCS Manager) checks settings, service reachability, the snapshot directory, the host timers, the job queues and the WissKI containers in one go. It exits with 1 when something fails. The items below explain what to fix.
+
 Use this checklist after the whole environment has started (`docker compose up -d`) to ensure each service is correctly wired and configured.
 
 ---

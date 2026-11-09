@@ -10,3 +10,5 @@ Type=oneshot
 # "-": a failed user reconcile must not skip the project reconcile.
 ExecStart=-/usr/bin/docker exec manager--drupal--app drush scs:nextcloud-reconcile
 ExecStart=-/usr/bin/docker exec manager--drupal--app drush scs:nextcloud-project-reconcile
+# Tell the SCS system check (drush scs:check, status report) that the timer runs.
+ExecStartPost=/usr/bin/docker exec -u www-data manager--drupal--app /usr/local/bin/drush --root=/opt/drupal scs:heartbeat nextcloud-mount-reconcile
