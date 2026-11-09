@@ -21,6 +21,7 @@ fi
 DEFAULT_PATHS=(
   /var/www/deploy/soda_scs_manager_deployment/scs-manager-stack/volumes/drupal-root/web/modules/custom/soda_scs_manager
   /var/www/deploy/soda_scs_manager_deployment/scs-manager-stack/volumes/drupal-root/web/themes/custom/soda_scs_manager_theme
+  /var/www/deploy/soda_scs_manager_deployment/scs-manager-stack/volumes/drupal-root/web/themes/custom/scs_custom_theme
 )
 
 PATHS=("${@:-${DEFAULT_PATHS[@]}}")
@@ -40,12 +41,23 @@ for target in "${PATHS[@]}"; do
   # Directories: rwx for user/group, setgid so new files inherit group www-data.
   find "${target}" -type d -exec chmod 2775 {} +
 
-  # Files: group-writable; keep any existing execute bit (X).
-  find "${target}" -type f -exec chmod ug+rw,o+r,X {} +
+  # Files: group-writable; capital X keeps execute only where it already is.
+  find "${target}" -type f -exec chmod ug+rwX,o+rX {} +
 
   # Access ACL now + default ACL for future creates/renames.
+  # Default ACLs still grant www-data write even if a tool drops setgid/group.
   setfacl -R -m "u::rwx,g:www-data:rwx,o::r-x" "${target}"
   setfacl -R -d -m "u::rwx,g:www-data:rwx,o::r-x" "${target}"
+
+  # Shared git: new index/objects stay group-writable for www-data.
+  # Write the config file directly — `git -C` as root often fails on
+  # safe.directory / ownership checks ("not in a git directory").
+  if [[ -f "${target}/.git/config" ]]; then
+    git config --file "${target}/.git/config" core.sharedRepository group
+    echo "git core.sharedRepository=group"
+  elif [[ -d "${target}/.git" ]]; then
+    echo "Skip git config (no .git/config): ${target}"
+  fi
 
   echo "Done: ${target}"
 done
