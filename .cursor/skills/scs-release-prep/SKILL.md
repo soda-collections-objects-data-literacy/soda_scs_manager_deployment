@@ -154,7 +154,7 @@ each item names the exact URL or command. Check these cases:
 
 | Trigger | Manual step |
 | --- | --- |
-| Module tag `X.Y.Z` | drupal.org → https://www.drupal.org/project/soda_scs_manager → *Add new release*, pick tag `X.Y.Z`, paste the changelog section as release notes, set the release type (new features / bug fixes / security). Packaging takes a few minutes; `wait-drupal` waits for it. |
+| Module tag `X.Y.Z` | Write `plans/release-notes-soda_scs_manager-X.Y.Z.md` (English, for drupal.org): `## Short description` (one plain-text sentence) and `## Release notes (HTML)` (fenced `html`: intro, **Upgrade notes** first, then Added/Changed/Removed/Fixed from the changelog, admin-facing, no internals). In the plan: `show plans/release-notes-…md` before the `pause`. drupal.org → https://www.drupal.org/project/soda_scs_manager → *Add new release*, pick tag `X.Y.Z`, paste both fields, set the release type. Packaging takes a few minutes; `wait-drupal` waits for it. |
 | Older module tag pushed but not on updates.drupal.org | Same release node for that tag, or skip it and say so. |
 
 **After pushing** (go into the plan as `todo`, the script prints them at the end):
@@ -178,7 +178,7 @@ each item names the exact URL or command. Check these cases:
 ### 7. Push plan + report
 
 Write `plans/push-plan.txt` (gitignored). Innermost first, deployment last; tags
-go in the same line as their branch. Actions: `push`, `pause`, `wait-drupal`,
+go in the same line as their branch. Actions: `push`, `show`, `pause`, `wait-drupal`,
 `note`, `todo`; lines starting with `#` are comments.
 
 ```text
@@ -189,6 +189,7 @@ push jupyterhub origin main
 push scs-manager-stack/volumes/drupal-root/web/themes/custom/scs_custom_theme origin main
 push scs-manager-stack/volumes/drupal-root/web/modules/custom/soda_scs_manager origin 4.x 4.2.0
 push scs-manager-stack/volumes/drupal-root/web/modules/custom/soda_scs_manager fork 4.x 4.2.0
+show plans/release-notes-soda_scs_manager-4.2.0.md
 pause drupal.org: create the release node for 4.2.0 at https://www.drupal.org/project/soda_scs_manager (Add new release, tag 4.2.0, paste the changelog)
 wait-drupal soda_scs_manager 4.2.0
 push repos/scs-manager-image origin main 3.4.0

@@ -30,7 +30,7 @@ Running it again is safe, refs that are already pushed are up to date. After the
 
 ## What does not happen automatically
 
-The skill writes these steps into the plan. The script stops at `pause` and prints the `todo` items as a checklist at the end.
+The skill writes these steps into the plan. For every module release it writes `plans/release-notes-soda_scs_manager-X.Y.Z.md` with a short description and HTML release notes for drupal.org. The script prints that file with `show` right before the step, stops at `pause` and prints the `todo` items as a checklist at the end.
 
 | When | Step |
 | --- | --- |
@@ -44,6 +44,7 @@ The skill writes these steps into the plan. The script stops at `pause` and prin
 
 ```text
 push <repo-path> <remote> <refspec>...
+show <file>
 pause <text>
 wait-drupal <project> <version>
 note <text>

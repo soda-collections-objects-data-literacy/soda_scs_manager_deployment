@@ -7,6 +7,7 @@
 #
 # Plan format, one action per line, lines starting with '#' are comments:
 #   push <repo-path> <remote> <refspec>...   git push, path relative to the deployment root
+#   show <file>                              print a file (e.g. release notes to paste), path relative to the deployment root
 #   pause <text>                             print a manual step, wait for Enter
 #   wait-drupal <project> <version>          wait until drupal.org lists the release
 #   note <text>                              print a reminder now
@@ -33,7 +34,7 @@ WAIT_INTERVAL=30
 for arg in "$@"; do
   case "${arg}" in
     --dry-run|-n) DRY_RUN=1 ;;
-    -h|--help) sed -n '2,23p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,24p' "$0"; exit 0 ;;
     *) PLAN="${arg}" ;;
   esac
 done
@@ -130,6 +131,13 @@ while IFS= read -r line || [[ -n "${line}" ]]; do
       echo "NOTE ${line#*note }" ;;
     todo)
       TODOS+=("${line#*todo }") ;;
+    show)
+      (( ${#words[@]} == 2 )) || { echo "Line ${lineno}: show <file>" >&2; exit 1; }
+      [[ -f "${ROOT}/${words[1]}" ]] || { echo "Line ${lineno}: no such file ${words[1]}" >&2; exit 1; }
+      echo "==> ${words[1]}"
+      echo "------------------------------------------------------------------------"
+      cat "${ROOT}/${words[1]}"
+      echo "------------------------------------------------------------------------" ;;
     pause)
       echo "==> MANUAL STEP: ${line#*pause }"
       (( DRY_RUN )) || read -r -p "    Press Enter when done (Ctrl-C to stop; re-running is safe) " </dev/tty ;;

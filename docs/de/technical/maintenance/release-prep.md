@@ -30,7 +30,7 @@ Ein zweiter Lauf ist ungefährlich, schon gepushte Refs sind aktuell. Nach dem L
 
 ## Was nicht automatisch passiert
 
-Der Skill schreibt diese Schritte in den Plan. Das Skript hält bei `pause` an und gibt die `todo`-Punkte am Ende als Checkliste aus.
+Der Skill schreibt diese Schritte in den Plan. Für jedes Modul-Release legt er `plans/release-notes-soda_scs_manager-X.Y.Z.md` an, mit Kurzbeschreibung und HTML-Release-Notes für drupal.org. Das Skript zeigt die Datei mit `show` direkt vor dem Schritt an, hält bei `pause` an und gibt die `todo`-Punkte am Ende als Checkliste aus.
 
 | Wann | Schritt |
 | --- | --- |
@@ -44,6 +44,7 @@ Der Skill schreibt diese Schritte in den Plan. Das Skript hält bei `pause` an u
 
 ```text
 push <repo-pfad> <remote> <refspec>...
+show <datei>
 pause <text>
 wait-drupal <projekt> <version>
 note <text>
