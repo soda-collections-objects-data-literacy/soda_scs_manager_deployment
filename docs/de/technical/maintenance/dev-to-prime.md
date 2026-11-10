@@ -4,6 +4,33 @@ Dev-Checkout: `/var/www/deploy/soda_scs_manager_deployment`. Prime-Checkout: `/v
 
 Es gibt zwei Wege. Nimm den, der zur Änderung passt. Haben sich beide geändert, zuerst Weg A auf Dev pushen. Auf Prime zuerst das Deployment auschecken und den Manager-Container erst am Ende von Weg B neu erzeugen.
 
+## Mit einem Befehl
+
+Auf Prime erledigt `update-stack.bash --prime` die Prime-Seite beider Wege: Weg A, Schritt 2 und 3, und Weg B, Schritt 5. Die Schritte auf Dev (pushen, releasen, taggen) bleiben Handarbeit. Die Abschnitte unten bleiben als Referenz dafür, was das Skript tut.
+
+```bash
+cd /var/deploy/soda_scs_manager_deployment
+./01_scripts/global/update-stack.bash --prime --check   # nur der Plan, ändert nichts
+./01_scripts/global/update-stack.bash --prime --apply   # nachdem du den Plan gelesen hast
+```
+
+`--check` zeigt, welche Repos auf welchen festgehaltenen Zeiger gehen (mit Commit-Log), was gebaut, neu erzeugt und kopiert wird, welche Systemd-Units abweichen, die neuen CHANGELOG-Abschnitte und die aktuellen Drupal-Checks. Es endet mit 1, wenn etwas das Update blockiert, zum Beispiel nicht committete Änderungen.
+
+`--apply` macht dann:
+
+1. Das Deployment wird vorgespult, danach läuft `git submodule update --init --recursive` ohne `--remote`.
+2. Geänderte Override-Quellen werden nach `scs-manager-stack/` und `scs-project-website-stack/` kopiert, außer die Kopie dort hat lokale Änderungen.
+3. Geänderte Systemd-Units werden als root installiert, sonst gibt das Skript die `sudo`-Befehle aus.
+4. Vor dem ersten neu erzeugten Container werden alle Datenbanken nach `/srv/backups/pre-update/<Zeitstempel>/` gesichert. Wechselt die Nextcloud-Version, läuft zusätzlich `backup-nextcloud.bash`.
+5. Die betroffenen Container werden gebaut und neu erzeugt (Tabelle in [Schritt 3](#3-die-betroffenen-container-neu-erzeugen)).
+6. Das SCS-Manager-Image wird gezogen und das Log verfolgt ([Weg B, Schritt 5](#5-auf-prime-das-image-starten)), aber nur, wenn der Container keinen Bind-Mount auf Modul oder Theme hat.
+7. Geprüft werden `docker compose ps`, `drush updatedb:status`, `drush scs:check --problems` und die aktiven Themes.
+8. Am Ende stehen die übrigen Handgriffe: `sudo`-Befehle, der Nextcloud-Repair und die fetten Zeilen aus den CHANGELOGs.
+
+Optionen: `--no-snapshot` lässt die Datenbanksicherung weg, `--since <Commit>` legt den Deployment-Commit fest, ab dem verglichen wird (Standard: das letzte erfolgreiche `--prime --apply`), und `--offline` plant ohne Fetch. Braucht der SSH-Key eine Passphrase, liest Git öffentliche Repos über HTTPS.
+
+`SCS_MANAGER_IMAGE_VERSION` wird nur angezeigt. Mit einer vollen Version wie `3.3.1` kommt kein neueres Manager-Image, bis dort `3` steht.
+
 ## Weg A: Deployment und Submodule
 
 Das gilt für JupyterHub, Nextcloud, Keycloak, OpenGDB, WebProtégé, Voyager, Health, die Project Website und für Compose, Overrides und Skripte im Deployment. Auch für den `scs-manager-stack`, solange sich nur dessen Compose ändert und nicht Modul, Theme oder Seiten.
