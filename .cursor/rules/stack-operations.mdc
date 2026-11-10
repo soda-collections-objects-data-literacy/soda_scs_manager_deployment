@@ -7,8 +7,16 @@ alwaysApply: true
 
 ## Project Root
 
-`/var/www/deploy/soda_scs_manager_deployment` (**dev**) — always run `docker compose` from here.
-Production (**Prime**) lives at `/var/deploy/soda_scs_manager_deployment` on its own host. Shipping dev → Prime: `docs/en/technical/maintenance/dev-to-prime.md`.
+Always run `docker compose` from the repo root. Two hosts share this repo and these rules:
+
+| Host | Root (`SCS_ROOT_PATH`) | `SCS_SUBDOMAIN` | Module and themes |
+|---|---|---|---|
+| **dev** | `/var/www/deploy/soda_scs_manager_deployment` | `dev-scs` | bind-mounted git repos |
+| **Prime** (production, host `scs-prime`) | `/var/deploy/soda_scs_manager_deployment` | `scs` | from the production image; a bind mount over them is a fault (`dev-to-prime.md`, Path B step 5) |
+
+Which host this is: the working directory, or `CLAUDE.local.md` if present. Shipping dev → Prime: `docs/en/technical/maintenance/dev-to-prime.md`.
+
+**On Prime, real users depend on every container** (including the `wisski-*` instances that Portainer manages). Reading (`ps`, `logs`, `inspect`) is free; ask before anything that recreates, restarts, stops or rebuilds a container, changes Drupal/Nextcloud/Keycloak state (`drush`, `occ`, config) or touches `.env`. Development, releases and tags happen on dev; Prime receives them with `git pull` and `/update-stack`.
 
 ## How Multi-Stack Compose Works
 
@@ -43,12 +51,12 @@ Each service stack follows this pattern:
 
 Shared infrastructure (`core--mariadb--db` alias `scs--database`, `core--traefik--edge` alias `scs--reverse-proxy`, `core--portainer--app`, `dbms--phpmyadmin--app`, `dbms--forwardauth--proxy`, `core--echo--app`, `core--rclone--sidecar`, `core--docs--app`, etc.) lives in the root `docker-compose.yml`.
 
-Not submodules, separate git repos in gitignored paths: module `scs-manager-stack/volumes/drupal-root/web/modules/custom/soda_scs_manager` (`4.x`, `origin` = git.drupal.org), themes under `…/web/themes/custom/` (`scs_custom_theme` on `main` is the default theme), image `repos/scs-manager-image`. Dev bind-mounts module and themes; Prime runs them from the production image.
+Not submodules, separate git repos in gitignored paths: module `scs-manager-stack/volumes/drupal-root/web/modules/custom/soda_scs_manager` (`4.x`, `origin` = git.drupal.org), themes under `…/web/themes/custom/` (`scs_custom_theme` on `main` is the default theme), image `repos/scs-manager-image` (dev only, like `plans/`).
 
 ## Key Variables
 
-- `SCS_ROOT_PATH=/var/www/deploy/soda_scs_manager_deployment` — used in override files for absolute volume mounts
-- `SCS_BASE_DOMAIN=sammlungen.io`, `SCS_SUBDOMAIN=dev-scs`
+- `SCS_ROOT_PATH` — used in override files for absolute volume mounts
+- `SCS_BASE_DOMAIN=sammlungen.io`, `SCS_SUBDOMAIN` (per host, see above)
 - Override files use `${SCS_ROOT_PATH}/<stack>/...` for volume paths to avoid relative-path resolution issues
 
 ## Container Operations

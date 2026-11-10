@@ -6,6 +6,11 @@ globs:
   - "docs/**"
   - "**/zensical.toml"
   - "**/README.md"
+# Same patterns for Claude Code (.claude/rules links here).
+paths:
+  - "docs/**"
+  - "**/zensical.toml"
+  - "**/README.md"
 alwaysApply: false
 ---
 # Documentation (Zensical)

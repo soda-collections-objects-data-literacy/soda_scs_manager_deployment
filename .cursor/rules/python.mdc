@@ -5,6 +5,10 @@ description: >-
 globs:
   - "**/*.py"
   - "**/pyproject.toml"
+# Same patterns for Claude Code (.claude/rules links here).
+paths:
+  - "**/*.py"
+  - "**/pyproject.toml"
 alwaysApply: false
 ---
 # Python Standards

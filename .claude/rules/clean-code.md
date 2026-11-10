@@ -1,0 +1,1 @@
+../../.cursor/rules/clean-code.mdc

@@ -12,6 +12,16 @@ globs:
   - "**/web/**/*.yml"
   - "**/composer.json"
   - "**/composer.lock"
+# Same patterns for Claude Code (.claude/rules links here).
+paths:
+  - "**/web/**/*.php"
+  - "**/web/**/*.module"
+  - "**/web/**/*.theme"
+  - "**/web/**/*.inc"
+  - "**/web/**/*.install"
+  - "**/web/**/*.yml"
+  - "**/composer.json"
+  - "**/composer.lock"
 alwaysApply: false
 ---
 # Drupal 11 / PHP 8.5 Standards

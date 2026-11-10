@@ -4,6 +4,9 @@ description: >-
   groups, ISO dates, release workflow.
 globs:
   - "**/CHANGELOG.md"
+# Same patterns for Claude Code (.claude/rules links here).
+paths:
+  - "**/CHANGELOG.md"
 alwaysApply: false
 ---
 # Changelog Format (Keep a Changelog 1.1)

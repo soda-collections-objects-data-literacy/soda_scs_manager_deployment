@@ -12,6 +12,17 @@ globs:
   - "**/compose*.yaml"
   - "**/entrypoint*.sh"
   - "**/.dockerignore"
+# Same patterns for Claude Code (.claude/rules links here).
+paths:
+  - "**/Dockerfile"
+  - "**/Dockerfile.*"
+  - "**/*.dockerfile"
+  - "**/docker-compose*.yml"
+  - "**/docker-compose*.yaml"
+  - "**/compose*.yml"
+  - "**/compose*.yaml"
+  - "**/entrypoint*.sh"
+  - "**/.dockerignore"
 alwaysApply: false
 ---
 # Docker Standards

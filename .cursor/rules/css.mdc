@@ -6,6 +6,11 @@ globs:
   - "**/*.css"
   - "**/*.pcss"
   - "**/*.scss"
+# Same patterns for Claude Code (.claude/rules links here).
+paths:
+  - "**/*.css"
+  - "**/*.pcss"
+  - "**/*.scss"
 alwaysApply: false
 ---
 # CSS Standards

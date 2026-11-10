@@ -5,6 +5,8 @@
 .vscode/
 .idea/
 .cursor/*.code-workspace
+CLAUDE.local.md
+.claude/settings.local.json
 *.swp
 *~
 .DS_Store

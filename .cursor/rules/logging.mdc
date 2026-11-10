@@ -11,6 +11,15 @@ globs:
   - "**/*.jsx"
   - "**/*.php"
   - "**/*.module"
+# Same patterns for Claude Code (.claude/rules links here).
+paths:
+  - "**/*.py"
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.php"
+  - "**/*.module"
 alwaysApply: false
 ---
 # Logging Standards
@@ -45,4 +54,4 @@ logger.error("login failed: invalid password", extra={"user_id": user.id, "reque
 ## Performance and scope
 - No expensive computation just for a log call; use lazy/deferred formatting on hot paths, and consider sampling for high-volume repeated events.
 - Logs are for troubleshooting, not monitoring: rates, latencies, and trends belong in metrics, not in log-line counting.
-- Where logs go (stdout/stderr in containers, aggregation, retention, encryption) is infrastructure — see the docker rule and the stack's `stack-environment` rule; application code never writes its own log files.
+- Where logs go (stdout/stderr in containers, aggregation, retention, encryption) is infrastructure — see the docker rule and the `stack-operations` rule; application code never writes its own log files.

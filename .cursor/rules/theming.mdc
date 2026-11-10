@@ -8,6 +8,13 @@ globs:
   - "**/*.scss"
   - "**/*.tsx"
   - "**/*.jsx"
+# Same patterns for Claude Code (.claude/rules links here).
+paths:
+  - "**/*.css"
+  - "**/*.pcss"
+  - "**/*.scss"
+  - "**/*.tsx"
+  - "**/*.jsx"
 alwaysApply: false
 ---
 # Theming / Corporate Design

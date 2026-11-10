@@ -37,4 +37,3 @@ alwaysApply: true
 - Small, focused commits. Subject: one plain English sentence in the imperative, ending with a period (`Run WissKI updates as queued background jobs.`), no `feat:` prefix; the body explains *why*.
 - Never commit secrets, credentials, or `.env` files.
 - Tags are plain `X.Y.Z`, annotated, never `vX.Y.Z`.
-- Don't push: the SSH key has a passphrase. Pushes are collected in `plans/push-plan.txt` and run by `01_scripts/global/push-release-plan.bash` (skills `/git-commit`, `/release`, `/scs-release-prep`).

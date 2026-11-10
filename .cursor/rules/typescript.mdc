@@ -10,6 +10,14 @@ globs:
   - "**/*.js"
   - "**/*.jsx"
   - "**/*.mjs"
+# Same patterns for Claude Code (.claude/rules links here).
+paths:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.mts"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
 alwaysApply: false
 ---
 # TypeScript Standards
