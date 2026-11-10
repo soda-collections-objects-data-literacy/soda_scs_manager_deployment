@@ -37,7 +37,7 @@ Der Skill schreibt diese Schritte in den Plan. Für jedes Modul-Release legt er 
 | Während des Pushs, Modul-Tag | Auf [drupal.org](https://www.drupal.org/project/soda_scs_manager) mit *Add new release* das Release-Node für den Tag anlegen und den Changelog-Abschnitt als Release Notes einfügen. Ohne das Node packt drupal.org nichts, und das Image baut weiter das alte Modul. Das Skript wartet, bis die Version gelistet ist, und pusht erst dann den Image-Tag. Nach 60 Minuten bricht es ab (`WAIT_TIMEOUT` in Sekunden ändert das). |
 | Nach dem Push, Image-Tag | Prüfen, ob [Publish SCS Manager Docker Images](https://github.com/soda-collections-objects-data-literacy/scs-manager-image/actions) grün ist. |
 | Nach dem Push, Tag in einem GitHub-Repo | Ein GitHub-Release entsteht nicht von selbst. Bei Bedarf unter `https://github.com/<owner>/<repo>/releases/new?tag=X.Y.Z` anlegen. |
-| Auf Prime | `git pull` und `git submodule update --init --recursive`, Overrides kopieren, Units nach `/etc/systemd/system/` kopieren, Container neu erzeugen. Siehe [Dev nach Prime](dev-to-prime.md). |
+| Auf Prime | `./01_scripts/global/update-stack.bash --prime --check`, dann `--apply`. Siehe [Kurzablauf](dev-to-prime.md#kurzablauf). |
 | Auf Prime, Drupal | Der Entrypoint führt `drush updatedb` aus, aber nie `config:import`. Neue Config aus dem Modul braucht ein Update-Hook. Neue Einstellungen und API-Keys unter `/admin/config/soda-scs-manager/settings` setzen. Drush-Befehle aus dem Changelog von Hand ausführen. |
 
 ## Planformat

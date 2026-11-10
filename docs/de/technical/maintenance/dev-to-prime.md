@@ -4,15 +4,23 @@ Dev-Checkout: `/var/www/deploy/soda_scs_manager_deployment`. Prime-Checkout: `/v
 
 Es gibt zwei Wege. Nimm den, der zur Änderung passt. Haben sich beide geändert, zuerst Weg A auf Dev pushen. Auf Prime zuerst das Deployment auschecken und den Manager-Container erst am Ende von Weg B neu erzeugen.
 
-## Mit einem Befehl
+## Kurzablauf
 
-Auf Prime erledigt `update-stack.bash --prime` die Prime-Seite beider Wege: Weg A, Schritt 2 und 3, und Weg B, Schritt 5. Die Schritte auf Dev (pushen, releasen, taggen) bleiben Handarbeit. Die Abschnitte unten bleiben als Referenz dafür, was das Skript tut.
+1. **Auf Dev:** `/scs-release-prep` (Skill) — Commits, Changelogs, Tags, `plans/push-plan.txt`. Details: [Release vorbereiten](release-prep.md).
+2. **Auf Dev:** `01_scripts/global/push-release-plan.bash` (vorher `--dry-run`). Offene Handgriffe aus dem Prep erledigen (z. B. Release-Node auf drupal.org).
+3. **Auf Prime:**
 
 ```bash
 cd /var/deploy/soda_scs_manager_deployment
 ./01_scripts/global/update-stack.bash --prime --check   # nur der Plan, ändert nichts
 ./01_scripts/global/update-stack.bash --prime --apply   # nachdem du den Plan gelesen hast
 ```
+
+Die Wege A und B unten bleiben die Referenz dafür, was hinter den Schritten steckt.
+
+## Was `--prime` auf Prime macht
+
+`update-stack.bash --prime` erledigt die Prime-Seite beider Wege: Weg A, Schritt 2 und 3, und Weg B, Schritt 5.
 
 `--check` zeigt, welche Repos auf welchen festgehaltenen Zeiger gehen (mit Commit-Log), was gebaut, neu erzeugt und kopiert wird, welche Systemd-Units abweichen, die neuen CHANGELOG-Abschnitte und die aktuellen Drupal-Checks. Es endet mit 1, wenn etwas das Update blockiert, zum Beispiel nicht committete Änderungen.
 

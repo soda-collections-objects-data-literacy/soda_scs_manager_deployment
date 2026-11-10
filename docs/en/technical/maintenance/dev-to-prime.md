@@ -4,15 +4,23 @@ Dev checkout: `/var/www/deploy/soda_scs_manager_deployment`. Prime checkout: `/v
 
 There are two paths. Take the one that matches the change. When both changed, push path A on dev first. On Prime, check out the deployment first and recreate the manager container only at the end of path B.
 
-## With one command
+## Short recipe
 
-On Prime, `update-stack.bash --prime` runs the Prime side of both paths: path A steps 2 and 3, and path B step 5. The steps on dev (pushing, releasing, tagging) stay manual. The sections below remain as the reference for what the script does.
+1. **On dev:** `/scs-release-prep` (skill) — commits, changelogs, tags, `plans/push-plan.txt`. Details: [Release prep](release-prep.md).
+2. **On dev:** `01_scripts/global/push-release-plan.bash` (try `--dry-run` first). Finish any manual steps from the prep (for example the drupal.org release node).
+3. **On Prime:**
 
 ```bash
 cd /var/deploy/soda_scs_manager_deployment
 ./01_scripts/global/update-stack.bash --prime --check   # plan only, changes nothing
 ./01_scripts/global/update-stack.bash --prime --apply   # after reading the plan
 ```
+
+Paths A and B below remain the reference for what those steps do.
+
+## What `--prime` does on Prime
+
+`update-stack.bash --prime` runs the Prime side of both paths: path A steps 2 and 3, and path B step 5.
 
 `--check` shows which repos move to which recorded pointer (with the commit log), what is built, recreated and copied, which systemd units differ, the new CHANGELOG sections, and the current Drupal checks. It exits with 1 when something blocks the update, for example uncommitted changes.
 
