@@ -46,7 +46,7 @@ Nextcloud is a stateful service with a database, file storage, and apps. Updates
    docker exec core--mariadb--db mariadb-dump -u root -p"${SCS_DB_ROOT_PASSWORD}" "${NEXTCLOUD_DB_NAME}" > nextcloud-backup-$(date +%Y%m%d).sql
    ```
 
-3. **Check Nextcloud release notes**
+2. **Check Nextcloud release notes**
 
    Visit [Nextcloud releases](https://nextcloud.com/changelog/) and read the changelog for the target version. Note any:
    - PHP version requirements.
@@ -54,7 +54,7 @@ Nextcloud is a stateful service with a database, file storage, and apps. Updates
    - Breaking changes or removed/changed apps.
    - Recommended upgrade paths (e.g. must upgrade to 30.x before 31.x).
 
-4. **Check app compatibility**
+3. **Check app compatibility**
 
    Some apps (e.g. Social Login, OnlyOffice connector) may need updates or may not yet support the new Nextcloud version. Check the Nextcloud app store or app repositories for compatibility.
 
@@ -261,7 +261,7 @@ Important:
 
 ### SCS Manager (Drupal)
 
-Package versions and shipped pages are baked into `scs-manager-image`. Prime pulls that image and recreates the container. The entrypoint runs database updates and the content import. Existing site config stays. Deployment and submodule changes are a git pull on Prime and do not need a new image. The full order, including JupyterHub, Nextcloud, the module release, and packing the shipped pages, is in [Ship changes from dev to Prime](dev-to-prime.md).
+Package versions and shipped pages are baked into `scs-manager-image`. Prime pulls that image and recreates the container. The entrypoint runs database updates and the content import. Existing site config stays. Deployment and submodule changes are a git pull on Prime and do not need a new image. The full order, including JupyterHub, Nextcloud, the module release, and packing the shipped pages, is in [Ship changes from dev to Prime](dev-to-prime.md). Commits, tags and the push plan are prepared by [Release prep](release-prep.md).
 
 ### JupyterHub, OpenGDB
 
@@ -310,7 +310,7 @@ If you need to manually restore:
    ```bash
    docker exec core--mariadb--db mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "DROP DATABASE IF EXISTS ${NEXTCLOUD_DB_NAME};"
    docker exec core--mariadb--db mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" -e "CREATE DATABASE ${NEXTCLOUD_DB_NAME};"
-   docker exec -i scs--database mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" "${NEXTCLOUD_DB_NAME}" < /srv/backups/nextcloud/nextcloud-db_TIMESTAMP.sql
+   docker exec -i core--mariadb--db mariadb -u root -p"${SCS_DB_ROOT_PASSWORD}" "${NEXTCLOUD_DB_NAME}" < /srv/backups/nextcloud/nextcloud-db_TIMESTAMP.sql
    ```
 
 3. **Revert the image tag** in the compose file to the previous version.

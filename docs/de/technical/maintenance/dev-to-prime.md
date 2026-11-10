@@ -68,7 +68,7 @@ Ein `git pull` ändert einen laufenden Container nicht. `docker restart` lädt k
 | Traefik, MariaDB, Portainer, nur neues Image-Tag | `docker compose pull <container> && docker compose up -d <container>` |
 | SCS-Manager-Compose, ohne Modul, Theme oder Seiten | `docker compose up -d manager--drupal--app` |
 
-Wechselt die Nextcloud-Version, zuerst sichern und danach die Repair-Schritte aus [Updates](updates.md#updating-nextcloud) ausführen. Ein Recreate mitten in der Migration abbrechen lässt die Instanz in Maintenance.
+Wechselt die Nextcloud-Version, zuerst sichern und danach die Repair-Schritte aus [Updates](updates.md#nextcloud-aktualisieren) ausführen. Ein Recreate mitten in der Migration abbrechen lässt die Instanz in Maintenance.
 
 ## Weg B: SCS Manager, Modul, Themes und Seiten
 

@@ -71,6 +71,7 @@ nav = [
     { "Wartung" = [
       { "Übersicht" = "technical/maintenance/index.md" },
       { "Dev nach Prime" = "technical/maintenance/dev-to-prime.md" },
+      { "Release vorbereiten" = "technical/maintenance/release-prep.md" },
       { "Updates" = "technical/maintenance/updates.md" },
     ] },
     { "Troubleshooting" = [

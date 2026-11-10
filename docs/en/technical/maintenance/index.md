@@ -5,6 +5,7 @@ This section covers ongoing maintenance tasks for the SODa SCS Manager deploymen
 ## Topics
 
 - **[Dev to Prime](dev-to-prime.md)** — Step by step for a deployment or submodule change (JupyterHub, Nextcloud, Keycloak, and the others), and for the SCS Manager module, themes, and shipped pages.
+- **[Release prep](release-prep.md)** — The `scs-release-prep` skill commits, writes changelogs, tags, and writes a push plan; one script pushes it all.
 - **[Updates and maintenance](updates.md)** — How to update services (especially Nextcloud), handle post-update tasks, troubleshoot common issues, and use backup/restore scripts.
 
 ## Overview
