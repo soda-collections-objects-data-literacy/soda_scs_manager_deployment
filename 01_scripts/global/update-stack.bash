@@ -172,11 +172,12 @@ prime_have_commit() {
   git -C "$path" cat-file -e "${sha}^{commit}" 2>/dev/null
 }
 
-# Prints the bind mounts of the running manager that hide the module or theme
-# shipped in the image.
+# Prints the bind mounts in the manager's compose config (what the next
+# container gets, not the running one) that hide the module or theme shipped
+# in the image.
 manager_shadow_binds() {
-  docker inspect "$MANAGER_SVC" \
-    --format '{{range .Mounts}}{{.Type}} {{.Source}} -> {{.Destination}}{{"\n"}}{{end}}' 2>/dev/null \
+  jq -r --arg s "$MANAGER_SVC" \
+    '.services[$s].volumes[]? | select(.type == "bind") | "bind \(.source) -> \(.target)"' <<<"$COMPOSE_JSON" \
     | grep -E '^bind .* -> /opt/drupal/web/(themes|modules)/[^ ]*/(scs_custom_theme|soda_scs_manager)$' || true
 }
 
@@ -497,6 +498,7 @@ prime_run() {
 
   # Compose files may have changed with the pull: plan again from the new state.
   compute_impact
+  shadow="$(manager_shadow_binds)"
   mapfile -t recreate < <(printf '%s\n' "${REBUILD[@]}" "${RESTART[@]}" | grep -v '^$' | sort -u)
   if [[ ${#REBUILD[@]} -gt 0 ]]; then
     log "Building: ${REBUILD[*]}"
