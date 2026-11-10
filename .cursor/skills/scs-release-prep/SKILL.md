@@ -63,8 +63,13 @@ of scope unless the user names them.
 
 ### 1. Inventory
 
-For every repo in scope (parallel where possible; no network, no `git fetch` —
-it would ask for the passphrase):
+For every repo in scope (parallel where possible). `git fetch origin` would ask
+for the passphrase; for public GitHub repos fetch read-only over HTTPS instead, so
+a remote that moved ahead (e.g. a commit pushed from Prime) shows up before the
+push is rejected:
+`git fetch -q https://github.com/<owner>/<repo>.git <branch>:refs/remotes/origin/<branch>`.
+If the remote is ahead and the local commits are unpublished, rebase them onto
+`origin/<branch>`; if both sides have published work, ask.
 
 - `git status --short`, current branch (detached HEAD?), `git rev-list --count @{u}..HEAD`
 - latest tag `git tag --sort=-v:refname | head -1`, `git log --oneline <tag>..HEAD`
@@ -101,6 +106,8 @@ deployment last.
 - Hook changed files: stage them, new commit, never `--amend`. Never `--no-verify`,
   never rewrite history, never move or delete a tag.
 - Files are group `www-data` with `core.sharedRepository=group`; don't chmod/chown.
+- The deployment has `core.fileMode=false`: a new script needs
+  `git update-index --chmod=+x <file>`, or it loses its exec bit on the next checkout.
 
 ### 4. Changelogs + releases
 
