@@ -1,0 +1,48 @@
+---
+description: >-
+  General TypeScript/JavaScript standards: strict types, no any, interfaces vs
+  types, async patterns, code organization. Framework rules live in stack rule
+  sets.
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.mts"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.mjs"
+alwaysApply: false
+---
+# TypeScript Standards
+
+New code is TypeScript with `strict: true`; plain JavaScript only where the toolchain demands it. Framework rules (Next.js, React, …) live in stack rule sets.
+
+## Type system
+- No `any` — use `unknown` plus narrowing (type guards, `typeof`, `instanceof`, discriminated unions). No non-null assertions (`!`) without a comment justifying them.
+- `interface` for object shapes that may be extended/implemented; `type` for unions, intersections, tuples, and mapped types.
+- Let inference work for obvious locals; annotate explicitly on public APIs, exported functions, and function parameters.
+- Discriminated unions over boolean flag soup; `as const` for literal collections; built-in utility types (`Partial`, `Pick`, `Readonly`) before hand-rolled mapped types.
+- Handle `null`/`undefined` explicitly: optional chaining `?.` and nullish coalescing `??`, no unchecked access.
+- Do not loosen `tsconfig` flags to silence errors — fix the types.
+
+## Naming and organization
+- `PascalCase` types/interfaces/classes, `camelCase` variables/functions, `UPPER_CASE` constants; booleans as predicates (`isLoading`, `hasError`).
+- Keep type definitions next to their use; share cross-cutting types from a dedicated `types` module.
+- Type-only imports as `import type { … }` so bundlers can tree-shake.
+
+## Async
+- `async/await` over raw promise chains; every awaited call has an error path (try/catch with context, or propagate to a boundary that handles it).
+- Independent async operations run in parallel with `Promise.all`, not sequential awaits.
+- Flatten async flows with early returns — no nested await pyramids.
+
+```typescript
+// ❌ BAD
+const user = await getUser(id);
+const orders = await getOrders(id); // independent, but serialized
+
+// ✅ GOOD
+const [user, orders] = await Promise.all([getUser(id), getOrders(id)]);
+```
+
+## Errors
+- Throw `Error` subclasses (domain-specific), never strings; keep the original error as `cause`.
+- Empty catch blocks are forbidden; log with context or rethrow.

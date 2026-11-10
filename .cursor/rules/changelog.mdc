@@ -1,0 +1,57 @@
+---
+description: >-
+  Keep a Changelog 1.1 format for CHANGELOG.md: Unreleased section, change-type
+  groups, ISO dates, release workflow.
+globs:
+  - "**/CHANGELOG.md"
+alwaysApply: false
+---
+# Changelog Format (Keep a Changelog 1.1)
+
+`CHANGELOG.md` is for humans: curated notable changes, not a git log dump.
+
+## Structure
+- Newest version first; every version gets a section `## [x.y.z] - YYYY-MM-DD` (ISO 8601 date).
+- Always keep an `## [Unreleased]` section at the top — every user-facing change lands there in the same change set that makes it.
+- Group entries under exactly these headings (omit empty ones):
+  - `### Added` — new features
+  - `### Changed` — changes in existing functionality
+  - `### Deprecated` — soon-to-be removed features
+  - `### Removed` — removed features
+  - `### Fixed` — bug fixes
+  - `### Security` — vulnerabilities (lead with the CVE if there is one)
+- Breaking changes and deprecations are never omitted; mark them clearly (**Breaking:** prefix) and note upgrade steps.
+- Yanked releases stay listed: `## [x.y.z] - YYYY-MM-DD [YANKED]`.
+- Compare links at the bottom only if the file already uses them; keep the existing style of each file.
+- Write for admins and users, not a git log. Anything an admin must do after updating (re-copy units, run a drush command, set a setting) goes in **bold** — the release skills turn those into manual steps.
+
+## Release workflow
+Before tagging a release:
+1. Rename `[Unreleased]` content into a new `## [x.y.z] - YYYY-MM-DD` section.
+2. Re-create an empty `[Unreleased]` section above it.
+3. Update the compare links at the bottom (if present).
+4. Commit (`Release x.y.z.`), then create an annotated tag `x.y.z` — plain, never `vx.y.z`.
+
+A tag must contain its rolled section: never tag a commit whose changelog still lists the changes under `[Unreleased]`.
+
+## Template
+
+```markdown
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [1.0.0] - 2026-01-15
+
+### Added
+
+- Initial release.
+
+[unreleased]: https://github.com/OWNER/REPO/compare/1.0.0...HEAD
+[1.0.0]: https://github.com/OWNER/REPO/releases/tag/1.0.0
+```

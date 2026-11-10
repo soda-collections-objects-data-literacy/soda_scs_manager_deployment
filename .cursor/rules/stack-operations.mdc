@@ -1,0 +1,100 @@
+---
+description: SODa SCS deployment stack structure, compose conventions, and container operations
+alwaysApply: true
+---
+
+# SODa SCS Manager Deployment
+
+## Project Root
+
+`/var/www/deploy/soda_scs_manager_deployment` (**dev**) — always run `docker compose` from here.
+Production (**Prime**) lives at `/var/deploy/soda_scs_manager_deployment` on its own host. Shipping dev → Prime: `docs/en/technical/maintenance/dev-to-prime.md`.
+
+## How Multi-Stack Compose Works
+
+All stacks are wired together via `COMPOSE_FILE` in the root `.env`:
+
+```
+COMPOSE_FILE=docker-compose.yml:jupyterhub/docker-compose.yml:00_custom_configs/jupyterhub/docker/docker-compose.override.yml:...
+```
+
+This means a plain `docker compose` from the root resolves every service across all stacks automatically. **Never specify `-f` manually** unless debugging a single stack in isolation.
+
+## Stack Layout
+
+Each service stack follows this pattern:
+
+```
+<stack>/docker-compose.yml                              # base definition (submodule)
+00_custom_configs/<stack>/docker/docker-compose.override.yml  # site-specific overrides
+```
+
+| Stack | Containers |
+|---|---|
+| `scs-nextcloud-stack` | `nextcloud--nextcloud--app` (alias `nextcloud--nextcloud`), `nextcloud--ods--app` (alias `nextcloud--onlyoffice-document-server`), `nextcloud--nginx--edge` (alias `nextcloud--nextcloud-reverse-proxy`), `nextcloud--ods--edge` (alias `nextcloud--onlyoffice-reverse-proxy`), `nextcloud--redis--cache` (alias `nextcloud--redis`) |
+| `jupyterhub` | `jupyterhub--jupyterhub--app` (alias `jupyterhub--jupyterhub`), `jupyterhub--spawner--builder` (build only; alias `jupyterhub--image-builder`) |
+| `keycloak` | `keycloak--keycloak--app` (alias `keycloak--keycloak`) |
+| `scs-manager-stack` | `manager--drupal--app` (alias `scs-manager--drupal`), `manager--redis--cache` (alias `scs-manager--redis`) |
+| `open_gdb` | `opengdb--nginx--edge` (alias `scs--opengdb-proxy`), `opengdb--authproxy--proxy`, `opengdb--rdf4j--db`, `opengdb--outproxy--proxy` |
+| `webprotege` | `webprotege--webprotege--app` (alias `webprotege`), `webprotege--mongodb--db` (aliases `wpmongo`, `webprotege-mongodb`) |
+| `scs-health` | `health--health--app` (alias `scs--health`) |
+| `scs-voyager` | `voyager--voyager--app` |
+| `scs-project-website-stack` | `scs-project-website--drupal`, `scs-project-website--database`, `scs-project-website--redis`, `scs-project-website--varnish` |
+
+Shared infrastructure (`core--mariadb--db` alias `scs--database`, `core--traefik--edge` alias `scs--reverse-proxy`, `core--portainer--app`, `dbms--phpmyadmin--app`, `dbms--forwardauth--proxy`, `core--echo--app`, `core--rclone--sidecar`, `core--docs--app`, etc.) lives in the root `docker-compose.yml`.
+
+Not submodules, separate git repos in gitignored paths: module `scs-manager-stack/volumes/drupal-root/web/modules/custom/soda_scs_manager` (`4.x`, `origin` = git.drupal.org), themes under `…/web/themes/custom/` (`scs_custom_theme` on `main` is the default theme), image `repos/scs-manager-image`. Dev bind-mounts module and themes; Prime runs them from the production image.
+
+## Key Variables
+
+- `SCS_ROOT_PATH=/var/www/deploy/soda_scs_manager_deployment` — used in override files for absolute volume mounts
+- `SCS_BASE_DOMAIN=sammlungen.io`, `SCS_SUBDOMAIN=dev-scs`
+- Override files use `${SCS_ROOT_PATH}/<stack>/...` for volume paths to avoid relative-path resolution issues
+
+## Container Operations
+
+All commands from project root:
+
+```bash
+# Start a stack or specific container
+docker compose up -d <container-name>
+
+# Recreate a container (pick up compose/volume changes)
+docker compose up -d --force-recreate <container-name>
+
+# Stop and remove containers (keeps volumes)
+docker compose down <container-name>
+
+# View logs
+docker compose logs -f <container-name>
+
+# Run occ commands in Nextcloud
+docker exec --user www-data nextcloud--nextcloud--app php /var/www/html/occ <command>
+
+# Drupal in scs-manager-stack (scs-drush / scs-composer are fish functions,
+# not available in non-interactive bash — use docker exec there)
+docker exec manager--drupal--app drush <command>
+docker exec manager--drupal--app composer <command>
+```
+
+Convenience scripts in `01_scripts/<stack>/`:
+- `start-services.bash` — start a stack's containers
+- `stop-services.bash` — stop a stack's containers
+- `backup-*.bash` / `restore-*.bash` — data backup/restore
+
+## Override File Conventions
+
+- Use `volumes: !override` to **replace** the base volume list (prevents path resolution issues when compose runs from root)
+- Use `networks: !override` to replace networks entirely
+- Use `ports: !reset []` to remove port bindings (Traefik handles routing instead)
+- Always use `${SCS_ROOT_PATH}/<stack>/path` for host-side volume mounts in overrides, never relative paths
+
+## Post-Installation Hooks
+
+Nextcloud hooks run **once** on first container start via `/docker-entrypoint-hooks.d/post-installation/`. If you add a new hook or change existing config, apply it manually with `occ` — rebuilding/recreating the container will NOT re-run hooks on an already-installed instance.
+
+## Git, releases, pushing
+
+- Commit innermost repo first, then the submodule pointer in the parent (`scs_manager_integration` → `scs-nextcloud-stack` → deployment).
+- Don't push: the SSH key has a passphrase. `/scs-release-prep` (or `/git-commit`, `/release`) writes `plans/push-plan.txt`, the user runs `01_scripts/global/push-release-plan.bash`.
+- Not everything is CI: a module tag needs a release node on drupal.org before it is packaged, and the production image installs the module from drupal.org. Docs: `docs/en/technical/maintenance/release-prep.md`.

@@ -1,0 +1,56 @@
+---
+description: >-
+  Dockerfile, entrypoint, and docker-compose standards: minimal secure images,
+  build cache, non-root, healthchecks, compose hygiene.
+globs:
+  - "**/Dockerfile"
+  - "**/Dockerfile.*"
+  - "**/*.dockerfile"
+  - "**/docker-compose*.yml"
+  - "**/docker-compose*.yaml"
+  - "**/compose*.yml"
+  - "**/compose*.yaml"
+  - "**/entrypoint*.sh"
+  - "**/.dockerignore"
+alwaysApply: false
+---
+# Docker Standards
+
+## Base images
+- Pin versions — `FROM node:22.12-alpine3.21`, never `:latest`. Prefer minimal official images (alpine/slim variants).
+- One concern per container; split web app, database, cache, and workers into separate services.
+
+## Dockerfile
+- Multi-stage builds: build stage with toolchain, slim runtime stage that copies only artifacts.
+- Order instructions least → most frequently changing to maximize layer-cache hits: copy dependency manifests, install, then copy source.
+
+```dockerfile
+# ✅ GOOD — cache survives source changes
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY . .
+```
+
+- Combine `apt-get update` and install in one `RUN` with `--no-install-recommends`, sort packages alphabetically, clean up `/var/lib/apt/lists/*` in the same layer.
+- `ARG` for build-time values, `ENV` for runtime values; `WORKDIR` with absolute paths instead of `RUN cd`.
+- `COPY` over `ADD` (use `ADD` only for remote artifacts with `--checksum`).
+- Run as non-root: create a user, `chown` app files, `USER appuser` before `CMD`.
+- `HEALTHCHECK` on every long-running service.
+- Always ship a `.dockerignore` (`.git`, `node_modules`, `.env*`, logs, test artifacts).
+
+## Production vs development images
+- Never bake test, lint, or debugger tools into the production final stage — profiles do not strip packages already installed in a shared image.
+- Prefer one Dockerfile with stages `base` → `production` / `development`, selected via Compose `build.target`. Use separate `Dockerfile` / `Dockerfile.dev` only when the process model differs (e.g. nginx vs Next/Vite).
+- Compose selects the path with `profiles: [production]` / `profiles: [dev]` and/or `build.target`.
+- Bind-mount source only on the development path; production images copy built artifacts only (no live mounts of app source).
+
+## entrypoint.sh
+- Start with `#!/bin/sh` (or bash) and `set -e`; end with `exec "$@"` so the app becomes PID 1 and receives signals.
+- Entrypoints do setup only (migrations, waiting for deps, permissions) — no business logic.
+
+## Compose
+- Named volumes for persistence; bind mounts only for development.
+- Services talk via service names on the default/custom bridge network — never `network_mode: host`, never hardcoded container IPs.
+- Startup ordering via `depends_on` with `condition: service_healthy`, not sleep hacks.
+- Configuration via environment variables with defaults (`${VAR:-default}`); secrets come from `.env` (gitignored) or compose `secrets:` — never hardcoded in the file.
+- Logs go to stdout/stderr; never write log files inside the container.

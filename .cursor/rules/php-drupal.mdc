@@ -1,0 +1,48 @@
+---
+description: >-
+  Drupal 11 / PHP 8.5 standards: coding standards, OOP with dependency
+  injection, core APIs, caching, security. Applies to PHP and config files
+  under the Drupal web root.
+globs:
+  - "**/web/**/*.php"
+  - "**/web/**/*.module"
+  - "**/web/**/*.theme"
+  - "**/web/**/*.inc"
+  - "**/web/**/*.install"
+  - "**/web/**/*.yml"
+  - "**/composer.json"
+  - "**/composer.lock"
+alwaysApply: false
+---
+# Drupal 11 / PHP 8.5 Standards
+
+Target: Drupal 11 APIs only — no deprecated approaches. PHP 8.5 features (typed properties, enums, readonly, first-class callables) are welcome where they clarify code.
+
+## Coding standards
+- Drupal coding standards (PSR-12 based): 2-space indent, docblocks on all classes and public methods, `declare(strict_types=1)` in new class files.
+- `CamelCase` classes, `lowerCamelCase` properties/methods, `snake_case` procedural functions and hooks (`mymodule_entity_presave()`).
+- Custom modules in `web/modules/custom/`, custom themes in `web/themes/custom/`; PHP classes under the module's `src/` with PSR-4 namespaces.
+
+## Architecture
+- Prefer classes (services, controllers, plugins, event subscribers) over procedural code; `.module` files only hold hooks that have no OO replacement.
+- Inject services via the container (constructor injection, `create()` factory); never call `\Drupal::service()` inside injectable classes.
+- Use core APIs instead of reinventing: Entity API for data (never raw SQL against entity tables), Form API with validate/submit handlers, Config API for settings, Queue API / cron for background work, Batch API for long-running operations.
+
+## Database and updates
+- Database API with parameterized queries or entity queries — never string-concatenated SQL.
+- Schema changes only through `hook_update_N()`; keep data migrations separate from schema updates.
+- Never hack core or contrib — extend via modules, patches go through composer-patches.
+
+## Caching and performance
+- Attach cache metadata (`#cache` contexts, tags, max-age) to render arrays; invalidate via cache tags, don't disable caching.
+- Load entities in bulk (`loadMultiple()`, entity queries) — no loads inside loops.
+
+## Theming
+- Logic in preprocess functions, not Twig; templates only render prepared variables.
+- Attach assets via `*.libraries.yml` and `#attached` — no hardcoded `<script>`/`<link>` tags.
+- Prefer Single Directory Components (SDC) for new theme components.
+
+## Security
+- Sanitize output: Twig auto-escaping, `Xss::filter()`, `Html::escape()`; never render raw user input.
+- Check permissions before protected actions (`hasPermission()`, `AccessResult::allowedIf()`); deny by default.
+- Config export stays deterministic: no `uuid`/`_core` churn in committed config diffs.

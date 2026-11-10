@@ -1,0 +1,39 @@
+---
+description: >-
+  General Python 3.14 standards: PEP 8, modern type hints, ruff, pyproject,
+  pathlib, testing. Framework-specific rules live in stack rule sets.
+globs:
+  - "**/*.py"
+  - "**/pyproject.toml"
+alwaysApply: false
+---
+# Python Standards
+
+Target: Python 3.14 (or the project's pinned version). Framework rules (FastAPI, …) live in stack rule sets and take precedence for their code.
+
+## Style and typing
+- PEP 8: `snake_case` functions/variables, `PascalCase` classes, `UPPER_CASE` constants, 4-space indent.
+- Type hints on all function signatures using modern syntax: `list[str]`, `dict[str, int]`, `X | None` — not `List`, `Optional`.
+- Docstrings on every public module, class, and function: one summary line, then behavior notes (Google style).
+- Format and lint with **ruff** (`ruff format`, `ruff check`); configuration lives in `pyproject.toml`.
+
+## Project layout and dependencies
+- `pyproject.toml` is the single source of truth for metadata, dependencies, and tool config; use **uv** (preferred) or pip-tools with a committed lockfile.
+- src-layout for packages (`src/package_name/`), tests in `tests/` parallel to `src/`.
+- Pin direct dependencies; check license and maintenance status before adding anything new.
+
+## Idioms
+- `pathlib.Path` over `os.path`; context managers for resources; f-strings for formatting.
+- Prefer comprehensions and generators over manual loops where they stay readable.
+- `dataclasses` (or pydantic at validation boundaries) instead of dict-shaped data passed around.
+- Absolute imports; no wildcard imports.
+- Only catch exceptions you can handle; raise domain-specific exception classes, never bare `raise Exception`.
+- YAML always via `yaml.safe_load`/`safe_dump`; validate archive members before extraction (no `..` traversal).
+
+## Concurrency
+- I/O-bound concurrency: `asyncio` (or threads for blocking libraries); CPU-bound parallelism: `multiprocessing`/`concurrent.futures`. Never block an event loop with sync I/O.
+
+## Testing
+- **pytest** with plain `assert`, fixtures over setup/teardown classes, parametrize instead of copy-pasted cases.
+- Test behavior through public interfaces; mock only true externals (network, clock, filesystem).
+- Ensure all test libraries are installed in development build

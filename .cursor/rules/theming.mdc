@@ -1,0 +1,34 @@
+---
+description: >-
+  Corporate design enforcement: read the styleguide before writing any new CSS
+  or styling; never invent colors, fonts, or spacing outside the token system.
+globs:
+  - "**/*.css"
+  - "**/*.pcss"
+  - "**/*.scss"
+  - "**/*.tsx"
+  - "**/*.jsx"
+alwaysApply: false
+---
+# Theming / Corporate Design
+
+A corporate styleguide exists for all user-facing surfaces. **Read it before writing or changing any styling.**
+
+## Where the tokens live
+SODa corporate design (Inter / Noto Sans, orange `#e68500`, menu-bar motif: orange dot + black rule). No separate `STYLEGUIDE.md` exists; the token sources are:
+
+| Surface | Tokens | Build |
+| --- | --- | --- |
+| Public site + dashboard shell (`scs_custom_theme`) | `assets/scss/base/_vars.scss`, `_colors.scss`, `_typo.scss` | SCSS → `assets/css/styles.css` |
+| Manager UI (`soda_scs_manager_theme`, Tailwind v4) | `@theme` blocks in `pcss/` | host `npm run build` (see the theme's `AGENTS.md`) |
+| Keycloak login | `keycloak/keycloak/themes/scs/login/resources/css/scs-login.css` | container rebuild |
+| SCS Health | `scs-health/app/globals.css` | container rebuild |
+
+Read the relevant token file before styling. If a needed value is missing, ask instead of improvising.
+
+## Hard rules
+- **No new colors, fonts, radii, shadows, or spacing values.** Everything visual comes from the existing token system (CSS custom properties / `@theme` tokens). A raw hex value or arbitrary pixel size in component code is a defect.
+- New UI (pages, buttons, nav, cards, forms) reuses the documented patterns: page-shell widths, typography scale, focus states, header/footer anatomy — do not design parallel variants of existing components.
+- Both light and dark theme must be covered: every token used has a counterpart in both themes; never style only one mode.
+- Accessibility is part of the design: visible focus styles, WCAG AA contrast for token pairs, state never conveyed by color alone.
+- If a design need genuinely has no token or pattern, add the token to the central theme definition (and propose a styleguide update) — never inline the value.

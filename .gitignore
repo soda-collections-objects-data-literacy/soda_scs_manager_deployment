@@ -4,7 +4,7 @@
 # IDE / editor / OS
 .vscode/
 .idea/
-.cursor/
+.cursor/*.code-workspace
 *.swp
 *~
 .DS_Store

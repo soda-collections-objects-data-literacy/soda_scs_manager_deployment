@@ -1,0 +1,35 @@
+---
+description: >-
+  General CSS/PostCSS/SCSS standards: semantic selectors, tokens over
+  hardcoded values, low specificity, maintainable structure.
+globs:
+  - "**/*.css"
+  - "**/*.pcss"
+  - "**/*.scss"
+alwaysApply: false
+---
+# CSS Standards
+
+If the project has a styleguide (see theming rule), its tokens and patterns override anything here.
+
+## Selectors and naming
+- Semantic class names describing purpose, not appearance: `.btn-primary`, `.nav-item` — never `.big-red-text`.
+- Lowercase with hyphens; no camelCase, no underscores, no over-qualified selectors (`.container`, not `div.container`).
+- Keep specificity low and flat: no ID selectors for styling, nesting max 3 levels, no `!important` except to override third-party inline styles (comment why).
+
+## Values and properties
+- Design tokens / custom properties over hardcoded values; a repeated hex color or magic pixel value is a missing token.
+- Shorthand where it doesn't accidentally reset other properties (`margin: 0 auto`, but `margin-left` when overriding one side).
+- Unitless `line-height` and zero values (`margin: 0`, not `0px`); numeric font weights (`700`, not `bold`); leading zero for decimals (`0.5`).
+- Lowercase hex, shortened where possible (`#fff`); `rgba()`/`color-mix()` when opacity is needed.
+
+## Structure
+- Group styles by component/section, consistently ordered properties within a block (display → position → box model → typography → color → other).
+- Media queries live next to the component they modify, mobile-first (`min-width` scaling up).
+- One selector per line; comments explain *why* (workarounds, stacking contexts, browser quirks), with a table of contents only for long framework-free stylesheets.
+
+## Maintainability
+- Don't restate defaults (`display: block` on a `div`).
+- Target the element you style directly, not through parent chains that break when the DOM moves.
+- Before adding an override, try removing the rule that forces it.
+- Preprocessor usage (SCSS/PostCSS): variables and mixins for repetition, partials per component, no deep `@import` chains.

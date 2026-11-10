@@ -1,0 +1,48 @@
+---
+description: >-
+  Application logging standards: correct log levels, structured logs with
+  context, no sensitive data, performance awareness. Applies to all
+  application code.
+globs:
+  - "**/*.py"
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.js"
+  - "**/*.jsx"
+  - "**/*.php"
+  - "**/*.module"
+alwaysApply: false
+---
+# Logging Standards
+
+Use the project's established logging framework (Python `logging`/structlog, Pino for Node, Drupal logger channel) — never `print()`/`console.log` for operational logging.
+
+## Log levels
+- `DEBUG`: diagnostic detail, off in production by default.
+- `INFO`: significant business events (job started, order created).
+- `WARNING`: abnormal but handled situations that may indicate future problems.
+- `ERROR`: unrecoverable failure of a specific operation.
+- `CRITICAL`/`FATAL`: failure affecting the entire application.
+- Level comes from configuration (env var), never hardcoded; don't log routine noise at `INFO`.
+
+## Structure and context
+- Structured logging (JSON in production): key-value fields, not string interpolation of data into the message.
+- Every entry carries enough context to act on it: request/correlation ID, user/entity ID, relevant metadata; errors include the stack trace and the events leading up to them.
+- One meaningful message beats five vague ones — write for the future reader debugging at 3 a.m. Prefer a canonical summary log line per request over scattered fragments.
+
+```python
+# ❌ BAD — no context, unparseable
+logging.error("Login failed")
+
+# ✅ GOOD — structured, actionable
+logger.error("login failed: invalid password", extra={"user_id": user.id, "request_id": rid, "attempt": n})
+```
+
+## Sensitive data
+- **Never log** passwords, tokens, session IDs, API keys, or full personal data (GDPR) — not even at `DEBUG`.
+- Don't dump whole objects/payloads into logs; log explicit fields, or give models a safe log representation so future fields can't leak.
+
+## Performance and scope
+- No expensive computation just for a log call; use lazy/deferred formatting on hot paths, and consider sampling for high-volume repeated events.
+- Logs are for troubleshooting, not monitoring: rates, latencies, and trends belong in metrics, not in log-line counting.
+- Where logs go (stdout/stderr in containers, aggregation, retention, encryption) is infrastructure — see the docker rule and the stack's `stack-environment` rule; application code never writes its own log files.

@@ -1,0 +1,110 @@
+---
+description: >-
+  Project documentation in docs/ with Zensical: user docs (GUI how-tos) and
+  technical docs (developer/backend), kept in sync with code.
+globs:
+  - "docs/**"
+  - "**/zensical.toml"
+  - "**/README.md"
+alwaysApply: false
+---
+# Documentation (Zensical)
+
+Everything we build gets documented in `docs/`, built with [Zensical](https://zensical.org/) — the successor to Material for MkDocs by the same team. Docs are code: versioned in git, updated in the **same change set** as the feature, reviewed with it.
+
+## Two audiences, two trees (per language)
+
+Languages live under `docs/en/` and `docs/de/`. Zensical builds them separately to `site/en/` and `site/de/` (language selector via `project.extra.alternate`). For the DE site, `build-docs.bash` copies `docs/en/` into `.docs-build/de/` and lays `docs/de/` over it, so a page without a DE file shows up **in English inside the German menu**.
+
+- A new or changed page gets both `docs/en/` and `docs/de/` in the same change set; nav entries go into `zensical.toml`, `zensical.en.toml` (English labels) and `zensical.de.toml` (German labels).
+- Anchors differ per language (headings are slugified). Links between DE pages use the German anchors.
+
+- `docs/<lang>/user/` — **user documentation**: how to *use* the software, frontend/GUI focused. Task-oriented step-by-step guides ("How to create a report"), screenshots of the UI, FAQs. No internals, no code, no jargon; write for a non-developer.
+- `docs/<lang>/technical/` — **technical documentation**: how it's *built*, developer/backend focused. Architecture overview, setup/installation, API reference, data model, deployment, decisions and trade-offs. Complete, copy-paste-ready code examples.
+
+Never mix audiences in one page. `docs/<lang>/index.md` is the landing page linking both trees. Hosted technical paths (`/en/technical`, `/de/technical`) require admin SSO.
+
+## README vs docs/
+
+`README.md` is the shop window, `docs/` is the shop. The README stays a short introduction — everything substantial lives in `docs/` and is linked, never duplicated:
+
+- README sections, in order: title + one-liner (what it is, who it's for), optional screenshot/demo, quickstart (minimal install + run, a few commands max), key features, tech stack, link to the full documentation, license.
+- No walls of text, no dev journal, no detailed how-tos, no API or architecture content — those belong in `docs/user/` and `docs/technical/`.
+- If a README section grows beyond ~10 lines, move the content to `docs/` and leave a link.
+- Keep the quickstart runnable; an outdated README command is a bug like any other stale doc.
+
+## Setup and structure
+
+This project uses `zensical.toml` / `zensical.en.toml` / `zensical.de.toml` (settings under `[project]`). Build both languages with `./01_scripts/global/build-docs.bash` (Docker image `zensical/zensical`). Hosted docs: `core--docs--app` at `docs.<SCS_SUBDOMAIN>.<SCS_BASE_DOMAIN>`.
+
+```
+zensical.toml / zensical.en.toml / zensical.de.toml
+docs/
+  en/                 # English source of truth
+    index.md
+    user/
+    technical/
+  de/                 # German overlays (user guide + translated pages)
+site/                 # build output (gitignored): index.html + en/ + de/
+```
+
+Minimal language config:
+
+```toml
+[project]
+site_name = "My Project"
+docs_dir = "docs/en"
+site_dir = "site/en"
+site_url = "https://docs.example.org/en/"
+nav = [
+  "index.md",
+  {"User Guide" = ["user/index.md"]},
+  {"Technical" = ["technical/index.md"]},
+]
+
+[project.extra]
+alternate = [
+  { name = "English", link = "/en/", lang = "en" },
+  { name = "Deutsch", link = "/de/", lang = "de" },
+]
+
+[project.markdown_extensions.admonition]
+[project.markdown_extensions.pymdownx.details]
+[project.markdown_extensions.pymdownx.superfences]
+[project.markdown_extensions.pymdownx.tabbed]
+alternate_style = true
+```
+
+- Register every page in `nav`; keep nav order task-frequency-first for user docs, onboarding-first (setup before architecture) for technical docs.
+- Inverted pyramid per page: what/why first, steps next, background last. One `#` H1 per page, then `##`/`###` — never skip levels.
+
+## Markdown syntax
+
+Zensical keeps the Material for MkDocs syntax. Use its features instead of plain-markdown workarounds:
+
+```markdown
+!!! warning "Data loss"
+    Deleting a project removes all its reports.
+
+??? info "Details for the curious"
+    Collapsed by default — background info goes here.
+
+=== "Linux"
+    ```bash
+    ./install.sh
+    ```
+=== "macOS"
+    ```bash
+    brew install foo
+    ```
+```
+
+- Admonitions (`!!! note|tip|warning|danger`) for callouts, `???` for collapsible detail (`???+` starts expanded) — indent content by 4 spaces.
+- Content tabs (`=== "Label"`) for OS/language/role alternatives.
+- Fenced code blocks always carry a language; use `mermaid` fences for diagrams instead of committed images where possible.
+
+## Keeping docs current
+
+- A change that alters behavior, UI, API, or setup updates the affected pages in the same change set — stale docs are bugs.
+- Update screenshots when the UI changes; keep code examples runnable.
+- Deprecated features: mark with a `!!! warning "Deprecated"` admonition, link the replacement and migration steps — don't delete the page while users may still be on the old version.

@@ -1,0 +1,40 @@
+---
+description: >-
+  Core clean-code standards for every project: naming, structure, comments,
+  changelog discipline. Always active.
+alwaysApply: true
+---
+# Clean Code
+
+## Naming
+- Names reveal intent: variables, functions, and classes explain *why they exist* and *what they do*. No abbreviations unless universally understood (`id`, `url`, `db`).
+- Booleans read as predicates (`isLoading`, `hasError`, `canRetry`).
+- Replace magic numbers and strings with named constants at the top of the file or in a dedicated constants module.
+
+## Functions and structure
+- One function, one job. If a function needs a comment to explain *what* it does, split it.
+- Keep functions short and nesting shallow; prefer early returns over deep `if` pyramids.
+- DRY: extract repeated logic into a shared function once it appears a third time — but do not abstract prematurely for hypothetical reuse.
+- Keep related code together; follow the existing file and folder conventions of the project instead of inventing new ones.
+
+## Comments
+- Code says *what*, comments say *why*: document non-obvious intent, trade-offs, workarounds, and side effects.
+- Never add comments that narrate the code (`// increment counter`). Delete commented-out code — git remembers it.
+
+## Errors and edge cases
+- Never swallow errors silently: log with context or rethrow a domain-specific error.
+- Validate at system boundaries (user input, external APIs); trust internal code and framework guarantees.
+
+## Quality gates
+- Fix linter and type errors you introduce before finishing; don't suppress warnings to silence them.
+- Every bugfix ships with a regression test.
+- Leave code cleaner than you found it, but keep unrelated cleanup out of the current change.
+
+## Changelog
+- Maintain `CHANGELOG.md`: every user-facing change is recorded under `[Unreleased]` in the same change set (format details in the changelog rule).
+
+## Version control
+- Small, focused commits. Subject: one plain English sentence in the imperative, ending with a period (`Run WissKI updates as queued background jobs.`), no `feat:` prefix; the body explains *why*.
+- Never commit secrets, credentials, or `.env` files.
+- Tags are plain `X.Y.Z`, annotated, never `vX.Y.Z`.
+- Don't push: the SSH key has a passphrase. Pushes are collected in `plans/push-plan.txt` and run by `01_scripts/global/push-release-plan.bash` (skills `/git-commit`, `/release`, `/scs-release-prep`).
