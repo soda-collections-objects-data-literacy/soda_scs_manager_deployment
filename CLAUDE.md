@@ -1,26 +1,25 @@
 # SODa SCS Manager deployment
 
-The project rules live in `.cursor/rules/` and are shared by Cursor and Claude Code.
+The rules are written once, in `.cursor/rules/*.mdc`, for Cursor and Claude Code.
+`.claude/rules/` links to them, so Claude Code loads them by itself:
+`stack-operations` and `clean-code` always, the others when you open a file that
+matches their `paths:` (changelog, docs, Docker, PHP/Drupal, CSS, theming,
+Python, TypeScript, logging). Each rule file lists its patterns twice: `globs:`
+for Cursor, `paths:` for Claude Code. Keep the two lists the same, and add a
+link in `.claude/rules/` for every new rule.
+
 The skills live in `.cursor/skills/`; `.claude/skills/` only links to them.
 
-Always apply:
+Skills (the user starts them): `/update-stack`, `/git-commit`, `/release` (one
+repo), `/scs-release-prep` (all SCS repos, push plan and manual steps).
 
-@.cursor/rules/stack-operations.mdc
-@.cursor/rules/clean-code.mdc
+Subagents in `.claude/agents/` run on cheaper models. Hand them the reading-heavy
+work and keep decisions and anything that changes containers yourself:
 
-Read the matching rule before you edit these files:
-
-| Files | Rule |
+| Agent | Use it for |
 | --- | --- |
-| `CHANGELOG.md` | `.cursor/rules/changelog.mdc` |
-| `docs/**`, `zensical*.toml`, `README.md` | `.cursor/rules/documentation.mdc` |
-| Dockerfiles, compose files, entrypoints | `.cursor/rules/docker.mdc` |
-| PHP, `.module`, `.theme`, `.install`, Drupal YAML, composer | `.cursor/rules/php-drupal.mdc` |
-| CSS, SCSS, PCSS | `.cursor/rules/css.mdc`, `.cursor/rules/theming.mdc` |
-| Python | `.cursor/rules/python.mdc` |
-| TypeScript / JavaScript | `.cursor/rules/typescript.mdc` |
-| Application code (logging) | `.cursor/rules/logging.mdc` |
+| `log-triage` | container status and logs: why is a service unhealthy, what do the logs say |
+| `repo-inventory` | git state of the deployment, submodules, module and theme (step 1 of `/scs-release-prep`, before `/update-stack`) |
+| `docs-sync` | comparing `docs/en` with `docs/de` and the three `zensical*.toml`, translating pages |
 
-Skills: `/git-commit`, `/release` (one repo), `/scs-release-prep` (all SCS repos,
-push plan and manual steps). Nothing is pushed from the agent shell: the user runs
-`01_scripts/global/push-release-plan.bash`.
+Host-specific notes (dev or Prime) are in `CLAUDE.local.md`, which is not in git.
