@@ -181,6 +181,59 @@ Die Logs offen lassen, bis nginx läuft. Dann diese Zeilen suchen:
 
 Ein Start ohne `Package set changed` und ohne `Shipped content changed` hat beide Fingerabdrücke unverändert gefunden und nichts getan.
 
+#### Wenn Prime noch die Bind-Mounts hat
+
+Prime kann Modul und Theme noch aus Host-Checkouts einbinden, so wie Dev. Dann ändert ein neues Image nichts, `drush scs:check` fehlt womöglich, und ausgemusterte Themes bleiben aktiv. `update-stack.bash --prime --check` meldet das als `SCS Manager image: SKIPPED`. Die Mounts stehen in der gitignorierten Kopie `scs-manager-stack/docker-compose.override.yml`, nicht in der Quelle unter `00_custom_configs/`.
+
+**1. Prüfen, dass das Image nicht älter ist als die Site.** Jede Update-Hook-Nummer, die die Datenbank kennt, muss es im Image geben. Das Image darf mehr haben; die laufen beim Start.
+
+```bash
+cd /var/deploy/soda_scs_manager_deployment
+IMAGE=ghcr.io/soda-collections-objects-data-literacy/scs-manager-image-production:3
+docker pull -q "$IMAGE"
+# Schema-Version der Site
+docker exec manager--drupal--app drush ev "echo \Drupal::service('update.update_hook_registry')->getInstalledVersion('soda_scs_manager');"; echo
+# Modulversion und neuester Update-Hook im Image
+docker run --rm --entrypoint sh "$IMAGE" -c 'd=/opt/drupal/web/modules/contrib/soda_scs_manager; grep -m1 "^version" $d/*.info.yml; grep -oE "^function soda_scs_manager_update_[0-9]+" $d/soda_scs_manager.install | grep -oE "[0-9]+$" | sort -n | tail -1'
+```
+
+Ist der neueste Hook im Image kleiner als die Schema-Version, hier aufhören: erst das Modul releasen und das Image taggen (Schritt 3 und 4).
+
+**2. Sichern, was es nur auf Prime gibt.** Nicht committete Änderungen in den Host-Checkouts sind weg, sobald das Image läuft. Sie sichern, auf Dev einspielen und mit dem nächsten Release ausliefern.
+
+```bash
+BACKUP=/srv/backups/pre-update/$(date +%Y%m%d_%H%M%S)-manual; mkdir -p "$BACKUP"
+M=scs-manager-stack/volumes/drupal-root/web/modules/custom/soda_scs_manager
+git -C "$M" status --short
+git -C "$M" diff > "$BACKUP/soda_scs_manager-prime-local.patch"
+cp scs-manager-stack/docker-compose.override.yml "$BACKUP/scs-manager-stack.docker-compose.override.yml"
+```
+
+Dasselbe für die Theme-Checkouts unter `…/web/themes/custom/`.
+
+**3. Mounts entfernen und dem Major-Tag folgen.** Unterscheidet sich die Kopie von der Quelle nur durch die beiden Mount-Zeilen (`diff scs-manager-stack/docker-compose.override.yml 00_custom_configs/scs-manager-stack/docker/docker-compose.override.yml`), die Quelle darüberkopieren. Sonst die beiden Zeilen von Hand löschen.
+
+```bash
+cp 00_custom_configs/scs-manager-stack/docker/docker-compose.override.yml scs-manager-stack/docker-compose.override.yml
+sed -i 's/^SCS_MANAGER_IMAGE_VERSION=.*/SCS_MANAGER_IMAGE_VERSION=3/' .env
+./01_scripts/global/update-stack.bash --prime --check   # jetzt: "docker compose pull manager--drupal--app"
+./01_scripts/global/update-stack.bash --prime --apply
+```
+
+Das Skript sichert zuerst alle Datenbanken und erzeugt dann den Manager neu. Zu erwarten sind `Package set changed` (die neuen Update-Hooks laufen, ein ausgemustertes Theme wird deinstalliert) und meist `Shipped content changed`. Danach müssen `drush scs:check --problems` und die Theme-Prüfung grün sein. Zeigt ein Host-Timer direkt nach dem Start `never ran`, seinen nächsten Lauf abwarten: Ein Heartbeat während des Neustarts geht verloren.
+
+Danach Theme-Checkouts löschen, die der CHANGELOG ausmustert, zum Beispiel `…/web/themes/custom/soda_scs_manager_theme`, sobald `git status` und `git log --branches --not --remotes` nichts Lokales zeigen.
+
+**4. Zurück, wenn der Manager nicht hochkommt.**
+
+```bash
+cp "$BACKUP/scs-manager-stack.docker-compose.override.yml" scs-manager-stack/docker-compose.override.yml
+sed -i 's/^SCS_MANAGER_IMAGE_VERSION=.*/SCS_MANAGER_IMAGE_VERSION=3.3.1/' .env   # die Version, die vorher lief
+docker compose up -d manager--drupal--app
+```
+
+Sind die Datenbank-Updates schon gelaufen, passt das alte Modul womöglich nicht zum neuen Schema. Dann zusätzlich den Dump zurückspielen, den `--prime --apply` nach `/srv/backups/pre-update/<Zeitstempel>/all-databases.sql.gz` geschrieben hat, mit allen schreibenden Containern gestoppt.
+
 ### Was auf Prime liegen bleibt
 
 | Kommt aus dem Image | Bleibt |

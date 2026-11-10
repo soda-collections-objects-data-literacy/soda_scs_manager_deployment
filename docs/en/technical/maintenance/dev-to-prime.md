@@ -181,6 +181,59 @@ Leave the logs open until nginx is up. Then look for these lines:
 
 A start that prints neither `Package set changed` nor `Shipped content changed` found both fingerprints unchanged and did nothing.
 
+#### When Prime still has the bind mounts
+
+Prime may still bind-mount the module and the theme from host checkouts, as dev does. Then a new image changes nothing, `drush scs:check` can be missing, and retired themes stay enabled. `update-stack.bash --prime --check` reports it as `SCS Manager image: SKIPPED`. The mounts live in the gitignored copy `scs-manager-stack/docker-compose.override.yml`, not in the source under `00_custom_configs/`.
+
+**1. Check that the image is not older than the site.** Every update hook number the database knows must exist in the image. The image may have more; they run on start.
+
+```bash
+cd /var/deploy/soda_scs_manager_deployment
+IMAGE=ghcr.io/soda-collections-objects-data-literacy/scs-manager-image-production:3
+docker pull -q "$IMAGE"
+# Schema version of the site
+docker exec manager--drupal--app drush ev "echo \Drupal::service('update.update_hook_registry')->getInstalledVersion('soda_scs_manager');"; echo
+# Module version and newest update hook in the image
+docker run --rm --entrypoint sh "$IMAGE" -c 'd=/opt/drupal/web/modules/contrib/soda_scs_manager; grep -m1 "^version" $d/*.info.yml; grep -oE "^function soda_scs_manager_update_[0-9]+" $d/soda_scs_manager.install | grep -oE "[0-9]+$" | sort -n | tail -1'
+```
+
+If the newest hook in the image is lower than the schema version, stop: release the module and tag the image first (steps 3 and 4).
+
+**2. Save what only exists on Prime.** Uncommitted edits in the host checkouts are lost once the image runs. Save them, apply them on dev and ship them with the next release.
+
+```bash
+BACKUP=/srv/backups/pre-update/$(date +%Y%m%d_%H%M%S)-manual; mkdir -p "$BACKUP"
+M=scs-manager-stack/volumes/drupal-root/web/modules/custom/soda_scs_manager
+git -C "$M" status --short
+git -C "$M" diff > "$BACKUP/soda_scs_manager-prime-local.patch"
+cp scs-manager-stack/docker-compose.override.yml "$BACKUP/scs-manager-stack.docker-compose.override.yml"
+```
+
+Do the same for the theme checkouts under `…/web/themes/custom/`.
+
+**3. Remove the mounts and follow the major tag.** When the copy differs from the source only by the two mount lines (`diff scs-manager-stack/docker-compose.override.yml 00_custom_configs/scs-manager-stack/docker/docker-compose.override.yml`), copy the source over it. Otherwise delete the two lines by hand.
+
+```bash
+cp 00_custom_configs/scs-manager-stack/docker/docker-compose.override.yml scs-manager-stack/docker-compose.override.yml
+sed -i 's/^SCS_MANAGER_IMAGE_VERSION=.*/SCS_MANAGER_IMAGE_VERSION=3/' .env
+./01_scripts/global/update-stack.bash --prime --check   # now: "docker compose pull manager--drupal--app"
+./01_scripts/global/update-stack.bash --prime --apply
+```
+
+The script dumps all databases first and then recreates the manager. Expect `Package set changed` (the new update hooks run, a retired theme is uninstalled) and usually `Shipped content changed`. Afterwards `drush scs:check --problems` and the theme check must be green. If a host timer shows `never ran` right after the start, wait for its next run: a heartbeat sent while the manager was restarting is lost.
+
+Then remove theme checkouts the CHANGELOG retires, for example `…/web/themes/custom/soda_scs_manager_theme`, once `git status` and `git log --branches --not --remotes` show nothing local.
+
+**4. Roll back if the manager does not come up.**
+
+```bash
+cp "$BACKUP/scs-manager-stack.docker-compose.override.yml" scs-manager-stack/docker-compose.override.yml
+sed -i 's/^SCS_MANAGER_IMAGE_VERSION=.*/SCS_MANAGER_IMAGE_VERSION=3.3.1/' .env   # the version that ran before
+docker compose up -d manager--drupal--app
+```
+
+If the database updates already ran, the old module may not match the new schema. Then also restore the dump that `--prime --apply` wrote to `/srv/backups/pre-update/<timestamp>/all-databases.sql.gz`, with all writing containers stopped.
+
 ### What stays on Prime
 
 | Applied from the image | Left as it is |
