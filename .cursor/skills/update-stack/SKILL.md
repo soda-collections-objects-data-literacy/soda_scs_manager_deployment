@@ -12,7 +12,9 @@ disable-model-invocation: true
 
 All mechanics live in `01_scripts/global/update-stack.bash`. Do not hand-roll `git pull` / `docker compose` sequences — run the script, read its output, and handle what it reports.
 
-## Workflow
+**Which host?** If `SCS_MANAGER_MODE=production` in `.env` (Prime, `/var/deploy/soda_scs_manager_deployment`), use **[Prime](#prime-production)** below. Everything else (dev) uses the workflow right after this.
+
+## Workflow (dev)
 
 ```
 - [ ] Step 1: Check (read-only)
@@ -69,6 +71,45 @@ Builds can take minutes (webprotege/maven, voyager/npm): use a long timeout or r
 If a rebuilt service fails, offer a rollback: `git -C <path> checkout <FROM-sha>` (from the table), rebuild and recreate that one service.
 
 **Step 5: Submodule pointers.** Moving submodules leaves modified pointers in the deployment repo (script lists them). Ask whether to commit them; if yes use `/git-commit` (message like `Update scs-voyager to v0.68.0 and scs-health to main@abc1234.`). Push only if asked.
+
+## Prime (production)
+
+Prime follows the submodule pointers recorded in the deployment repo, never the newest tag or branch head. That is `--prime`; the dev mode and `start.sh` (`--remote`) are wrong here. Background and the manual steps it automates: `docs/en/technical/maintenance/dev-to-prime.md`.
+
+```
+- [ ] Step 1: ./01_scripts/global/update-stack.bash --prime --check
+- [ ] Step 2: Show the plan, wait for the user's yes
+- [ ] Step 3: ./01_scripts/global/update-stack.bash --prime --apply
+- [ ] Step 4: Verify (the script does it, you read it)
+- [ ] Step 5: Hand over the manual steps
+```
+
+**Step 1: Check.** `--prime --check` changes nothing. Exit code 1 means something blocks the apply. It prints:
+
+- pre-checks: `SCS_MANAGER_MODE` must be `production` (aborts otherwise); `SCS_MANAGER_IMAGE_VERSION` is shown, normally `3` — a full version (e.g. `3.3.1`) pins that release, so no newer manager image arrives. Report it, change `.env` only on request.
+- one row per repo: current commit → recorded pointer. `BLOCKED: checkout is not behind the pointer` means the checkout has commits the pointer lacks; following would move it backwards — ask the user.
+- commit log per moving repo, override copies (`COPY` / `unchanged` / `MANUAL` when the stack copy has local edits), systemd units (`DIFFERS` / `NOT INSTALLED`) with the `sudo` commands.
+- planned builds and recreates, image tag changes, whether the SCS Manager image is updated or `SKIPPED` because of a module/theme bind mount.
+- new CHANGELOG sections and **bold** lines (manual steps) of the moving repos.
+- the current Drupal checks and the manual steps that will remain.
+
+Git reads over HTTPS when SSH needs a passphrase (SSH runs in batch mode, it never prompts). If a private repo cannot be fetched, ask the user to load the key (`ssh-add`) — never enter a passphrase yourself.
+
+**Step 2: Review.** Summarise for the user: which repos move and why it matters, what is built and recreated, the snapshot, units, and every `BLOCKED` line. Resolve blockers with the user, never by force: uncommitted changes are committed, stashed or reverted by the user — no `reset`, no `checkout --`. **Do not run `--apply` without an explicit yes.**
+
+**Step 3: Apply.** `./01_scripts/global/update-stack.bash --prime --apply` (long timeout or background: builds take minutes, the manager start up to 15 min). It runs, in order:
+
+1. `git merge --ff-only` in the deployment, `git submodule update --init --recursive` (no `--remote`).
+2. Copies changed override sources into `scs-manager-stack/` and `scs-project-website-stack/` (only if the copy had no local edits).
+3. Systemd units: as root it installs them, otherwise it lists the `sudo` commands as manual steps.
+4. Builds services whose build context changed, pulls the manager image.
+5. Before the first recreate: a gzip dump of all databases to `/srv/backups/pre-update/<timestamp>/` (`--no-snapshot` skips it, `SCS_UPDATE_BACKUP_DIR` moves it). When the Nextcloud image tag changes, also `backup-nextcloud.bash`. A failed backup stops the run before any container is touched.
+6. `docker compose up -d` for running services (only changed ones are recreated), `--force-recreate` for rebuilt or bind-mount-affected ones. Never `docker restart`, never `down`.
+7. SCS Manager (path B step 5): only without a module/theme bind mount; `up -d`, follows the log until healthy, reports `Package set changed`, `Shipped content changed` and `ERROR:`.
+
+**Step 4: Verify.** The script checks `docker compose ps` (no `unhealthy`/`Restarting`/`Exited`), `drush updatedb:status`, `drush scs:check --problems` and the enabled themes (only `scs_custom_theme`, `gin`, core; `soda_scs_manager_theme` is gone since module 4.3.0). Exit code 1 = a check failed: read `docker compose logs --tail 100 <service>` and report with excerpts. Do not claim success on a red check. On success it records the applied commit in `.git/update-stack-prime.applied`, the baseline for the next run (`--since <rev>` overrides it).
+
+**Step 5: Manual steps.** Pass the script's checklist on verbatim: `sudo` unit commands, Nextcloud repair after a version change (`01_scripts/scs-nextcloud-stack/run-nextcloud-repair.bash`, then `occ app:update --all` — suggest, do not run), override merges, and the **bold** CHANGELOG steps (drush commands, new settings). If you commit anything on Prime, append the push to `plans/push-plan.txt` for `01_scripts/global/push-release-plan.bash`; do not push.
 
 ## Notes
 
