@@ -20,7 +20,8 @@ SODa corporate design (Inter / Noto Sans, orange `#e68500`, menu-bar motif: oran
 | Surface | Tokens | Build |
 | --- | --- | --- |
 | Public site + dashboard shell (`scs_custom_theme`) | `assets/scss/base/_vars.scss`, `_colors.scss`, `_typo.scss` | SCSS → `assets/css/styles.css` |
-| Manager UI (`soda_scs_manager_theme`, Tailwind v4) | `@theme` blocks in `pcss/` | host `npm run build` (see the theme's `AGENTS.md`) |
+| Base reset, body font, cookie banner (`scs_custom_theme`) | `assets/css/reset.css`, `assets/css/cookie-banner.css` | plain CSS, no build |
+| Manager UI (module `soda_scs_manager`, Tailwind v4) | `pcss/colors.pcss`, `@theme` blocks in `pcss/components/` | `npm run build` in the module → `css/soda-scs-manager.css` (no Node on the host: `node:22-alpine` container) |
 | Keycloak login | `keycloak/keycloak/themes/scs/login/resources/css/scs-login.css` | container rebuild |
 | SCS Health | `scs-health/app/globals.css` | container rebuild |
 

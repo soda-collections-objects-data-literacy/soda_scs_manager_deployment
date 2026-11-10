@@ -19,9 +19,8 @@ services:
     volumes:
       # Site settings and public files (replaces the named sites volume).
       - ./scs-manager-stack/volumes/drupal-root/web/sites:/opt/drupal/web/sites
-      # Custom module and themes as host git clones.
+      # Custom module and theme as host git clones.
       - ./scs-manager-stack/volumes/drupal-root/web/modules/custom/soda_scs_manager:/opt/drupal/web/modules/contrib/soda_scs_manager
-      - ./scs-manager-stack/volumes/drupal-root/web/themes/custom/soda_scs_manager_theme:/opt/drupal/web/themes/custom/soda_scs_manager_theme
       - ./scs-manager-stack/volumes/drupal-root/web/themes/custom/scs_custom_theme:/opt/drupal/web/themes/custom/scs_custom_theme
       # Xdebug settings for the host IDE (replaces the image's file).
       - ./scs-manager-stack/configs/php/zz-xdebug-debug.ini:/usr/local/etc/php/conf.d/zz-xdebug-custom.ini:ro

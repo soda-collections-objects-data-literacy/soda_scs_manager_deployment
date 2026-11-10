@@ -70,11 +70,11 @@ Ein `git pull` ändert einen laufenden Container nicht. `docker restart` lädt k
 
 Wechselt die Nextcloud-Version, zuerst sichern und danach die Repair-Schritte aus [Updates](updates.md#nextcloud-aktualisieren) ausführen. Ein Recreate mitten in der Migration abbrechen lässt die Instanz in Maintenance.
 
-## Weg B: SCS Manager, Modul, Themes und Seiten
+## Weg B: SCS Manager, Modul, Theme und Seiten
 
-Dev bindet Modul und Themes aus den Checkouts. Prime startet die Kopien aus dem Production-Image. Ein Push von Modul oder Theme allein ändert Prime nicht.
+Dev bindet Modul und Theme aus den Checkouts. Prime startet die Kopien aus dem Production-Image. Ein Push von Modul oder Theme allein ändert Prime nicht.
 
-Reihenfolge: Seiten packen, Themes pushen, Modul releasen, Image taggen, auf Prime ziehen. Einen Schritt weglassen, dessen Baum sich nicht geändert hat.
+Reihenfolge: Seiten packen, Theme pushen, Modul releasen, Image taggen, auf Prime ziehen. Einen Schritt weglassen, dessen Baum sich nicht geändert hat.
 
 ### 1. Seiten nach `content/sync` packen
 
@@ -91,23 +91,18 @@ git commit -m "Update the shipped home page and legal pages."
 git push origin main
 ```
 
-### 2. Themes pushen
+### 2. Theme pushen
 
-Der Image-Bau klont `scs_custom_theme` von Branch `main` und `soda_scs_manager_theme` von Branch `1.x`. Commits, die nicht auf diesem Branch liegen, fehlen im Image. Schritt 1 hat `scs_custom_theme` schon gepusht, wenn sich nur die Seiten geändert haben.
+Der Image-Bau klont `scs_custom_theme` von Branch `main`. Commits, die nicht auf diesem Branch liegen, fehlen im Image. Das Styling der Manager-Oberfläche liegt im Modul (`css/soda-scs-manager.css`) und kommt mit dem Modul-Release. Schritt 1 hat `scs_custom_theme` schon gepusht, wenn sich nur die Seiten geändert haben.
 
 ```bash
 cd /var/www/deploy/soda_scs_manager_deployment/scs-manager-stack/volumes/drupal-root/web/themes/custom/scs_custom_theme
 git push origin main
 ```
 
-```bash
-cd /var/www/deploy/soda_scs_manager_deployment/scs-manager-stack/volumes/drupal-root/web/themes/custom/soda_scs_manager_theme
-git push origin 1.x
-```
-
 ### 3. Modul releasen
 
-Der Production-Bau installiert `drupal/soda_scs_manager` mit `^4.1` von Drupal.org. Der Branch `4.x` allein ist nicht im Production-Image.
+Der Production-Bau installiert `drupal/soda_scs_manager` mit `^4.3` von Drupal.org. Der Branch `4.x` allein ist nicht im Production-Image.
 
 Vor dem Tag den Abschnitt `[Unreleased]` in `CHANGELOG.md` in die neue Version schieben. `4.1.1` durch den nächsten Tag ersetzen, höher als der letzte (`git tag -l '4.*' --sort=-v:refname | head -1`). `origin` ist `git.drupal.org`. Ein Tag nur auf dem GitHub-Fork reicht nicht.
 
@@ -133,7 +128,7 @@ git push origin 3.3.5
 
 Warten, bis [Publish SCS Manager Docker Images](https://github.com/soda-collections-objects-data-literacy/scs-manager-image/actions) grün ist. `3.3.5` durch den nächsten Tag ersetzen.
 
-Die Vorgabe `^4.1` nur in `repos/scs-manager-image/.github/workflows/build-image.yml` ändern, wenn sich die Zeile selbst ändert (`SODA_SCS_MANAGER_VERSION`, `SODA_SCS_MANAGER_DEV_VERSION`, `SCS_CUSTOM_THEME_REF`). Diese Datei vor dem Tag committen und mit pushen.
+Die Vorgabe `^4.3` nur in `repos/scs-manager-image/.github/workflows/build-image.yml` ändern, wenn sich die Zeile selbst ändert (`SODA_SCS_MANAGER_VERSION`, `SODA_SCS_MANAGER_DEV_VERSION`, `SCS_CUSTOM_THEME_REF`). Diese Datei vor dem Tag committen und mit pushen.
 
 ### 5. Auf Prime das Image starten
 

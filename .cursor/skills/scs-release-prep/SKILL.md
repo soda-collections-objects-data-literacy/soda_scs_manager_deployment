@@ -37,13 +37,15 @@ All paths relative to `/var/www/deploy/soda_scs_manager_deployment`.
 | Submodules | every path from `git submodule status --recursive` (jupyterhub, keycloak, open_gdb, scs-health, scs-manager-stack, scs-nextcloud-stack + `apps/scs_manager_integration`, scs-project-website-stack, scs-voyager, webprotege) | the branch checked out | `origin` | only if the repo already has version tags and the user wants one | only open_gdb (images) |
 | Module | `scs-manager-stack/volumes/drupal-root/web/modules/custom/soda_scs_manager` | `4.x` | `origin` = git.drupal.org, `fork` = GitHub | **tag `4.x.y`** when it changed since the last tag | drupal.org packages a tag **only after a release node exists** (manual) |
 | Theme | `scs-manager-stack/volumes/drupal-root/web/themes/custom/scs_custom_theme` | `main` | `origin` | none (image clones `main`) | none |
-| Image | `repos/scs-manager-image` | `main` | `origin` (https, pushed over SSH) | **tag `3.x.y`** whenever module, theme, shipped content or the image changed | GitHub Actions builds `:main` on push and `X.Y.Z`/`X.Y`/`X` on a tag; no GitHub Release object |
+| Image | `repos/scs-manager-image` | `main` | `origin` (https, pushed over SSH) | **tag `3.x.y`** whenever module, theme, shipped content or the image changed. If the image raises its module constraint (`SODA_SCS_MANAGER_VERSION`), even its `main` push waits for that module release on drupal.org, or the `:main` build fails | GitHub Actions builds `:main` on push and `X.Y.Z`/`X.Y`/`X` on a tag; no GitHub Release object |
 
-`soda_scs_manager_theme` (`web/themes/custom/soda_scs_manager_theme`, branch
-`1.x`) still exists while the module's `globalStyling` library depends on it.
-Treat it like the theme above until it is removed.
+The manager UI CSS is part of the module (`pcss/` → committed
+`css/soda-scs-manager.css`). If `pcss/` changed, rebuild it before committing
+(`npm run build` in the module; no Node on the host:
+`docker run --rm -u "$(id -u):$(getent group www-data | cut -d: -f3)" -v "$PWD":/m -w /m node:22-alpine sh -c 'npm install && npm run build'`)
+and commit the CSS with the change. The image needs a module release for it.
 
-Module and themes live in gitignored volume paths: separate repos, not
+Module and theme live in gitignored volume paths: separate repos, not
 submodules. Other `repos/*` (WissKI images, stacks, data model, packages) are out
 of scope unless the user names them.
 
@@ -85,7 +87,7 @@ something unexpected comes up.
 
 ### 3. Commit (innermost first)
 
-Order: `scs_manager_integration` → other submodules → module → theme(s) → image →
+Order: `scs_manager_integration` → other submodules → module → theme → image →
 deployment last.
 
 - Split mixed diffs into logical commits; stage explicit paths, never `git add -A`.
