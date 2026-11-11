@@ -98,6 +98,12 @@ services:
       RDF4J_TIMEOUT: ${RDF4J_TIMEOUT:-5}
       # Keep Today DNS while WissKI/Manager still call scs--authproxy.
       DJANGO_ALLOWED_HOSTS: ${OPEN_GDB_DOMAIN},${SCS_BASE_DOMAIN},${SCS_CONTAINER_AUTHPROXY:-opengdb--authproxy--proxy},${SCS_CONTAINER_AUTHPROXY:-opengdb--authproxy--proxy}:8000,scs--authproxy,scs--authproxy:8000
+      KEYCLOAK_SERVER_URL: ${OPEN_GDB_KEYCLOAK_SERVER_URL:-}
+      KEYCLOAK_CLIENT_ID: ${OPEN_GDB_KEYCLOAK_CLIENT_ID:-}
+      KEYCLOAK_CLIENT_SECRET: ${OPEN_GDB_KEYCLOAK_CLIENT_SECRET:-}
+      KEYCLOAK_ADMIN_GROUP: ${OPEN_GDB_KEYCLOAK_ADMIN_GROUP:-}
+      KEYCLOAK_REPO_MANAGER_GROUP: ${OPEN_GDB_KEYCLOAK_REPO_MANAGER_GROUP:-gdb-repo-managers}
+      KEYCLOAK_REPOS_CLAIM: ${OPEN_GDB_KEYCLOAK_REPOS_CLAIM:-gdb_repos}
     volumes:
       - authproxy-data:/data/
     depends_on:

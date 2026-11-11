@@ -100,6 +100,16 @@ DJANGO_SUPERUSER_NAME=admin
 DJANGO_SUPERUSER_PASSWORD=
 OPEN_GDB_DOMAIN=ts.scs.localhost
 PUBLIC_PORT=8082
+# SSO (Keycloak OIDC). Leave empty to keep username/password only.
+# Issuer URL (no trailing slash), e.g. https://auth.scs.localhost/realms/main
+OPEN_GDB_KEYCLOAK_SERVER_URL=
+OPEN_GDB_KEYCLOAK_CLIENT_ID=
+OPEN_GDB_KEYCLOAK_CLIENT_SECRET=
+# Group names that map to AuthProxy Admin / Repository Manager roles.
+OPEN_GDB_KEYCLOAK_ADMIN_GROUP=gdb-admins
+OPEN_GDB_KEYCLOAK_REPO_MANAGER_GROUP=gdb-repo-managers
+# Optional; default gdb_repos. Whitespace-separated repo ids in the ID token / userinfo.
+# OPEN_GDB_KEYCLOAK_REPOS_CLAIM=gdb_repos
 
 # Jupyter.
 # Optional if it matches code.${SCS_SUBDOMAIN}.${SCS_BASE_DOMAIN}; compose defaults match that pattern.
