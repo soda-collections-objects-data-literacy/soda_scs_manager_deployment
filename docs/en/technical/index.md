@@ -4,14 +4,18 @@ How the SODa SCS Manager deployment is built, installed, and operated. For end-u
 
 ## Start here
 
-1. [Glossary](glossary.md) — terms used in this project (SCS, Keycloak, Traefik, naming, …).
-2. [Prerequisites](initial-setup/prerequisites.md) — Docker, GitHub auth, `.env`.
-3. [Pre-start steps](initial-setup/pre-start-steps.md) — `start.sh`, network, database, pre-install scripts.
-4. [Post-configuration checklist](post-configuration/checklist.md) — Keycloak, Manager, Nextcloud, JupyterHub.
+1. [Glossary](glossary.md) — terms used in this project (sidecar, private files, Sail/LMDB, Keycloak, Traefik, naming, …).
+2. [Infrastructure inventory](service-infrastructure/inventory.md) — every Compose environment, container, and host unit.
+3. [Prerequisites](initial-setup/prerequisites.md) — Docker, GitHub auth, `.env`.
+4. [Pre-start steps](initial-setup/pre-start-steps.md) — `start.sh`, network, database, pre-install scripts.
+5. [Post-configuration checklist](post-configuration/checklist.md) — Keycloak, Manager, Nextcloud, JupyterHub.
 
 ## Sections
 
 - **[Service infrastructure](service-infrastructure/index.md)** — stack layout, Traefik, shared DB, Manager, Drive, Code, OpenGDB, website.
+  - [Infrastructure inventory](service-infrastructure/inventory.md) — what exists, what it does, where it is configured
+  - [Scripts catalogue](service-infrastructure/scripts.md) — `01_scripts/` and systemd units
+  - [Custom configs](service-infrastructure/custom-configs.md) — `00_custom_configs/`
   - [Architecture overview (C4 / Mermaid)](service-infrastructure/architecture-overview.md)
   - [Naming vocabulary](service-infrastructure/naming-vocabulary.md) — `{scope}--{service}--{function}`
   - [Naming migration plan](service-infrastructure/naming-migration-plan.md)

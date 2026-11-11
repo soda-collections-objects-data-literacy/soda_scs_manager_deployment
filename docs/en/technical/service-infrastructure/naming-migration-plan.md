@@ -159,7 +159,6 @@ Central DNS knobs: **`SCS_CONTAINER_*`** (see [Naming vocabulary — Environment
 Also update on-disk copies:
 
 - `scs-manager-stack/custom_configs/soda_scs_manager.settings.yml`
-- `scs-manager-stack/volumes/drupal-root/custom_configs/…`
 - **live** config in MariaDB (export before / import or `config:set` on cutover)
 
 Portainer / Jupyter / Nextcloud **public** baseUrls in settings usually stay on HTTPS domains — still verify nothing points at old Docker DNS.

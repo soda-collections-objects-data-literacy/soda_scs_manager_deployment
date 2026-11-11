@@ -61,7 +61,7 @@ Fixed, short vocabulary. Prefer these tokens; do not invent synonyms (`frontend`
 | `website` | Project website stack (if enabled) |
 | `health` | Operator health dashboard |
 | `dbms` | phpMyAdmin + forward-auth |
-| `proj-{id}` / `wisski--{id}` | Per-project WissKI instance (Portainer). **Deferred** — Today remains `{SERVICE_NAME}--drupal` etc. Prefer leaning `wisski--{id}--*` over `proj-{id}`; see [Naming migration plan — Wave Z](naming-migration-plan.md#wave-z--wisski-instances--todo--deferred). |
+| `proj-{id}` / `wisski--{id}` | Per-project WissKI instance (Portainer). **Deferred** — Today remains `{SERVICE_NAME}--drupal` etc. Prefer leaning `wisski--{id}--*` over `proj-{id}`; see [Naming migration plan — Wave Z](naming-migration-plan.md). |
 
 ---
 

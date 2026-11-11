@@ -48,7 +48,7 @@ After cloning, run `git submodule update --init --recursive`; `start.sh` also up
    - **Traefik:** `SCS_TRAEFIK_EMAIL`, `SCS_TRAEFIK_HASHED_PASSWORD`, `SCS_TRAEFIK_USERNAME` (for dashboard basic auth). Generate the hash with: `echo $(htpasswd -nb USERNAME PASSWORD) | sed -e s/\\$/\\$\\$/g`
    - **Nextcloud:** `NEXTCLOUD_ADMIN_USER`, `NEXTCLOUD_ADMIN_PASSWORD`, `NEXTCLOUD_DB_*`, `NEXTCLOUD_CLIENT_SECRET`.
    - **JupyterHub:** `JUPYTERHUB_CLIENT_SECRET`, `KC_USER_GROUPS`, `KC_ADMIN_GROUPS`.
-   - **OpenGDB:** `OPEN_GDB_DOMAIN`, `DJANGO_*` (secret, superuser, etc.).
+   - **OpenGDB:** `OPEN_GDB_DOMAIN`, `DJANGO_*` (secret, superuser, etc.). For Keycloak SSO on the AuthProxy UI, also set `OPEN_GDB_KEYCLOAK_SERVER_URL`, `OPEN_GDB_KEYCLOAK_CLIENT_ID`, `OPEN_GDB_KEYCLOAK_CLIENT_SECRET`, and optionally `OPEN_GDB_KEYCLOAK_ADMIN_GROUP` / `OPEN_GDB_KEYCLOAK_REPO_MANAGER_GROUP` / `OPEN_GDB_KEYCLOAK_REPOS_CLAIM` (see [Post-configuration checklist → OpenGDB](../post-configuration/checklist.md#opengdb)).
 
 See `example-env` and the main repository `README.md` for the full list. The Keycloak pre-install script checks a subset of these (see [Initial setup overview](index.md#required-environment-variables-keycloak-pre-install)).
 

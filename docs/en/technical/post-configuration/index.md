@@ -9,7 +9,8 @@ After the whole environment has started with `docker compose up -d`, many servic
 - **Nextcloud** — Plugins (Social Login, OnlyOffice, Draw.io) must be installed and enabled; Social Login must be configured with Keycloak (realm URL, client ID, client secret, redirect URL).
 - **JupyterHub** — Keycloak client ID and secret are from env; ensure the JupyterHub client in Keycloak has the “groups” (and optionally “gids”) scope so group-based access and spawner gids work; `KC_USER_GROUPS` and `KC_ADMIN_GROUPS` must match Keycloak group names.
 - **phpMyAdmin/DBMS** — Keycloak SSO with per-user `mariadb_password`; no pre-installed DB users; SCS Manager creates MariaDB users and syncs passwords to Keycloak when users create SQL components.
-- **OpenGDB, project website, Portainer, Traefik** — Domain, trusted hosts, admin accounts, and optional settings as described in the checklist.
+- **OpenGDB** — Public domain (`OPEN_GDB_DOMAIN`); optional Keycloak SSO via `OPEN_GDB_KEYCLOAK_*` (OIDC client, groups, `gdb_repos` claim) as in the checklist.
+- **Project website, Portainer, Traefik** — Domain, trusted hosts, admin accounts, and optional settings as described in the checklist.
 
 ## Checklist
 

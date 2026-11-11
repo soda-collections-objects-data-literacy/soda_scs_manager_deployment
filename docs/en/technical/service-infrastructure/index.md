@@ -2,7 +2,12 @@
 
 This section describes what is in the SODa SCS Manager deployment and how the services are wired.
 
-For a C4-style Mermaid map (Compose → containers → modules → integrations → configs/scripts), see **[Architecture overview](architecture-overview.md)**. Naming scheme: **[Naming vocabulary](naming-vocabulary.md)**. Migration (aliases, Manager settings, env, code): **[Naming migration plan](naming-migration-plan.md)**.
+- **[Infrastructure inventory](inventory.md)** — every Compose environment, container, and host unit (what / effect / where configured).
+- **[Scripts catalogue](scripts.md)** — `01_scripts/` and systemd timers.
+- **[Custom configs](custom-configs.md)** — `00_custom_configs/` overlays and templates.
+- **[Architecture overview](architecture-overview.md)** — C4-style Mermaid map.
+- **[Naming vocabulary](naming-vocabulary.md)** / **[Naming migration plan](naming-migration-plan.md)**.
+- **[Glossary](../glossary.md)** — sidecar, private files, Sail, LMDB, …
 
 ## Overview
 
@@ -13,7 +18,7 @@ The deployment is built from multiple Docker Compose files merged via the `COMPO
 
 All services that serve HTTP or need to be reached by Traefik attach to the same Docker network, `reverse-proxy`. The shared MariaDB instance is used by Keycloak, SCS Manager, Nextcloud, and the project website; each has its own database and user created by pre-install scripts.
 
-Keycloak is the central identity provider (IdP): SCS Manager, Nextcloud, JupyterHub, and WebProtégé use OpenID Connect to authenticate users against Keycloak.
+Keycloak is the central identity provider (IdP): SCS Manager, Nextcloud, JupyterHub, WebProtégé, and optionally OpenGDB AuthProxy use OpenID Connect to authenticate users against Keycloak.
 
 ## Architecture diagram
 
@@ -171,6 +176,7 @@ The `.po` path must be absolute. Drush resolves a relative path from the Drupal 
 ### OpenGDB
 
 - RDF4J (`opengdb--rdf4j--db`, alias `scs--rdf4j`), AuthProxy (`opengdb--authproxy--proxy`, alias `scs--authproxy`), OutProxy, nginx (`opengdb--nginx--edge`). Internal SPARQL from WissKI still uses the alias until cutover.
+- Optional Keycloak SSO on AuthProxy: set `OPEN_GDB_KEYCLOAK_SERVER_URL`, `OPEN_GDB_KEYCLOAK_CLIENT_ID`, and `OPEN_GDB_KEYCLOAK_CLIENT_SECRET` in `.env` (plus group / claim vars as needed). Compose maps them to AuthProxy `KEYCLOAK_*`. Setup steps: [Post-configuration checklist → OpenGDB](../post-configuration/checklist.md#opengdb).
 
 ### Project website (scs-project-website-stack)
 

@@ -116,9 +116,28 @@ Use this checklist after the whole environment has started (`docker compose up -
 
 ## OpenGDB
 
-- [ ] **AuthProxy** — OpenGDB AuthProxy (and any OIDC/Keycloak integration) is configured per deployment. List or verify any env or config that must be set after first start (e.g. allowed hosts, CORS, OIDC client).
+- [ ] **Domain** — `OPEN_GDB_DOMAIN` is used for Traefik Host routing and AuthProxy `DJANGO_CSRF_TRUSTED_ORIGINS` / `DJANGO_ALLOWED_HOSTS`. Ensure it matches the public URL (e.g. `ts.<SCS_SUBDOMAIN>.<SCS_BASE_DOMAIN>`).
 
-- [ ] **Domain** — `OPEN_GDB_DOMAIN` is used in the nginx template. Ensure trusted hosts and CORS (if applicable) match this domain.
+- [ ] **Keycloak OIDC client (SSO)** — AuthProxy can sign users in via Keycloak alongside local username/password. Create a confidential OIDC client in the realm (Client authentication on) with redirect URI:
+  ```
+  https://${OPEN_GDB_DOMAIN}/accounts/oidc/keycloak/login/callback/
+  ```
+  Add a **Group Membership** mapper so the ID token carries a `groups` claim. Add a mapper for the repository list claim (default name `gdb_repos`, whitespace-separated repository ids; user- or group-attribute mapper). Create the role groups (defaults: `gdb-admins`, `gdb-repo-managers`) and assign users as needed. The realm template does **not** create this client yet — configure it in Keycloak Admin (or extend `scs-realm.json.tpl` in a follow-up).
+
+- [ ] **SSO environment variables** — Set in the root `.env` (Compose maps them to AuthProxy `KEYCLOAK_*`):
+
+  | `.env` variable | Purpose |
+  |---|---|
+  | `OPEN_GDB_KEYCLOAK_SERVER_URL` | Keycloak issuer, e.g. `https://${KC_DOMAIN}/realms/${KC_REALM}` (no trailing slash) |
+  | `OPEN_GDB_KEYCLOAK_CLIENT_ID` | OIDC client id |
+  | `OPEN_GDB_KEYCLOAK_CLIENT_SECRET` | OIDC client secret (must match Keycloak Credentials) |
+  | `OPEN_GDB_KEYCLOAK_ADMIN_GROUP` | Keycloak group → AuthProxy `Admin` (e.g. `gdb-admins`; empty = no group maps to Admin) |
+  | `OPEN_GDB_KEYCLOAK_REPO_MANAGER_GROUP` | Keycloak group → `Repository Manager` (default `gdb-repo-managers`) |
+  | `OPEN_GDB_KEYCLOAK_REPOS_CLAIM` | Optional; claim name for repo ids (default `gdb_repos`) |
+
+  If `OPEN_GDB_KEYCLOAK_SERVER_URL`, `OPEN_GDB_KEYCLOAK_CLIENT_ID`, or `OPEN_GDB_KEYCLOAK_CLIENT_SECRET` is unset, SSO stays disabled. After changing these vars, recreate AuthProxy: `docker compose up -d --force-recreate opengdb--authproxy--proxy`.
+
+- [ ] **SSO behaviour** — On each SSO login, AuthProxy syncs role and per-repo access from the token claims (destructive: permissions not in the claims are removed). Upstream detail: `open_gdb/README.md` → *Single Sign-On (SSO) with Keycloak*.
 
 ---
 

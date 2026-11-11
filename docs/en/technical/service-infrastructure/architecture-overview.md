@@ -4,7 +4,7 @@ C4-inspired view of the **SODa SCS Manager deployment**: Compose app → Docker 
 
 **Target container DNS (migration):** `{scope}--{service}--{function}` — see **[Naming vocabulary](naming-vocabulary.md)**. Ist→Soll and cutover: [Naming migration plan](naming-migration-plan.md).
 
-Related detail pages: [Service infrastructure](index.md), [Naming vocabulary](naming-vocabulary.md), [Naming migration plan](naming-migration-plan.md), [Nextcloud mount sidecar](nextcloud-mount-sidecar.md), [WissKI stack](wisski-stack/index.md), [Maintenance](../maintenance/index.md).
+Related detail pages: [Service infrastructure](index.md), [Infrastructure inventory](inventory.md), [Scripts](scripts.md), [Custom configs](custom-configs.md), [Naming vocabulary](naming-vocabulary.md), [Naming migration plan](naming-migration-plan.md), [Nextcloud mount sidecar](nextcloud-mount-sidecar.md), [WissKI stack](wisski-stack/index.md), [Glossary](../glossary.md), [Maintenance](../maintenance/index.md).
 
 Container labels in the diagrams use the canonical DNS pattern `{scope}--{service}--{function}` (see [Naming vocabulary](naming-vocabulary.md)). Legacy aliases may still resolve during soak — cutover details: [Naming migration plan](naming-migration-plan.md).
 
@@ -99,6 +99,7 @@ flowchart TB
   NC -.->|OIDC| KC
   JH -.->|OIDC| KC
   WP -.->|OIDC| KC
+  OGAuth -.->|OIDC optional| KC
   FwdAuth -.->|OIDC| KC
   PMA --> FwdAuth
 
@@ -168,7 +169,7 @@ flowchart TB
 
   subgraph KeycloakComp["keycloak--keycloak--app"]
     Realm[Realm from scs-realm.json.tpl]
-    Clients[OIDC clients: Manager, Drive, Code, DBMS, WebProtégé, DIDMOS, Health]
+    Clients[OIDC clients: Manager, Drive, Code, DBMS, WebProtégé, DIDMOS, Health, OpenGDB]
     ThemeKC[SCS theme]
   end
 
@@ -305,26 +306,24 @@ flowchart TD
 
 ### Script map (`01_scripts/`)
 
+Full table: **[Scripts catalogue](scripts.md)**. Summary:
+
 | Area | Scripts | Responsibility |
 |------|---------|----------------|
 | **Global bootstrap** | `global/pre-install.sh`, `setup-nextcloud-mounts.sh` | Snapshot dirs, FUSE host bind |
-| **Per-stack pre-install** | `*/pre-install.sh` | DB users, realm/OIDC/VCL/nginx generation |
-| **Backup orchestrator** | `global/backup-all-services.bash` | Calls all service backups → `/srv/backups/` |
-| **Per-service backup** | `*-backup.bash` / `backup-*.bash` | Keycloak, Manager, Nextcloud, JupyterHub, OpenGDB, WebProtégé, project website |
+| **Per-stack pre-install** | `*/pre-install.sh` | DB users, realm/OIDC generation |
+| **Backup / update / docs** | `backup-all-services.bash`, `update-stack.bash`, `build-docs.bash`, `push-release-plan.bash` | Day-2 ops |
 | **Nextcloud maintain** | `run-nextcloud-repair.bash`, `apply-nextcloud-proxy-and-region.bash`, `configure-nextcloud-email.bash`, `fix-*.bash` | Post-update / warning fixes |
-| **DB** | `database/db-snapshot.bash` | MariaDB snapshots |
-| **WissKI** | `wisski/apply-performance-tuning.bash` | Tune running Portainer stacks |
-| **WebProtégé** | `configure-oidc.bash` | OIDC post-setup |
-| **Logs** | `global/truncate-runtime-logs.bash` | Disk hygiene |
-| **Stack helpers** | `scs-nextcloud-stack/start-services.bash`, `stop-services.bash` | Start/stop Nextcloud stack alone |
+| **Systemd** | `scs-*-queue.*`, `scs-nextcloud-mount*` | Demo/WissKI queues, mount reconcile |
 
-Entry point for first-time setup: **`./start.sh`** at repo root. Day-2 backup: **`01_scripts/global/backup-all-services.bash`**. Updates: [Maintenance / Updates](../maintenance/updates.md).
+Entry point for first-time setup: **`./start.sh`** at repo root. Day-2 backup: **`01_scripts/global/backup-all-services.bash`**. Updates: [Maintenance / Updates](../maintenance/updates.md). Custom overlays: [Custom configs](custom-configs.md).
 
 ### Docker service inventory (quick)
 
 | Stack / compose | Containers (typical) |
 |-----------------|----------------------|
-| Root | `core--traefik--edge` (alias `scs--reverse-proxy`), `core--mariadb--db` (alias `scs--database`), `core--portainer--app` (alias `scs--portainer`), `dbms--phpmyadmin--app` (alias `scs--phpmyadmin`), `dbms--forwardauth--proxy` (alias `scs--forward-auth`), `core--echo--app` (alias `scs--echo`), `core--rclone--sidecar` (alias `nextcloud-mounter`) |
+| Root | `core--traefik--edge` (alias `scs--reverse-proxy`), `core--mariadb--db` (alias `scs--database`), `core--portainer--app` (alias `scs--portainer`), `dbms--phpmyadmin--app` (alias `scs--phpmyadmin`), `dbms--forwardauth--proxy` (alias `scs--forward-auth`), `core--echo--app` (alias `scs--echo`), `core--rclone--sidecar` (alias `nextcloud-mounter`), `core--docs--app`, `core--docsauth--proxy`, `core--wisski-alias--edge` |
+| Voyager | `voyager--voyager--app` |
 | Keycloak | `keycloak--keycloak--app` (alias `keycloak--keycloak`) |
 | SCS Manager | `manager--drupal--app` (alias `scs-manager--drupal`), `manager--redis--cache` (alias `scs-manager--redis`) (DB/Varnish often disabled via override) |
 | Nextcloud | `nextcloud--nextcloud--app` (alias `nextcloud--nextcloud`), `nextcloud--nginx--edge` (alias `nextcloud--nextcloud-reverse-proxy`), `nextcloud--ods--app` (alias `nextcloud--onlyoffice-document-server`), `nextcloud--ods--edge` (alias `nextcloud--onlyoffice-reverse-proxy`), `nextcloud--redis--cache` (alias `nextcloud--redis`) |
