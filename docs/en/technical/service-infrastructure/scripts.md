@@ -28,7 +28,7 @@ Related: [Infrastructure inventory](inventory.md), [Custom configs](custom-confi
 | `backup-all-services.bash` | Runs every stack backup script | Manual / cron |
 | `build-docs.bash` | Build docs into `site/` for `core--docs--app` | Manual after doc changes |
 | `update-stack.bash` | Check/apply submodule + compose changes; `--prime` path | Manual |
-| `push-release-plan.bash` | Push commits/tags from `plans/push-plan.txt` (one SSH passphrase) | Manual |
+| `push-release-plan.bash` | Push commits/tags from `plans/push-plan.txt` and create GitHub Releases (`gh-release`; one SSH passphrase) | Manual |
 | `php-security-mitigation.bash` | Audit/apply/revert temporary PHP CVE mitigations in containers | Manual |
 | `truncate-runtime-logs.bash` | Truncate Nextcloud + MariaDB slow logs inside containers | Manual |
 | `delete.sh` | `compose down` + remove named volumes (**destructive**) | Manual only |

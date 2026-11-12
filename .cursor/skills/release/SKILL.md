@@ -64,9 +64,9 @@ Then list what CI does not do:
   `wait-drupal soda_scs_manager X.Y.Z`. Without the node nothing is packaged and
   the image keeps the old module.
 - **Image**: check *Publish SCS Manager Docker Images* in GitHub Actions; the tag
-  publishes `X.Y.Z`, `X.Y` and `X`.
-- **Any GitHub repo**: a GitHub Release is not created automatically —
-  `https://github.com/<owner>/<repo>/releases/new?tag=X.Y.Z` if wanted.
+  publishes `X.Y.Z`, `X.Y` and `X`. After the image `push`, add
+  `gh-release <path> <tag>` so the script creates the GitHub Release from the
+  annotated tag (same for other GitHub-hosted tags such as wisski-base-*).
 
 The user runs `01_scripts/global/push-release-plan.bash`.
 

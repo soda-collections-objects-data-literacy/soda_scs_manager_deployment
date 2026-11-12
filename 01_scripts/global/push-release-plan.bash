@@ -7,6 +7,8 @@
 #
 # Plan format, one action per line, lines starting with '#' are comments:
 #   push <repo-path> <remote> <refspec>...   git push, path relative to the deployment root
+#   gh-release <repo-path> <tag>             create a GitHub Release for an already-pushed tag
+#                                            (notes = annotated tag message; skips if it exists)
 #   show <file>                              print a file (e.g. release notes to paste), path relative to the deployment root
 #   pause <text>                             print a manual step, wait for Enter
 #   wait-drupal <project> <version>          wait until drupal.org lists the release
@@ -19,7 +21,8 @@
 #   01_scripts/global/push-release-plan.bash path/to/plan.txt
 #
 # --dry-run works offline from the last fetched remote state, no passphrase.
-# Re-running is safe: refs that are already on the remote are up to date.
+# Re-running is safe: refs that are already on the remote are up to date;
+# gh-release skips a tag that already has a GitHub Release.
 
 set -euo pipefail
 
@@ -34,7 +37,7 @@ WAIT_INTERVAL=30
 for arg in "$@"; do
   case "${arg}" in
     --dry-run|-n) DRY_RUN=1 ;;
-    -h|--help) sed -n '2,24p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,28p' "$0"; exit 0 ;;
     *) PLAN="${arg}" ;;
   esac
 done
@@ -112,6 +115,53 @@ do_wait_drupal() {
   echo "    ${project} ${version} is published."
 }
 
+# Resolve owner/repo from a GitHub remote (origin preferred).
+github_slug() {
+  local dir="$1" remote="${2:-origin}" url
+  url="$(git -C "${dir}" remote get-url "${remote}" 2>/dev/null)" || return 1
+  case "${url}" in
+    git@github.com:*)
+      url="${url#git@github.com:}" ;;
+    ssh://git@github.com/*)
+      url="${url#ssh://git@github.com/}" ;;
+    https://github.com/*|http://github.com/*)
+      url="${url#http*://github.com/}" ;;
+    *)
+      return 1 ;;
+  esac
+  url="${url%.git}"
+  [[ "${url}" == */* && "${url}" != */*/* ]] || return 1
+  printf '%s\n' "${url}"
+}
+
+do_gh_release() {
+  local path="$1" tag="$2"
+  local dir="${ROOT}/${path}" slug
+  [[ "${path}" == "." ]] && dir="${ROOT}"
+  [[ -d "${dir}" ]] && git -C "${dir}" rev-parse --git-dir >/dev/null 2>&1 \
+    || { echo "Not a git repo: ${path}" >&2; return 1; }
+  git -C "${dir}" show-ref --verify -q "refs/tags/${tag}" \
+    || { echo "MISSING local tag ${tag} in ${path}" >&2; MISSING=$(( MISSING + 1 )); return 1; }
+  slug="$(github_slug "${dir}")" \
+    || { echo "${path}: origin is not a GitHub remote; cannot create a release" >&2; return 1; }
+  echo "==> ${path}: GitHub Release ${tag} on ${slug}"
+  # Run gh inside the repo: --notes-from-tag cannot be combined with --repo.
+  if (( DRY_RUN )); then
+    if command -v gh >/dev/null 2>&1 && (cd "${dir}" && gh release view "${tag}" >/dev/null 2>&1); then
+      echo "    already exists"
+    else
+      echo "    would create (notes from annotated tag)"
+    fi
+    return 0
+  fi
+  command -v gh >/dev/null 2>&1 || { echo "gh is required for gh-release" >&2; return 1; }
+  if (cd "${dir}" && gh release view "${tag}" >/dev/null 2>&1); then
+    echo "    already exists, skipping"
+    return 0
+  fi
+  (cd "${dir}" && gh release create "${tag}" --title "${tag}" --notes-from-tag --verify-tag)
+}
+
 (( DRY_RUN )) || ensure_agent
 
 lineno=0
@@ -124,6 +174,9 @@ while IFS= read -r line || [[ -n "${line}" ]]; do
     push)
       (( ${#words[@]} >= 4 )) || { echo "Line ${lineno}: push <path> <remote> <refspec>..." >&2; exit 1; }
       do_push "${words[@]:1}" ;;
+    gh-release)
+      (( ${#words[@]} == 3 )) || { echo "Line ${lineno}: gh-release <path> <tag>" >&2; exit 1; }
+      do_gh_release "${words[1]}" "${words[2]}" ;;
     wait-drupal)
       (( ${#words[@]} == 3 )) || { echo "Line ${lineno}: wait-drupal <project> <version>" >&2; exit 1; }
       do_wait_drupal "${words[1]}" "${words[2]}" ;;
