@@ -16,6 +16,19 @@ There is **no separate Nginx container** in front of Varnish. Nginx runs **insid
 
 Database and triplestore are **shared SCS services** (`scs--database`, OpenGDB/RDF4J), not part of the per-instance compose file.
 
+### Image variants and WissKI module updates
+
+The Drupal/WissKI codebase is **baked into the image at build time**. The entrypoint does not run Composer on boot. A new commit on `drupal/wisski` `4.x-dev` therefore does **not** appear in a running container by itself.
+
+Packages come from [drupal_packages](https://github.com/soda-collections-objects-data-literacy/drupal_packages) (`wisski_base/…`). Which image picks up a floating `4.x-dev` commit depends on the variant:
+
+| Variant | GHCR image | How packages are resolved | When a new `4.x-dev` commit lands |
+|---------|------------|---------------------------|----------------------------------|
+| Production | `wisski-base-image-production` | Semver path + **lock file** under `wisski_base/production/<version>/` | Only after someone updates that lock/version and builds a **new image tag**, then pull and recreate |
+| Development | `wisski-base-image-development` | Floating line `wisski_base/development/4.x/` via `composer update` (no lock) | CI rebuilds the rolling `:main` tag **nightly** (~02:30 UTC) and on pushes to the image repo. No new image *release* tag is required; then pull and recreate (for example SCS Manager **Nightly** / package update) |
+
+Until you pull the new image and recreate `{SERVICE_NAME}--drupal`, the instance keeps the old baked code. Details: [wisski-base-image](https://github.com/soda-collections-objects-data-literacy/wisski-base-image) (workflow *Publish WissKI Base Docker Images*).
+
 ### Nextcloud external mount
 
 SCS Manager deploys stacks with a host bind of the **project Team Folder** only (not the owner’s whole Drive):
@@ -437,3 +450,5 @@ No Drupal or `wisski-base-image` change is required; PhpRedis 6.x speaks Redis 8
 - [WissKI Drupal `settings.php` snippets](../configs/index.md) — what the entrypoint writes into `settings.php`
 - [Reverse proxy knowledge base](../../knowledge-base/reverse-proxy-backend-config-knowledge-base.md)
 - [Post-configuration checklist](../../post-configuration/checklist.md) — WissKI proxy and Portainer steps
+- [wisski-base-image](https://github.com/soda-collections-objects-data-literacy/wisski-base-image) — production vs development package manifests and nightly development rebuild
+- [WissKI package update failures](../../troubleshooting/wisski-package-update.md)
