@@ -12,6 +12,8 @@ WissKI versteht sich als [virtuelle Forschungsumgebung](https://wiss-ki.eu/) und
 
 Technisch ist das verlinkte Wissen typischerweise in einem **externen Triplestore** mit eigenen Endpunkten abgelegt und damit in seiner RDF-Schicht weitgehend **unabhängig von der Drupal-Installation** adressierbar. In *dieser* Auslieferung ist WissKI für Sammlungskontexte vorkonfiguriert und kommt mit einem **OpenGDB-Triplestore**, einer **MariaDB-Datenbank** (Drupal) sowie einem abgestimmten **Standard-Datenmodell** und **Modul- und Setup** im Sinne des [WissKI Barrel](https://wisski-barrels.de/)-Ansatzes: vorgefertigte, praxiserprobte [Erschließungs- und Publikationsumgebungen](https://wisski-barrels.de/introduction) mit passenden Modulen, Eingabemasken und Ansichten (siehe [Vorgehen und Methodik](https://wisski-barrels.de/approach) am Barrel-Projekt).
 
+Das Standard-Datenmodell ist optional: Im Formular zum Anlegen gibt es die Checkbox **Mit WissKI Default Data Model**, die standardmäßig angehakt ist. Ohne Haken startet eine reine Drupal/WissKI-Site: Sie ist mit ihrem Triplestore verbunden, hat aber keine WissKI-Ontologie, kein Default Data Model und keine Eingabemasken oder Ansichten daraus. Eigene Ontologien und Pathbuilder legen Sie selbst an. Die Wahl lässt sich nach dem Anlegen nicht mehr ändern.
+
 Hintergrund und Community: Informationen zu Geschichte, Förderung und Vernetzung finden sich auf [wiss-ki.eu](https://wiss-ki.eu/) (u. a. [Dokumentation](https://wiss-ki.eu/documentation) sofern verlinkt) und in der [WissKI-Bibliothek (Zotero)](https://www.zotero.org/groups/4528320/wisski-library). Fragen an die Community: [E-Mail](mailto:info@wiss-ki.eu) oder [chat.wiss-ki.eu](http://chat.wiss-ki.eu/).
 
 ## Links

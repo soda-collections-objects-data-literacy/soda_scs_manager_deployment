@@ -12,6 +12,8 @@ WissKI is presented as a [virtual research environment](https://wiss-ki.eu/) and
 
 From a technical perspective, linked data is typically stored in a dedicated **external triple store** with its own endpoints, so the RDF layer remains largely **independently addressable from the Drupal site**. In *this* deployment, WissKI is preconfigured for collection use cases and ships with an **OpenGDB triple store**, a **MariaDB** database (for Drupal), and a coordinated **default data model** and **module setup** in the sense of the [WissKI Barrel](https://wisski-barrels.de/) approach: ready-to-use, field-tested [curation and publication environments](https://wisski-barrels.de/introduction) with appropriate modules, forms, and views (see the [approach and methodology](https://wisski-barrels.de/approach) of the Barrel project).
 
+The default data model is optional: the create form has the checkbox **With WissKI Default Data Model**, which is checked by default. Uncheck it to start with a plain Drupal/WissKI site: it is connected to its triple store, but has no WissKI ontology, no default data model, and no forms or views from it. You can import your own ontology and build your own pathbuilder. The choice cannot be changed after creation.
+
 Background and community: information on history, funding, and the wider community is on [wiss-ki.eu](https://wiss-ki.eu/) (including [documentation](https://wiss-ki.eu/documentation) as linked from the project site) and in the [WissKI Zotero library](https://www.zotero.org/groups/4528320/wisski-library). For questions, use [email](mailto:info@wiss-ki.eu) or [chat.wiss-ki.eu](http://chat.wiss-ki.eu/).
 
 ## Links
