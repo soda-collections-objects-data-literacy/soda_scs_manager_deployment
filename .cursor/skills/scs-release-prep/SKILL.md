@@ -2,8 +2,9 @@
 name: scs-release-prep
 description: >-
   Prepare all pending SCS changes for shipping: scan the deployment, its
-  submodules, the soda_scs_manager module, the scs_custom_theme and the
-  scs-manager-image repo; write changelog entries, commit cleanly, cut
+  submodules, the soda_scs_manager module, the scs_custom_theme, the
+  scs-manager-image repo and the WissKI base image and stack; find what was committed since each repo's last
+  release; write changelog entries, commit cleanly, cut
   releases/tags where needed, write a push plan the user runs with one script
   (SSH key has a passphrase), and list every manual step (drupal.org release
   node, CI checks, Prime) needed before the releases show up. Use when the user
@@ -46,8 +47,25 @@ The manager UI CSS is part of the module (`pcss/` → committed
 and commit the CSS with the change. The image needs a module release for it.
 
 Module and theme live in gitignored volume paths: separate repos, not
-submodules. Other `repos/*` (WissKI images, stacks, data model, packages) are out
-of scope unless the user names them.
+submodules.
+
+The WissKI base image and stack are in scope as well:
+
+| Repo | Path | Branch | Remote | Release | CI / consumers |
+| --- | --- | --- | --- | --- | --- |
+| WissKI base image | `repos/wisski-base-image` | `main` | `origin` GitHub (SSH) | **tag `X.Y.Z`** when it changed since the last tag (plain; ignore the old `vX.Y.Z` tags when finding the latest) | GitHub Actions builds `wisski-base-image-{production,development}`: `:main` on push, `X.Y.Z`/`X.Y`/`X` on a tag |
+| WissKI base stack | `repos/wisski-base-stack` | `main` | `origin` GitHub (HTTPS) | **tag `X.Y.Z`** when it changed since the last tag | no CI; Portainer clones it by git ref |
+
+Order: image and stack tags first, then the manual step on Prime: a WissKI
+version entry (image and stack tag) and `defaultVersion` in the SCS Manager
+settings (`/admin/config/soda-scs-manager/settings`).
+
+Out of scope: the WissKI Drupal module (drupal.org/project/wisski) and its
+issues, `wisski_default_data_model`, `drupal_packages`, `scs-varnish-image`,
+`nextcloud_webdav_mount` and `roBot_rules` under `repos/`.
+
+Issue work (`issue-flow`, `issue-commit` in the module) commits and pushes but
+never releases; this skill is where those commits become releases.
 
 ## Workflow
 
@@ -72,7 +90,10 @@ If the remote is ahead and the local commits are unpublished, rebase them onto
 `origin/<branch>`; if both sides have published work, ask.
 
 - `git status --short`, current branch (detached HEAD?), `git rev-list --count @{u}..HEAD`
-- latest tag `git tag --sort=-v:refname | head -1`, `git log --oneline <tag>..HEAD`
+- latest tag `git tag --sort=-v:refname | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | head -1`
+  (plain `X.Y.Z`; skips old `v`-prefixed tags), `git log --oneline <tag>..HEAD`
+- commits since that tag that reference issues (`Issue #`, `Related:`):
+  group the plan and the changelog by them
 - `CHANGELOG.md` present? What does `[Unreleased]` say? Does the latest tag's
   commit contain a rolled `## [X.Y.Z]` section (`git show <tag>:CHANGELOG.md`)?
 - submodules: does the parent record an older pointer? (`git -C <parent> diff --submodule=log -- <path>`)
