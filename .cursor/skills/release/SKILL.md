@@ -67,6 +67,10 @@ Then list what CI does not do:
   publishes `X.Y.Z`, `X.Y` and `X`. After the image `push`, add
   `gh-release <path> <tag>` so the script creates the GitHub Release from the
   annotated tag (same for other GitHub-hosted tags such as wisski-base-*).
+- **Optional (local):** add a `todo Optional (local): …` with the `docker build`
+  that tags `ghcr.io/soda-collections-objects-data-literacy/<image>:X.Y.Z` (and
+  `:local` / `:main` as needed) so this host can test without waiting for CI.
+  Exact commands: `/scs-release-prep` → *Optional — local image builds*.
 
 The user runs `01_scripts/global/push-release-plan.bash`.
 

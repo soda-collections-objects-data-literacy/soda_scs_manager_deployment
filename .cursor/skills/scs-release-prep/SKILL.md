@@ -190,6 +190,7 @@ each item names the exact URL or command. Check these cases:
 | Trigger | Manual step |
 | --- | --- |
 | Image tag | Check that *Publish SCS Manager Docker Images* is green: https://github.com/soda-collections-objects-data-literacy/scs-manager-image/actions. |
+| WissKI base image tag | Check that *Publish WissKI Base Docker Images* is green: https://github.com/soda-collections-objects-data-literacy/wisski-base-image/actions. |
 | Deployment or submodule pointer changed | Prime: `cd /var/deploy/soda_scs_manager_deployment && git pull && git submodule update --init --recursive` (not `start.sh`, it pulls `--remote`). |
 | `00_custom_configs/scs-manager-stack/…` or `…/scs-project-website-stack/…` override changed | Prime: copy the override into the stack (`dev-to-prime.md`, Weg A step 2). |
 | Unit files in `01_scripts/global/*.service|*.timer` changed | Prime: copy them to `/etc/systemd/system/`, `systemctl daemon-reload`, restart the timers. |
@@ -201,6 +202,43 @@ each item names the exact URL or command. Check these cases:
 | Nextcloud app version bump in `appinfo/info.xml` | Prime: recreate `nextcloud--nextcloud--app`, then `occ upgrade` if Nextcloud reports the app as outdated. |
 | Keycloak realm/theme changes | Realm imports only run on a fresh realm: apply realm changes in the admin console on Prime; theme changes need the container rebuild. |
 | Any **bold** admin instruction in a changelog entry shipped now | Copy it as its own step. |
+
+**Optional — local image builds on this host** (skip the GHCR wait; tag with the
+same `ghcr.io/…` names Compose/Portainer use). Add as `todo Optional (local): …`
+when an image tag (or rolling `:main`) is in the plan. Offer to run the builds
+during prep if the user wants to test before CI finishes; otherwise leave the
+commands in the plan. Use `--no-cache` when the baked package set or module must
+change; otherwise `--pull` is enough.
+
+| Trigger | Local build (fill in the real `X.Y.Z`) |
+| --- | --- |
+| `scs-manager-image` tag `X.Y.Z` | From `repos/scs-manager-image`, build production and/or development and tag `ghcr.io/soda-collections-objects-data-literacy/scs-manager-image-{production,development}:X.Y.Z` plus `:X.Y`, `:X`, `:local`. Production needs the module release on drupal.org if `SODA_SCS_MANAGER_VERSION` was raised. |
+| `wisski-base-image` tag `X.Y.Z` | From `repos/wisski-base-image`, production: `--build-arg MODE=production` → `…/wisski-base-image-production:X.Y.Z` (+ `:X.Y`, `:local`). The Dockerfile curls `drupal_packages` from GitHub, so **push packages first** (or the build 404s). |
+| `wisski-base-image` rolling development | Same repo, `--build-arg MODE=development --build-arg WISSKI_PACKAGES_LINE=4.x` → `…/wisski-base-image-development:main` (+ `:local`). |
+
+Example commands (adapt version and which variants you need):
+
+```bash
+# SCS Manager (development example)
+cd repos/scs-manager-image
+docker build --pull --build-arg MODE=development \
+  -t ghcr.io/soda-collections-objects-data-literacy/scs-manager-image-development:X.Y.Z \
+  -t ghcr.io/soda-collections-objects-data-literacy/scs-manager-image-development:local \
+  .
+
+# WissKI production (after packages are on GitHub)
+cd repos/wisski-base-image
+docker build --no-cache --pull --build-arg MODE=production \
+  -t ghcr.io/soda-collections-objects-data-literacy/wisski-base-image-production:X.Y.Z \
+  -t ghcr.io/soda-collections-objects-data-literacy/wisski-base-image-production:local \
+  .
+
+# WissKI development rolling
+docker build --no-cache --pull --build-arg MODE=development --build-arg WISSKI_PACKAGES_LINE=4.x \
+  -t ghcr.io/soda-collections-objects-data-literacy/wisski-base-image-development:main \
+  -t ghcr.io/soda-collections-objects-data-literacy/wisski-base-image-development:local \
+  .
+```
 
 ### 7. Push plan + report
 
@@ -229,6 +267,7 @@ push repos/scs-manager-image origin main 3.4.0
 gh-release repos/scs-manager-image 3.4.0
 push . origin main
 todo Check the image build: https://github.com/soda-collections-objects-data-literacy/scs-manager-image/actions
+todo Optional (local): cd repos/scs-manager-image && docker build --pull --build-arg MODE=development -t ghcr.io/soda-collections-objects-data-literacy/scs-manager-image-development:3.4.0 -t ghcr.io/soda-collections-objects-data-literacy/scs-manager-image-development:local .
 todo Prime: cd /var/deploy/soda_scs_manager_deployment && git pull && git submodule update --init --recursive
 todo Prime: docker compose up -d --build jupyterhub--jupyterhub--app
 todo Prime: docker compose pull manager--drupal--app && docker compose up -d manager--drupal--app (log: Package set changed / Shipped content changed)
@@ -246,6 +285,6 @@ Run `01_scripts/global/push-release-plan.bash --dry-run`; every line must resolv
 2. Skipped items and why (uncommitted files left alone, repos without changelog).
 3. The command to run.
 4. **Manual steps**, as a numbered checklist in order: during the push (drupal.org),
-   after the push (CI checks, GitHub Releases), on Prime (pull, copies, recreate,
-   Drupal settings/drush). Same items as the `pause`/`todo` lines, so nothing is
-   only in one place.
+   after the push (CI checks, GitHub Releases), optional local image builds, on
+   Prime (pull, copies, recreate, Drupal settings/drush). Same items as the
+   `pause`/`todo` lines, so nothing is only in one place.
