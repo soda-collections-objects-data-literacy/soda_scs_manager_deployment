@@ -82,6 +82,7 @@ Prime follows the submodule pointers recorded in the deployment repo, never the 
 - [ ] Step 3: ./01_scripts/global/update-stack.bash --prime --apply
 - [ ] Step 4: Verify (the script does it, you read it)
 - [ ] Step 5: Hand over the manual steps
+- [ ] Step 6: Update the referenced GitHub issues
 ```
 
 **Step 1: Check.** `--prime --check` changes nothing. Exit code 1 means something blocks the apply. It prints:
@@ -92,6 +93,7 @@ Prime follows the submodule pointers recorded in the deployment repo, never the 
 - planned builds and recreates, image tag changes, whether the SCS Manager image is updated or `SKIPPED` because of a module/theme bind mount, and the WissKI base image pull (`docker pull …/wisski-base-image-production:<newest>`).
 - new CHANGELOG sections and **bold** lines (manual steps) of the moving repos.
 - the current Drupal checks and the manual steps that will remain.
+- the GitHub issues the moving commits reference (`Refs #n` / `Refs owner/repo#n`), one line each with repo, commit and subject.
 - the WissKI component version values to enter at `/admin/config/soda-scs-manager/wisski-versions/add` (Version, WissKI-Stack, WissKI Image, Package Environment, Default Data Model Recipe, Starter Recipe), derived from the newest `wisski-base-image` / `wisski-base-stack` tags and the packages lock, compared to the Manager default.
 
 Git reads over HTTPS when SSH needs a passphrase (SSH runs in batch mode, it never prompts). If a private repo cannot be fetched, ask the user to load the key (`ssh-add`) — never enter a passphrase yourself.
@@ -112,6 +114,15 @@ Git reads over HTTPS when SSH needs a passphrase (SSH runs in batch mode, it nev
 **Step 4: Verify.** The script checks `docker compose ps` (no `unhealthy`/`Restarting`/`Exited`), `drush updatedb:status`, `drush scs:check --problems` and the enabled themes (only `scs_custom_theme`, `gin`, core; `soda_scs_manager_theme` is gone since module 4.3.0). Exit code 1 = a check failed: read `docker compose logs --tail 100 <service>` and report with excerpts. Do not claim success on a red check. On success it records the applied commit in `.git/update-stack-prime.applied`, the baseline for the next run (`--since <rev>` overrides it).
 
 **Step 5: Manual steps.** Pass the script's checklist on verbatim: `sudo` unit commands, Nextcloud repair after a version change (`01_scripts/scs-nextcloud-stack/run-nextcloud-repair.bash`, then `occ app:update --all` — suggest, do not run), override merges, the **bold** CHANGELOG steps (drush commands, new settings), and the WissKI component version fill-in list when a newer image is not yet in Manager. If you commit anything on Prime, append the push to `plans/push-plan.txt` for `01_scripts/global/push-release-plan.bash`; do not push.
+
+**Step 6: Issues.** Only after a green `--apply` (exit 0). The script ends with "Issues referenced by the commits of this update". For each issue:
+
+1. `gh issue view <n> -R <owner/repo> --json state,title,body,comments`. Closed → skip. Read what the issue expects on Prime (the "Prime" / "Done when" part of its comments).
+2. Check exactly that, read-only: the test call, `systemctl list-timers`, `docker compose ps`, a log line. Steps still open (sudo, Manager settings, content) → the issue stays open.
+3. Draft one comment per issue in English, no SHAs, no secrets, no user names (`issue-tracking` rule): `Live on Prime: {what was checked and what it showed}.` plus `Still open: …` when something is left. The `/issue-flow` drafts in `plans/issues/` exist only on dev; on Prime the comment comes from here.
+4. **Show all drafts in one list and ask once**: post, and which issues to close (only those whose "Done when" is met). Post with `gh issue comment` / `gh issue close <n> -R <owner/repo> --comment …` only on that go.
+
+`gh` not installed or not logged in (`gh auth status`) → hand the drafts to the user to post, and name the setup step (`dev-to-prime.md`, "GitHub CLI on Prime"). Never close an issue on a red run.
 
 ## Notes
 

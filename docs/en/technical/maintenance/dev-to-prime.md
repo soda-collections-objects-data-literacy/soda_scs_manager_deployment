@@ -40,6 +40,22 @@ Options: `--no-snapshot` skips the database dump, `--since <commit>` sets the de
 
 `SCS_MANAGER_IMAGE_VERSION` is only shown. With a full version such as `3.3.1`, no newer manager image arrives until the line says `3`.
 
+### Issues on Prime
+
+Commits that belong to a GitHub issue carry `Refs #n` (own repo) or `Refs owner/repo#n` in their message. `--check` and `--apply` list these issues for all repos that move. After a green `--apply`, the `/update-stack` skill checks what each issue expects on Prime, drafts one comment per issue and, after you confirm, posts it and closes the issues that are done. Which repo tracks which issue: `.cursor/rules/issue-tracking.mdc`.
+
+#### GitHub CLI on Prime
+
+Once per host, as the user who runs Claude Code on Prime:
+
+```bash
+sudo apt install gh
+gh auth login --with-token < token.txt   # then delete token.txt
+gh auth status
+```
+
+Use a fine-grained personal access token for the organization `soda-collections-objects-data-literacy`, limited to the repos in the issue-tracking rule, with **Issues: read and write** (Metadata: read is added automatically). It needs no code access. Without `gh`, the skill shows the comments for you to post.
+
 ## Path A: deployment and submodules
 
 This covers JupyterHub, Nextcloud, Keycloak, OpenGDB, WebProtégé, Voyager, Health, the project website, and Compose, overrides, and scripts in the deployment. It also covers `scs-manager-stack` when only its Compose changed, and not the module, a theme, or the pages.

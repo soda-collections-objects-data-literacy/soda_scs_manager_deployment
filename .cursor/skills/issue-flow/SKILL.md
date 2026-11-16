@@ -198,14 +198,17 @@ Check each pushed repo: `git ls-remote <remote> refs/heads/<branch>` against
 
 All pushed → give the Prime steps: `/update-stack --prime --check`, then
 `--apply`, plus the manual steps from the comment (sudo, systemd, a test
-call). An image repo → the image build/tag first (`/release` or
+call). On Prime, `/update-stack` step 6 lists every issue the applied commits
+reference, checks the "Prime" part of its comments and, on the user's go,
+posts the result and closes the issue; Phase 8 then only confirms that here. An image repo → the image build/tag first (`/release` or
 `/scs-release-prep`). **PAUSE:** "Wie sieht es auf Prime aus?" Something off
 → Phase 2 (Prime-only: compare `.env`, overrides, unit files; ask for the
 output, you cannot read Prime).
 
 ## Phase 8: Close
 
-Draft the closing comment (reference.md: one or two lines, what Prime shows
-now; no SHAs) for each issue of the change. **PAUSE:** "Kommentar posten und
+Closed on Prime by `/update-stack` step 6 → check with `gh issue view`, say
+so, done. Otherwise draft the closing comment (reference.md: one or two
+lines, what Prime shows now; no SHAs) for each issue of the change. **PAUSE:** "Kommentar posten und
 Issue(s) schließen?" On a go: `gh issue close {n} -R $R --comment "…"` (or
 `--reason "not planned"`). Releases are separate: `/scs-release-prep`.

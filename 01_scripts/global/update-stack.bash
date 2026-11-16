@@ -144,7 +144,7 @@ DERIVED_OVERRIDES=(
 ALLOWED_THEMES=" scs_custom_theme gin claro olivero stable9 stark starterkit_theme "
 
 GIT_NET=(git)
-declare -a BLOCKERS=() TODOS=() PRIME_MOVES=() COPY_NOW=() UNIT_CMDS=()
+declare -a BLOCKERS=() TODOS=() PRIME_MOVES=() COPY_NOW=() UNIT_CMDS=() ISSUE_REFS=()
 
 # Prints the value of a variable from .env (last assignment, quotes stripped).
 env_get() {
@@ -205,6 +205,35 @@ changelog_highlights() { # repo_path from to
 }
 
 # Read-only Drupal checks. Prints findings, returns 1 when something is off.
+# owner/repo of a GitHub remote URL (ssh or https), empty for other hosts.
+github_slug() {
+  sed -nE 's#^(git@github\.com:|ssh://git@github\.com/|https://github\.com/)([^/]+/[^/]+)$#\2#p' <<<"${1%.git}"
+}
+
+# Collects "owner/repo#n|repo|sha|subject" for every "Refs …" line in the
+# commits a repo moves through. "#n" alone means the repo's own tracker.
+# The issue-tracking rule and /issue-flow write these lines.
+issue_refs() { # name path from to url
+  local name="$1" path="$2" from="$3" to="$4" own sha subject body ref
+  own="$(github_slug "$5")"
+  while IFS=$'\x1f' read -r -d $'\x1e' sha subject body; do
+    sha="${sha#$'\n'}"
+    while read -r ref; do
+      [[ "$ref" == \#* ]] && { [[ -n "$own" ]] || continue; ref="${own}${ref}"; }
+      ISSUE_REFS+=("${ref}|${name}|${sha:0:8}|${subject}")
+    done < <(grep -E '^Refs ' <<<"$body" | grep -oE '([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)?#[0-9]+')
+  done < <(git -C "$path" log --format='%H%x1f%s%x1f%b%x1e' "${from}..${to}" 2>/dev/null)
+}
+
+print_issue_refs() {
+  [[ ${#ISSUE_REFS[@]} -gt 0 ]] || return 0
+  hr
+  log "Issues referenced by the commits of this update (Refs lines):"
+  printf '%s\n' "${ISSUE_REFS[@]}" | sort -t'|' -k1,1 -u -s \
+    | awk -F'|' '{printf "  %-55s %-16s %s %s\n", $1, $2, $3, $4}'
+  log "  Update them after a green --apply: /update-stack, Prime step 6."
+}
+
 prime_drupal_checks() {
   local out rc=0 themes extra=""
   if ! docker exec "$MANAGER_SVC" true 2>/dev/null; then
@@ -705,6 +734,16 @@ prime_run() {
     grep -q '\*\*' <<<"$hl" && TODOS+=("$name CHANGELOG has bold manual steps, see above.")
   done
 
+  # Deployment: from the last applied commit, like the changelog above.
+  [[ "$baseline" == "$dep_to" ]] \
+    || issue_refs deployment . "$baseline" "$dep_to" "$(git remote get-url origin 2>/dev/null)"
+  for entry in "${PRIME_MOVES[@]}"; do
+    IFS='|' read -r name path from ptr <<<"$entry"
+    [[ -n "$from" && "$path" != . ]] || continue
+    issue_refs "$name" "$path" "$from" "$ptr" "$(git config --blob "${dep_to}:.gitmodules" "submodule.${name}.url")"
+  done
+  print_issue_refs
+
   if [[ ${#BLOCKERS[@]} -gt 0 ]]; then
     hr
     log "BLOCKED, nothing will be applied until this is resolved:"
@@ -878,6 +917,7 @@ prime_run() {
   fi
   prime_drupal_checks || failed=1
   prime_wisski_settings_values
+  print_issue_refs
 
   hr
   if [[ ${#TODOS[@]} -gt 0 ]]; then
