@@ -51,8 +51,12 @@ is English Markdown. Templates, commands, layout: [reference.md](reference.md).
   containers the patch touches is part of Phase 2; name them first, ask when
   it is more than the affected services. **Prime:** you change nothing; the
   user runs `/update-stack --prime` there.
-- Never create, update or delete real applications, projects or users to test
-  (the Manager does that for real, on dev too). The user clicks.
+- Never create, update or delete real applications, projects or users to try
+  something out (the Manager does that for real, on dev too).
+- **Dev test: run it yourself.** The "how to test on dev" steps of the comment
+  draft are yours wherever `docker`, `drush` or `php:eval` can do them, on the
+  test accounts the steps name (the user's standing go). The steps stay in the
+  comment; only steps that need a browser go to the user.
 - Commits follow `/git-commit`: innermost repo first, explicit paths, no push;
   push lines go into `plans/push-plan.txt`.
 - `/compact` is the user's command. At pauses marked *compact hint*, end with
@@ -147,10 +151,13 @@ Existing issue without a local copy: `gh issue view` → write
    `docker restart`. An image repo (`repos/*-image`) → local build only when
    the user wants it; say how dev gets the image otherwise.
 6. **Comment draft** `plans/issues/{repo}/{n}/comments/{nn}.md`: what was
-   done, how to test on dev, what Prime will need. **PAUSE** with: what
-   changed (two or three sentences), the draft in one ```markdown block, which
-   test steps touch real data, and "Soll ich den Kommentar posten? Teste auf
-   dev und sag *getestet* oder was nicht stimmt." *compact hint*.
+   done, how to test on dev, what Prime will need.
+7. **Dev test:** run the draft's steps yourself (see the hard rules) and
+   note each result. **PAUSE** with: what changed (two or three sentences),
+   the draft in one ```markdown block, the result of each step you ran, the
+   steps left to the user (browser only), and "Soll ich den Kommentar posten?
+   Prüf die offenen Schritte und sag *getestet* oder was nicht stimmt."
+   *compact hint*.
 
 On "posten": `gh issue comment`, set `posted: true` and the comment `url`.
 
