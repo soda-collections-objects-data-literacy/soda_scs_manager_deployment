@@ -22,7 +22,7 @@ Die Wege A und B unten bleiben die Referenz dafür, was hinter den Schritten ste
 
 `update-stack.bash --prime` erledigt die Prime-Seite beider Wege: Weg A, Schritt 2 und 3, und Weg B, Schritt 5.
 
-`--check` zeigt, welche Repos auf welchen festgehaltenen Zeiger gehen (mit Commit-Log), was gebaut, neu erzeugt und kopiert wird, welche Systemd-Units abweichen, die neuen CHANGELOG-Abschnitte und die aktuellen Drupal-Checks. Es endet mit 1, wenn etwas das Update blockiert, zum Beispiel nicht committete Änderungen.
+`--check` zeigt, welche Repos auf welchen festgehaltenen Zeiger gehen (mit Commit-Log), was gebaut, neu erzeugt und kopiert wird, welche Systemd-Units abweichen, die neuen CHANGELOG-Abschnitte, die aktuellen Drupal-Checks und die WissKI-Component-Version-Werte für die Manager-Settings. Es endet mit 1, wenn etwas das Update blockiert, zum Beispiel nicht committete Änderungen.
 
 `--apply` macht dann:
 
@@ -32,8 +32,9 @@ Die Wege A und B unten bleiben die Referenz dafür, was hinter den Schritten ste
 4. Vor dem ersten neu erzeugten Container werden alle Datenbanken nach `/srv/backups/pre-update/<Zeitstempel>/` gesichert. Wechselt die Nextcloud-Version, läuft zusätzlich `backup-nextcloud.bash`.
 5. Die betroffenen Container werden gebaut und neu erzeugt (Tabelle in [Schritt 3](#3-die-betroffenen-container-neu-erzeugen)).
 6. Das SCS-Manager-Image wird gezogen und das Log verfolgt ([Weg B, Schritt 5](#5-auf-prime-das-image-starten)), aber nur, wenn der Container keinen Bind-Mount auf Modul oder Theme hat.
-7. Geprüft werden `docker compose ps`, `drush updatedb:status`, `drush scs:check --problems` und die aktiven Themes.
-8. Am Ende stehen die übrigen Handgriffe: `sudo`-Befehle, der Nextcloud-Repair und die fetten Zeilen aus den CHANGELOGs.
+7. Das neueste SemVer-Tag von `wisski-base-image-production` wird auf den Host gezogen (nur Cache; laufende WissKI-Stacks werden nicht neu erzeugt).
+8. Geprüft werden `docker compose ps`, `drush updatedb:status`, `drush scs:check --problems` und die aktiven Themes.
+9. Am Ende stehen die übrigen Handgriffe: `sudo`-Befehle, der Nextcloud-Repair, die fetten Zeilen aus den CHANGELOGs und die WissKI-Component-Version-Werte für `/admin/config/soda-scs-manager/wisski-versions/add` (Version, WissKI-Stack, WissKI Image, Package Environment, Default Data Model Recipe, Starter Recipe), wenn ein neueres Image noch nicht konfiguriert ist.
 
 Optionen: `--no-snapshot` lässt die Datenbanksicherung weg, `--since <Commit>` legt den Deployment-Commit fest, ab dem verglichen wird (Standard: das letzte erfolgreiche `--prime --apply`), und `--offline` plant ohne Fetch. Braucht der SSH-Key eine Passphrase, liest Git öffentliche Repos über HTTPS.
 

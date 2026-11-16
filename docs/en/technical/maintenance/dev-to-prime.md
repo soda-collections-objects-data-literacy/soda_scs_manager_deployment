@@ -22,7 +22,7 @@ Paths A and B below remain the reference for what those steps do.
 
 `update-stack.bash --prime` runs the Prime side of both paths: path A steps 2 and 3, and path B step 5.
 
-`--check` shows which repos move to which recorded pointer (with the commit log), what is built, recreated and copied, which systemd units differ, the new CHANGELOG sections, and the current Drupal checks. It exits with 1 when something blocks the update, for example uncommitted changes.
+`--check` shows which repos move to which recorded pointer (with the commit log), what is built, recreated and copied, which systemd units differ, the new CHANGELOG sections, the current Drupal checks, and the WissKI component version values to enter in Manager settings. It exits with 1 when something blocks the update, for example uncommitted changes.
 
 `--apply` then:
 
@@ -32,8 +32,9 @@ Paths A and B below remain the reference for what those steps do.
 4. dumps all databases to `/srv/backups/pre-update/<timestamp>/` before the first container is recreated, and runs `backup-nextcloud.bash` when the Nextcloud version changes,
 5. builds and recreates the affected containers (table in [step 3](#3-recreate-the-containers-that-changed)),
 6. pulls the SCS Manager image and follows its log ([path B, step 5](#5-start-the-image-on-prime)), but only when the container has no module or theme bind mount,
-7. checks `docker compose ps`, `drush updatedb:status`, `drush scs:check --problems` and the enabled themes,
-8. prints the manual steps that are left: `sudo` commands, the Nextcloud repair, and the bold lines from the CHANGELOGs.
+7. pulls the newest `wisski-base-image-production` SemVer tag onto the host (cache only; running WissKI stacks are not recreated),
+8. checks `docker compose ps`, `drush updatedb:status`, `drush scs:check --problems` and the enabled themes,
+9. prints the manual steps that are left: `sudo` commands, the Nextcloud repair, the bold lines from the CHANGELOGs, and the WissKI component version values to enter at `/admin/config/soda-scs-manager/wisski-versions/add` (Version, WissKI-Stack, WissKI Image, Package Environment, Default Data Model Recipe, Starter Recipe) when a newer image is not yet configured.
 
 Options: `--no-snapshot` skips the database dump, `--since <commit>` sets the deployment commit to compare from (default: the last successful `--prime --apply`), and `--offline` plans without fetching. Git reads public repos over HTTPS when the SSH key needs a passphrase.
 

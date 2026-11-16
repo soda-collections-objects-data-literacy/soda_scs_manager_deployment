@@ -15,7 +15,9 @@
 #   Follows the submodule pointers recorded in the deployment repo (no --remote),
 #   copies the derived overrides, prints systemd unit commands, snapshots all
 #   databases, rebuilds/recreates what changed, updates the SCS Manager image,
-#   runs the Drupal checks and lists the manual steps.
+#   pulls the newest WissKI base image (cache only), runs the Drupal checks,
+#   lists the manual steps and the WissKI component version values to enter
+#   in the Manager settings.
 #   options: --since <rev>      deployment commit to diff from (default: last --prime --apply)
 #            --no-snapshot      skip the database snapshot
 #            --offline          no fetch, plan from what is already fetched
@@ -233,6 +235,246 @@ prime_drupal_checks() {
   return $rc
 }
 
+WISSKI_IMAGE_GHCR="ghcr.io/soda-collections-objects-data-literacy/wisski-base-image-production"
+WISSKI_IMAGE_GIT="https://github.com/soda-collections-objects-data-literacy/wisski-base-image.git"
+WISSKI_STACK_GIT="https://github.com/soda-collections-objects-data-literacy/wisski-base-stack.git"
+WISSKI_IMAGE_RAW="https://raw.githubusercontent.com/soda-collections-objects-data-literacy/wisski-base-image"
+WISSKI_PACKAGES_RAW="https://raw.githubusercontent.com/soda-collections-objects-data-literacy/drupal_packages/main/wisski_base/production"
+# Set by prime_resolve_wisski_image: tag to use, remote/local newest, full pull ref.
+WISSKI_IMG_TAG=""
+WISSKI_IMG_REMOTE=""
+WISSKI_IMG_LOCAL=""
+WISSKI_IMG_REF=""
+
+# Newest plain SemVer tag from a git remote URL (no v-prefix). Empty on failure.
+newest_remote_semver_tag() {
+  local url="$1"
+  [[ $OFFLINE -eq 1 ]] && return 0
+  git ls-remote --tags "$url" 2>/dev/null \
+    | sed 's|.*refs/tags/||' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1 || true
+}
+
+# Newest local docker tag matching repo substring and plain SemVer.
+newest_local_image_semver_tag() {
+  local repo_substr="$1"
+  docker images --format '{{.Repository}}:{{.Tag}}' 2>/dev/null \
+    | grep -F "$repo_substr" | sed 's/.*://' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' \
+    | sort -V | tail -1 || true
+}
+
+# Max of two SemVer strings (empty loses).
+semver_max() {
+  printf '%s\n' "$1" "$2" | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1 || true
+}
+
+# Fetches a URL to stdout; empty and non-zero when curl is missing or the request fails.
+http_get() {
+  command -v curl >/dev/null || return 1
+  curl -fsSL --max-time 30 "$1" 2>/dev/null
+}
+
+# Resolves the newest WissKI production image tag (GitHub tags + local). Sets
+# WISSKI_IMG_TAG / WISSKI_IMG_REMOTE / WISSKI_IMG_LOCAL / WISSKI_IMG_REF.
+prime_resolve_wisski_image() {
+  WISSKI_IMG_REMOTE="$(newest_remote_semver_tag "$WISSKI_IMAGE_GIT")"
+  WISSKI_IMG_LOCAL="$(newest_local_image_semver_tag "wisski-base-image-production")"
+  # Prefer the remote release tag when known; otherwise the newest local SemVer.
+  if [[ -n "$WISSKI_IMG_REMOTE" ]]; then
+    WISSKI_IMG_TAG="$WISSKI_IMG_REMOTE"
+  else
+    WISSKI_IMG_TAG="$WISSKI_IMG_LOCAL"
+  fi
+  if [[ -n "$WISSKI_IMG_TAG" ]]; then
+    WISSKI_IMG_REF="${WISSKI_IMAGE_GHCR}:${WISSKI_IMG_TAG}"
+  else
+    WISSKI_IMG_REF=""
+  fi
+}
+
+# Pulls the newest WissKI production image onto the host (cache for Portainer).
+# Does not recreate running WissKI stacks. Returns 1 on pull failure.
+prime_pull_wisski_image() {
+  prime_resolve_wisski_image
+  if [[ -z "$WISSKI_IMG_REF" ]]; then
+    warn "WissKI image pull skipped: could not determine the newest tag"
+    return 1
+  fi
+  if [[ $OFFLINE -eq 1 ]]; then
+    log "WissKI image pull skipped (--offline): ${WISSKI_IMG_REF}"
+    return 0
+  fi
+  if [[ -n "$WISSKI_IMG_LOCAL" && "$WISSKI_IMG_LOCAL" == "$WISSKI_IMG_TAG" ]]; then
+    log "Pulling WissKI image ${WISSKI_IMG_REF} (refresh local ${WISSKI_IMG_LOCAL})"
+  elif [[ -n "$WISSKI_IMG_LOCAL" ]]; then
+    log "Pulling WissKI image ${WISSKI_IMG_REF} (local was ${WISSKI_IMG_LOCAL})"
+  else
+    log "Pulling WissKI image ${WISSKI_IMG_REF}"
+  fi
+  if ! docker pull "$WISSKI_IMG_REF"; then
+    warn "pull of ${WISSKI_IMG_REF} failed"
+    return 1
+  fi
+  # Convenience tags matching the image CI layout; Portainer uses the full SemVer
+  # from Manager settings, so this does not change running stacks by itself.
+  local major minor
+  major="${WISSKI_IMG_TAG%%.*}"
+  minor="${WISSKI_IMG_TAG%.*}"
+  docker tag "$WISSKI_IMG_REF" "${WISSKI_IMAGE_GHCR}:${minor}" 2>/dev/null || true
+  docker tag "$WISSKI_IMG_REF" "${WISSKI_IMAGE_GHCR}:${major}" 2>/dev/null || true
+  docker tag "$WISSKI_IMG_REF" "${WISSKI_IMAGE_GHCR}:latest" 2>/dev/null || true
+  log "  WissKI image ready: ${WISSKI_IMG_REF} (+ :${minor} :${major} :latest)"
+  return 0
+}
+
+# Prints the WissKI component version fields to enter in Manager settings for the
+# newest image/stack, compared to what is already configured. Adds a TODO when a
+# newer image is not yet a component version entity.
+prime_wisski_settings_values() {
+  local image_raw="$WISSKI_IMAGE_RAW"
+  local packages_raw="$WISSKI_PACKAGES_RAW"
+  local image_repo_substr="wisski-base-image-production"
+  local img_remote img_local img stack packages default_recipe starter_recipe
+  local dockerfile changelog lockjson reqjson host current_line have_entity=0
+  local current_version="" current_stack="" current_image="" current_packages=""
+  local current_default_recipe="" current_starter_recipe="" show=""
+
+  prime_resolve_wisski_image
+  img_remote="$WISSKI_IMG_REMOTE"
+  img_local="$(newest_local_image_semver_tag "$image_repo_substr")"
+  img="$WISSKI_IMG_TAG"
+  stack="$(newest_remote_semver_tag "$WISSKI_STACK_GIT")"
+
+  hr
+  log "WissKI component version for Manager settings"
+  log "  (/admin/config/soda-scs-manager/wisski-versions/add, then set as default if wanted):"
+
+  if [[ -z "$img" ]]; then
+    log "  (could not determine the newest wisski-base-image tag; online fetch failed or --offline with no local tags)"
+    return 0
+  fi
+
+  if [[ $OFFLINE -eq 0 ]]; then
+    dockerfile="$(http_get "${image_raw}/${img}/Dockerfile" || true)"
+    changelog="$(http_get "${image_raw}/${img}/CHANGELOG.md" || true)"
+  fi
+  packages="$(sed -n 's/^ARG WISSKI_PACKAGES_VERSION=//p' <<<"$dockerfile" | head -1)"
+  [[ -n "$packages" ]] || packages="$(docker image inspect \
+    "ghcr.io/soda-collections-objects-data-literacy/${image_repo_substr}:${img}" \
+    --format '{{index .Config.Labels "org.wisski.packages.version"}}' 2>/dev/null || true)"
+
+  if [[ -n "$packages" && $OFFLINE -eq 0 ]]; then
+    lockjson="$(http_get "${packages_raw}/${packages}/composer.lock" || true)"
+    if [[ -n "$lockjson" ]]; then
+      default_recipe="$(jq -r '.packages[] | select(.name=="drupal/wisski_default_data_model") | .version' <<<"$lockjson" 2>/dev/null | head -1)"
+      starter_recipe="$(jq -r '.packages[] | select(.name=="drupal/wisski_starter") | .version' <<<"$lockjson" 2>/dev/null | head -1)"
+    fi
+  fi
+  if [[ -z "$default_recipe" && -n "$changelog" ]]; then
+    default_recipe="$(awk -v v="$img" '
+      $0 ~ "^## \\[" v "\\]" {p=1; next}
+      p && /^## \[/ {exit}
+      p {print}
+    ' <<<"$changelog" | grep -oE 'default data model recipe [0-9]+(\.[0-9x]+)+' | head -1 | awk '{print $NF}')"
+  fi
+  if [[ -z "$starter_recipe" && -n "$changelog" ]]; then
+    # From the release section downward; starter may only be named in an older entry.
+    starter_recipe="$(awk -v v="$img" '
+      $0 ~ "^## \\[" v "\\]" {p=1}
+      p {print}
+    ' <<<"$changelog" | grep -oE 'starter recipe [0-9]+(\.[0-9x]+)+' | head -1 | awk '{print $NF}')"
+  fi
+  if [[ (-z "$default_recipe" || -z "$starter_recipe") && -n "$packages" && $OFFLINE -eq 0 ]]; then
+    reqjson="$(http_get "${packages_raw}/${packages}/composer.json" || true)"
+    if [[ -n "$reqjson" ]]; then
+      [[ -n "$default_recipe" ]] || default_recipe="$(jq -r '.require["drupal/wisski_default_data_model"] // empty' <<<"$reqjson" | sed 's/^[^0-9]*//')"
+      [[ -n "$starter_recipe" ]] || starter_recipe="$(jq -r '.require["drupal/wisski_starter"] // empty' <<<"$reqjson" | sed 's/^[^0-9]*//')"
+    fi
+  fi
+  # Local image fallback when the lock was unavailable (skips a pull).
+  if [[ (-z "$default_recipe" || -z "$starter_recipe") ]] \
+     && docker image inspect "ghcr.io/soda-collections-objects-data-literacy/${image_repo_substr}:${img}" >/dev/null 2>&1; then
+    show="$(docker run --rm --entrypoint sh \
+      "ghcr.io/soda-collections-objects-data-literacy/${image_repo_substr}:${img}" \
+      -c 'composer -d /opt/drupal show -D 2>/dev/null' 2>/dev/null || true)"
+    [[ -n "$default_recipe" ]] || default_recipe="$(awk '/^drupal\/wisski_default_data_model /{print $2; exit}' <<<"$show")"
+    [[ -n "$starter_recipe" ]] || starter_recipe="$(awk '/^drupal\/wisski_starter /{print $2; exit}' <<<"$show")"
+  fi
+
+  [[ -n "$stack" ]] || stack="(unknown — fetch wisski-base-stack tags)"
+  [[ -n "$packages" ]] || packages="(unknown)"
+  [[ -n "$default_recipe" ]] || default_recipe="(unknown)"
+  [[ -n "$starter_recipe" ]] || starter_recipe="(unknown)"
+
+  log "  Version                          : ${img}"
+  log "  WissKI-Stack                     : ${stack}"
+  log "  WissKI Image                     : ${img}"
+  log "  Package Environment              : ${packages}"
+  log "  WissKI Default Data Model Recipe : ${default_recipe}"
+  log "  WissKI Starter Recipe            : ${starter_recipe}"
+  if [[ -n "$img_remote" && -n "$img_local" && "$img_remote" != "$img_local" ]]; then
+    log "  note: newest on GitHub is ${img_remote}; newest local image tag is ${img_local}"
+  fi
+
+  if docker exec "$MANAGER_SVC" true 2>/dev/null; then
+    current_line="$(docker exec "$MANAGER_SVC" drush ev '
+      $storage = \Drupal::entityTypeManager()->getStorage("soda_scs_wisski_component_ver");
+      $default_id = \Drupal::config("soda_scs_manager.settings")->get("wisski.instances.versions.defaultVersion");
+      $host = \Drupal::config("soda_scs_manager.settings")->get("scsHost");
+      $rows = [];
+      foreach ($storage->loadMultiple() as $e) {
+        $rows[] = implode("\t", [
+          $e->id(),
+          $e->getVersion(),
+          $e->getWisskiStack(),
+          $e->getWisskiImage(),
+          $e->getPackageEnvironment(),
+          $e->getWisskiDefaultDataModelRecipe(),
+          $e->getWisskiStarterRecipe(),
+          $e->id() === $default_id ? "default" : "",
+        ]);
+      }
+      echo ($host ?: "") . "\n";
+      echo implode("\n", $rows);
+    ' 2>/dev/null || true)"
+    host="$(sed -n '1p' <<<"$current_line")"
+    while IFS=$'\t' read -r id ver st im pkg drec srec isdef; do
+      [[ -n "$id" ]] || continue
+      [[ "$im" == "$img" || "$ver" == "$img" ]] && have_entity=1
+      if [[ "$isdef" == default ]]; then
+        current_version="$ver"
+        current_stack="$st"
+        current_image="$im"
+        current_packages="$pkg"
+        current_default_recipe="$drec"
+        current_starter_recipe="$srec"
+      fi
+    done < <(sed -n '2,$p' <<<"$current_line")
+
+    if [[ -n "$current_version" ]]; then
+      log "  Current default in Manager       : ${current_version} (stack ${current_stack}, image ${current_image}, packages ${current_packages}, default-data-model ${current_default_recipe}, starter ${current_starter_recipe})"
+    else
+      log "  Current default in Manager       : (none / could not read)"
+    fi
+    [[ -n "$host" ]] && log "  Add form                        : https://${host}/admin/config/soda-scs-manager/wisski-versions/add"
+
+    if [[ $have_entity -eq 1 ]]; then
+      if [[ "$current_image" == "$img" && "$current_packages" == "$packages" && "$current_stack" == "$stack" \
+            && "$current_default_recipe" == "$default_recipe" && "$current_starter_recipe" == "$starter_recipe" ]]; then
+        log "  status                           : default already matches the newest image"
+      else
+        log "  status                           : version ${img} already exists; set it as default if new stacks should use it"
+        TODOS+=("WissKI component version ${img} exists but is not the default (or its fields differ). Check /admin/config/soda-scs-manager/settings → WissKI.")
+      fi
+    else
+      log "  status                           : not in Manager yet — enter the six values above"
+      TODOS+=("Add WissKI component version ${img} at /admin/config/soda-scs-manager/wisski-versions/add (Version=${img}, WissKI-Stack=${stack}, WissKI Image=${img}, Package Environment=${packages}, Default Data Model Recipe=${default_recipe}, Starter Recipe=${starter_recipe}), then set it as default if wanted.")
+    fi
+  else
+    log "  Current default in Manager       : ($MANAGER_SVC not running, skipped)"
+    TODOS+=("After Manager is up: add WissKI component version ${img} (Version=${img}, WissKI-Stack=${stack}, WissKI Image=${img}, Package Environment=${packages}, Default Data Model Recipe=${default_recipe}, Starter Recipe=${starter_recipe}) if it is not there yet.")
+  fi
+}
+
 prime_run() {
   local work; work="$(mktemp -d)"
   trap 'rm -rf "$CHANGED_FILES" "'"$work"'"' EXIT
@@ -418,6 +660,18 @@ prime_run() {
   else
     log "  SCS Manager image             : docker compose pull $MANAGER_SVC, up -d, follow the log"
   fi
+  prime_resolve_wisski_image
+  if [[ -n "$WISSKI_IMG_REF" ]]; then
+    if [[ $OFFLINE -eq 1 ]]; then
+      log "  WissKI base image             : SKIPPED (--offline), would pull ${WISSKI_IMG_REF}"
+    elif [[ -n "$WISSKI_IMG_LOCAL" && "$WISSKI_IMG_LOCAL" != "$WISSKI_IMG_TAG" ]]; then
+      log "  WissKI base image             : docker pull ${WISSKI_IMG_REF} (local ${WISSKI_IMG_LOCAL} -> ${WISSKI_IMG_TAG}; cache only, running stacks unchanged)"
+    else
+      log "  WissKI base image             : docker pull ${WISSKI_IMG_REF} (cache only, running stacks unchanged)"
+    fi
+  else
+    log "  WissKI base image             : (no tag found to pull)"
+  fi
   log "  DB snapshot before restarts   : $([[ $SNAPSHOT -eq 1 ]] && echo "${PRIME_BACKUP_ROOT}/<timestamp>/all-databases.sql.gz (only if a container is recreated)" || echo "off (--no-snapshot)")"
   if [[ -n "$nc_change" ]]; then
     log "  Nextcloud version change      : ${nc_change} -> backup-nextcloud.bash runs first"
@@ -461,6 +715,7 @@ prime_run() {
     hr
     log "State of the SCS Manager right now (the same checks run after --apply):"
     prime_drupal_checks || true
+    prime_wisski_settings_values
     if [[ ${#TODOS[@]} -gt 0 ]]; then hr; log "Manual steps that will remain:"; printf '  [ ] %s\n' "${TODOS[@]}"; fi
     hr
     log "Check only, nothing was changed. Run with --prime --apply to execute."
@@ -512,6 +767,10 @@ prime_run() {
     docker compose pull --quiet "$MANAGER_SVC" || { warn "pull of $MANAGER_SVC failed"; failed=1; }
     mgr_image_after="$(docker image inspect "$(jq -r --arg s "$MANAGER_SVC" '.services[$s].image' <<<"$COMPOSE_JSON")" --format '{{.Id}}' 2>/dev/null || true)"
   fi
+  prime_pull_wisski_image || {
+    failed=1
+    TODOS+=("Pull the WissKI base image manually: docker pull ${WISSKI_IMG_REF:-$WISSKI_IMAGE_GHCR:<newest>}")
+  }
 
   mapfile -t drift < <(compose_recreate_preview "${running[@]}")
   mapfile -t tagchg < <(image_tag_changes)
@@ -618,6 +877,7 @@ prime_run() {
     log "  ok    no service is unhealthy, restarting or exited"
   fi
   prime_drupal_checks || failed=1
+  prime_wisski_settings_values
 
   hr
   if [[ ${#TODOS[@]} -gt 0 ]]; then

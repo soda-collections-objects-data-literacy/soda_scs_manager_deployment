@@ -89,9 +89,10 @@ Prime follows the submodule pointers recorded in the deployment repo, never the 
 - pre-checks: `SCS_MANAGER_MODE` must be `production` (aborts otherwise); `SCS_MANAGER_IMAGE_VERSION` is shown, normally `3` — a full version (e.g. `3.3.1`) pins that release, so no newer manager image arrives. Report it, change `.env` only on request.
 - one row per repo: current commit → recorded pointer. `BLOCKED: checkout is not behind the pointer` means the checkout has commits the pointer lacks; following would move it backwards — ask the user.
 - commit log per moving repo, override copies (`COPY` / `unchanged` / `MANUAL` when the stack copy has local edits), systemd units (`DIFFERS` / `NOT INSTALLED`) with the `sudo` commands.
-- planned builds and recreates, image tag changes, whether the SCS Manager image is updated or `SKIPPED` because of a module/theme bind mount.
+- planned builds and recreates, image tag changes, whether the SCS Manager image is updated or `SKIPPED` because of a module/theme bind mount, and the WissKI base image pull (`docker pull …/wisski-base-image-production:<newest>`).
 - new CHANGELOG sections and **bold** lines (manual steps) of the moving repos.
 - the current Drupal checks and the manual steps that will remain.
+- the WissKI component version values to enter at `/admin/config/soda-scs-manager/wisski-versions/add` (Version, WissKI-Stack, WissKI Image, Package Environment, Default Data Model Recipe, Starter Recipe), derived from the newest `wisski-base-image` / `wisski-base-stack` tags and the packages lock, compared to the Manager default.
 
 Git reads over HTTPS when SSH needs a passphrase (SSH runs in batch mode, it never prompts). If a private repo cannot be fetched, ask the user to load the key (`ssh-add`) — never enter a passphrase yourself.
 
@@ -105,11 +106,12 @@ Git reads over HTTPS when SSH needs a passphrase (SSH runs in batch mode, it nev
 4. Builds services whose build context changed, pulls the manager image.
 5. Before the first recreate: a gzip dump of all databases to `/srv/backups/pre-update/<timestamp>/` (`--no-snapshot` skips it, `SCS_UPDATE_BACKUP_DIR` moves it). When the Nextcloud image tag changes, also `backup-nextcloud.bash`. A failed backup stops the run before any container is touched.
 6. `docker compose up -d` for running services (only changed ones are recreated), `--force-recreate` for rebuilt or bind-mount-affected ones. Never `docker restart`, never `down`.
-7. SCS Manager (path B step 5): only without a module/theme bind mount; `up -d`, follows the log until healthy, reports `Package set changed`, `Shipped content changed` and `ERROR:`.
+7. Pull the newest `wisski-base-image-production` SemVer tag (cache only; does not recreate running WissKI stacks).
+8. SCS Manager (path B step 5): only without a module/theme bind mount; `up -d`, follows the log until healthy, reports `Package set changed`, `Shipped content changed` and `ERROR:`.
 
 **Step 4: Verify.** The script checks `docker compose ps` (no `unhealthy`/`Restarting`/`Exited`), `drush updatedb:status`, `drush scs:check --problems` and the enabled themes (only `scs_custom_theme`, `gin`, core; `soda_scs_manager_theme` is gone since module 4.3.0). Exit code 1 = a check failed: read `docker compose logs --tail 100 <service>` and report with excerpts. Do not claim success on a red check. On success it records the applied commit in `.git/update-stack-prime.applied`, the baseline for the next run (`--since <rev>` overrides it).
 
-**Step 5: Manual steps.** Pass the script's checklist on verbatim: `sudo` unit commands, Nextcloud repair after a version change (`01_scripts/scs-nextcloud-stack/run-nextcloud-repair.bash`, then `occ app:update --all` — suggest, do not run), override merges, and the **bold** CHANGELOG steps (drush commands, new settings). If you commit anything on Prime, append the push to `plans/push-plan.txt` for `01_scripts/global/push-release-plan.bash`; do not push.
+**Step 5: Manual steps.** Pass the script's checklist on verbatim: `sudo` unit commands, Nextcloud repair after a version change (`01_scripts/scs-nextcloud-stack/run-nextcloud-repair.bash`, then `occ app:update --all` — suggest, do not run), override merges, the **bold** CHANGELOG steps (drush commands, new settings), and the WissKI component version fill-in list when a newer image is not yet in Manager. If you commit anything on Prime, append the push to `plans/push-plan.txt` for `01_scripts/global/push-release-plan.bash`; do not push.
 
 ## Notes
 
