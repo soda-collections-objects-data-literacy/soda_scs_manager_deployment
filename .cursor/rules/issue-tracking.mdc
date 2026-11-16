@@ -1,0 +1,52 @@
+---
+description: >-
+  Which GitHub repo an issue belongs in: every repo developed from this
+  deployment root files its issues in its own GitHub repo. Drupal.org projects
+  (SCS Manager module, Drupal recipes/modules) are out of scope. Always active.
+alwaysApply: true
+---
+
+# Issue tracking
+
+An issue goes into the repo **whose code changes**. The deployment repo gets
+an issue only for its own files (root `docker-compose.yml`, `00_custom_configs/`,
+`01_scripts/`, systemd units, `docs/`, `start.sh`, `example-env`) and for
+submodule pointer bumps. Work flow: `/issue-flow`.
+
+| Path here | GitHub repo (`gh -R …`) | Issues |
+|---|---|---|
+| `.` (deployment root) | `soda-collections-objects-data-literacy/soda_scs_manager_deployment` | public |
+| `jupyterhub` | `soda-collections-objects-data-literacy/jupyterhub` | private |
+| `keycloak` | `soda-collections-objects-data-literacy/keycloak` | private |
+| `scs-manager-stack` | `soda-collections-objects-data-literacy/scs-manager-stack` | public |
+| `scs-nextcloud-stack` | `soda-collections-objects-data-literacy/scs-nextcloud-stack` | private |
+| `scs-nextcloud-stack/apps/scs_manager_integration` | `soda-collections-objects-data-literacy/scs_manager_integration` | public |
+| `scs-project-website-stack` | `soda-collections-objects-data-literacy/scs-project-website-stack` | private |
+| `scs-voyager` | `soda-collections-objects-data-literacy/scs-voyager` | public |
+| `webprotege` (remote `scs`) | `soda-collections-objects-data-literacy/scs-webprotege` | public |
+| `scs-health` | `rnsrk/scs-health` | public |
+| `open_gdb` | `FAU-CDI/open_gdb` | another organization: ask before filing |
+| `repos/scs-manager-image` | `soda-collections-objects-data-literacy/scs-manager-image` | public |
+| `repos/scs-varnish-image` | `soda-collections-objects-data-literacy/scs-varnish-image` | public |
+| `repos/wisski-base-image` | `soda-collections-objects-data-literacy/wisski-base-image` | public |
+| `repos/wisski-base-stack` | `soda-collections-objects-data-literacy/wisski-base-stack` | public |
+| `repos/drupal_packages` | `soda-collections-objects-data-literacy/drupal_packages` | public |
+
+**Not here (Drupal.org workflow, handled separately):** `soda_scs_manager`
+(module clone under `scs-manager-stack/volumes/…`), `repos/wisski_default_data_model`,
+`repos/nextcloud_webdav_mount`, the themes. A problem there → say so and
+stop; do not open a GitHub issue for it. Upstream forks (`protegeproject/webprotege`,
+`Smithsonian/dpo-voyager`) never get issues from here.
+
+A path missing from the table → take the repo from `git -C <path> remote
+get-url origin` (for `webprotege`: `scs`) and add the row here.
+
+- One problem in several repos → one issue per repo whose code changes; each
+  links the others (`owner/repo#n`). The deployment issue tracks the rollout
+  (pointer bump, Prime steps).
+- Commits reference their own repo's issue as `Refs #n.`, another repo's as
+  `Refs owner/repo#n.`. Never `Fixes`/`Closes`: issues close after Prime.
+- Public repos: no secrets, `.env` values, e-mail addresses, personal names,
+  real user names or internal IPs. Private repos: still no secrets.
+- `gh` writes (create, comment, close, labels) only after the user approved
+  that exact text.
