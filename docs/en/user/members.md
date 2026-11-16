@@ -35,4 +35,4 @@ If you are only a member, the same cross is on your own entry. The confirmation 
 
 ## Delete the project
 
-The red **Löschen** button under the team removes the whole project. If other members are still in it, the dialog names them. You remove them first, or you choose in the dialog to remove them and delete the project. With no other members, the confirmation deletes the project immediately. Neither can be undone.
+The red **Löschen** button under the team removes the whole project. If other members are still in it, the dialog names them. You remove them first, or you choose in the dialog to remove them and delete the project. With no other members, the confirmation deletes the project immediately. Neither can be undone. In a demo project, the WissKI of the demo goes with it, including its database and triplestore.

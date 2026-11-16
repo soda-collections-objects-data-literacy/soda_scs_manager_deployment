@@ -77,3 +77,5 @@ Während die Demo eingerichtet oder zurückgesetzt wird, zeigt der Bereich, was 
 
 !!! warning "Demo zurücksetzen"
     Zurücksetzen überschreibt alle Änderungen in WissKI, den Datenbanken, den Triplestores, dem Jupyter-Home-Verzeichnis, dem Team-Ordner und der WebProtégé-Ontologie dieses Projekts mit den Demo-Daten. Anwendungen, die du selbst hinzugefügt hast, bleiben. Das lässt sich nicht rückgängig machen.
+
+Wenn du das Demo-Projekt löschst, werden auch das WissKI der Demo mit seiner Datenbank und seinem Triplestore, JupyterHub, WebProtégé und der Team-Ordner gelöscht. Ein WissKI, das ein Mitglied hinzugefügt hat oder das auch zu einem anderen Projekt gehört, bleibt. Bei der nächsten Anmeldung bekommst du eine neue Demo.

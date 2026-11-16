@@ -35,4 +35,4 @@ Bist du selbst nur Mitglied, steht an deinem eigenen Eintrag dasselbe Kreuz. Die
 
 ## Projekt löschen
 
-Die rote Schaltfläche **Löschen** unter dem Team entfernt das ganze Projekt. Sind noch andere Mitglieder da, nennt der Dialog ihre Namen. Du entfernst sie zuerst, oder du wählst im Dialog, sie zu entfernen und das Projekt zu löschen. Ohne weitere Mitglieder löscht die Bestätigung das Projekt unmittelbar. Beides lässt sich nicht rückgängig machen.
+Die rote Schaltfläche **Löschen** unter dem Team entfernt das ganze Projekt. Sind noch andere Mitglieder da, nennt der Dialog ihre Namen. Du entfernst sie zuerst, oder du wählst im Dialog, sie zu entfernen und das Projekt zu löschen. Ohne weitere Mitglieder löscht die Bestätigung das Projekt unmittelbar. Beides lässt sich nicht rückgängig machen. In einem Demo-Projekt wird das WissKI der Demo mit seiner Datenbank und seinem Triplestore mitgelöscht.

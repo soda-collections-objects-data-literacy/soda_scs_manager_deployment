@@ -77,3 +77,5 @@ While the demo is being set up or reset, the panel shows what is happening: sinc
 
 !!! warning "Reset the demo"
     Reset overwrites every change in the WissKI, the databases, the triplestores, the Jupyter home directory, the team folder, and the WebProtégé ontology of this project with the demo data. Applications you added yourself stay. This cannot be undone.
+
+Deleting the demo project deletes the WissKI of the demo with its database and triplestore as well, along with JupyterHub, WebProtégé and the team folder. A WissKI that a member added, or that also belongs to another project, stays. On your next sign-in, you get a new demo.
