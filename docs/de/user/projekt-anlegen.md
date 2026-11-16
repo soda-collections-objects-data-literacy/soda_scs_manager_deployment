@@ -73,7 +73,7 @@ Das Ergebnis sieht so aus:
 
 Oben rechts stehen der Status **Demo**, die Version und **Demo zurücksetzen**.
 
-Während die Demo eingerichtet oder zurückgesetzt wird, zeigt der Bereich, was gerade passiert: seit wann sie in der Warteschlange steht, den aktuellen Schritt oder dass sie auf die WissKI-Installation wartet und wann sie es erneut versucht. Schlägt das Einrichten fehl, steht dort der Schritt, bei dem es passiert ist; setze die Demo dann zurück. Auf dem Dashboard zeigt das Demo-Badge dieselbe Zeile, wenn du mit der Maus darüberfährst.
+Während die Demo eingerichtet oder zurückgesetzt wird, zeigt der Bereich, was gerade passiert: seit wann sie in der Warteschlange steht, den aktuellen Schritt oder dass sie auf die WissKI-Installation wartet und wann sie es erneut versucht. Schlägt das Einrichten fehl, steht dort der Schritt, bei dem es passiert ist; setze die Demo dann zurück. Steht dort, dass das WissKI der Demo unvollständig ist, lösche dieses WissKI zuerst im Projekt und setze die Demo dann zurück. Auf dem Dashboard zeigt das Demo-Badge dieselbe Zeile, wenn du mit der Maus darüberfährst.
 
 !!! warning "Demo zurücksetzen"
     Zurücksetzen überschreibt alle Änderungen in WissKI, den Datenbanken, den Triplestores, dem Jupyter-Home-Verzeichnis, dem Team-Ordner und der WebProtégé-Ontologie dieses Projekts mit den Demo-Daten. Anwendungen, die du selbst hinzugefügt hast, bleiben. Das lässt sich nicht rückgängig machen.
