@@ -2,7 +2,7 @@
 
 Steckbriefe der Dienste: [JupyterHub mit OpenRefine](apps/jupyter.md), [MariaDB mit phpMyAdmin](apps/mariadb.md), [Nextcloud mit OnlyOffice und draw.io](apps/nextcloud.md), [OpenGDB](apps/opengdb.md), [WebProtégé](apps/webprotege.md), [WissKI-Umgebung](apps/wisski.md).
 
-Anwendungen gehören zu einem Projekt. Du öffnest sie über die Karte auf der Projektseite. Der Pfeil auf der Karte öffnet die Anwendung in einem neuen Tab. **Details** zeigt die Seite der Anwendung im SCS Manager.
+Anwendungen gehören zu einem Projekt. Du öffnest sie über die Karte auf der Projektseite. Der Pfeil auf der Karte öffnet die Anwendung in einem neuen Tab. **Details** zeigt die Seite der Anwendung im SCS Manager. Dort listet die Karte **Snapshots** die neuesten Snapshots der Anwendung und hat einen Button **Snapshot erstellen**.
 
 Das Demo-Projekt **robert Demo** enthält drei Anwendungen:
 

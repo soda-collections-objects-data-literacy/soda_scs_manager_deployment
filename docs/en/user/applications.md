@@ -2,7 +2,7 @@
 
 Profiles of the services themselves: [JupyterHub with OpenRefine](apps/jupyter.md), [MariaDB with phpMyAdmin](apps/mariadb.md), [Nextcloud with OnlyOffice and draw.io](apps/nextcloud.md), [OpenGDB](apps/opengdb.md), [WebProtégé](apps/webprotege.md), [WissKI Environment](apps/wisski.md).
 
-Applications belong to a project. You open them from the card on the project page. The arrow on the card opens the application in a new tab. **Details** opens the application's page in SCS Manager.
+Applications belong to a project. You open them from the card on the project page. The arrow on the card opens the application in a new tab. **Details** opens the application's page in SCS Manager. There, the **Snapshots** card lists the newest snapshots of the application and has a **Create snapshot** button.
 
 The demo project **robert Demo** contains three applications:
 
