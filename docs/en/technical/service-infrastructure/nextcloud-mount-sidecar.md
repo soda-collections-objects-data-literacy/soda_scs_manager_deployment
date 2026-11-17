@@ -86,6 +86,11 @@ journalctl -u scs-nextcloud-mount-reconcile.service -n 20
 
 `start.sh` aborts if the mounts root is missing or not `shared`.
 
+The script leaves the mounts root `root:root 755`; only `_disabled` and
+`_projects` belong to www-data. The Manager creates a user's directory
+(`<machine-name>`) itself where it can, and otherwise asks the sidecar
+(rc `operations/mkdir`, as root), so these directories may belong to root.
+
 ## Environment
 
 In `.env` (see `example-env`):
