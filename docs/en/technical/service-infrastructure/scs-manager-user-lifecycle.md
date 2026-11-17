@@ -142,62 +142,49 @@ API key and optional Docker-internal API base URL live in SCS Manager settings (
 
 ### Trigger
 
-Keycloak (and downstream cleanup) runs **only** when a **Drupal user is deleted** in SCS Manager — `hook_user_delete()` in `soda_scs_manager.module`.
+Cleanup runs only when a **Drupal user is deleted** in SCS Manager: the profile delete form, the account cancel forms (single and bulk, method "Delete the account …"), the link in the cancellation confirmation e-mail, or `drush user:cancel`. All of them go through core `user_cancel()`, which deletes the account in the batch operation `_user_cancel`. Blocking an account removes nothing.
 
-Deleting a user directly in the Keycloak Admin Console does **not** invoke this hook. Nextcloud, MariaDB, and Drupal data are then **not** cleaned up automatically.
+Deleting a user directly in the Keycloak Admin Console does **not** run any of this. Nextcloud, MariaDB and Drupal data are then **not** cleaned up automatically.
+
+The forms refuse while a project the account owns is locked, i.e. being set up by the demo job or deleted (`SodaScsUserOffboarding::lockedProjects()`), and ask before projects that still have other members are deleted.
 
 ### Deletion sequence
 
 ```mermaid
 sequenceDiagram
     participant Admin
-    participant Drupal
-    participant Hook as hook_user_delete
-    participant NC as Nextcloud OCS API
-    participant KC as Keycloak Admin API
-    participant DB as MariaDB / OpenGDB
+    participant Batch as Batch API
+    participant Pre as Batch step removeApplications
+    participant Hook as hook_user_predelete
+    participant Svc as WissKI / SQL / OpenGDB / NC / KC
 
-    Admin->>Drupal: Delete Drupal user
-    Drupal->>Hook: soda_scs_manager_user_delete()
-    Hook->>Hook: getUserSsoUuid() from authmap
-    alt SSO link present
-        Hook->>NC: deleteNextcloudAccountForKeycloakUser()
-        Note over NC: Revoke app password; DELETE user if admin creds set
-        Hook->>KC: POST token (admin-cli)
-        Hook->>KC: DELETE /admin/realms/{realm}/users/{userId}
-    else no SSO link
-        Hook->>Hook: Skip Keycloak delete
+    Admin->>Batch: user_cancel(user_cancel_delete)
+    Note over Batch: soda_scs_manager_batch_alter() wraps _user_cancel
+    loop one request per application
+        Pre->>Svc: delete or detach one WissKI, database or triplestore of an owned project
     end
-    Hook->>DB: cleanServiceUsers (MariaDB)
-    Hook->>DB: OpenGDB user delete
-    Hook->>Drupal: Delete snapshots, components, stacks, projects, service keys
+    Batch->>Hook: deleteAccount → _user_cancel → $account->delete()
+    Hook->>Svc: leave foreign projects, delete invitations
+    Hook->>Svc: per owned project: JupyterHub, rest of the apps, WebProtégé, Team Folder, Keycloak group, project
+    Hook->>Svc: leftovers, snapshots, service keys
+    Hook->>Svc: Nextcloud, MariaDB, OpenGDB, WebProtégé and Keycloak accounts
+    Hook->>Hook: delete the user's conversations
+    Batch->>Batch: release project locks
 ```
 
 ### Step-by-step
 
-1. **Jupyter notebook stop** — `SodaScsJupyterHelpers::stopNotebookContainerForUser($user)` (always, before other cleanup):
-   - Stops the DockerSpawner notebook container (`jupyter-{drupalAccountName}` by default) via Portainer Docker API
-   - Does **not** remove the container forcibly with volume flags and does **not** delete `jupyterhub-user-{username}` data volumes
-   - No-op when the container does not exist or is already stopped
+1. **Applications, one per request** — `hook_batch_alter()` replaces every `_user_cancel` that deletes an account by `SodaScsUserOffboardingBatch::removeApplications()` and `::deleteAccount()`:
+   - `removeApplications()` takes the project lock of each owned project through `lock.persistent` (`SodaScsUserOffboarding::lockProjectsForAccountDelete()`). If one is busy (demo job or project delete running), it removes nothing and `deleteAccount()` refuses the account delete with a message.
+   - It removes one application per request with `SodaScsProjectApplicationRemover::removeNextApplication()`: WissKI stacks of the account are deleted with their database and triplestore, then its loose databases and triplestores; an application of another member only loses the link to the project. A failure moves on to the next project; step 2 tries again.
+   - `deleteAccount()` runs core `_user_cancel()` with the locks still held and releases them afterwards.
 
-2. **Resolve Keycloak ID** — `getUserSsoUuid($user)` from `authmap`. If missing, Keycloak delete is skipped (logged).
-
-3. **Nextcloud cleanup** — `SodaScsNextcloudHelpers::deleteNextcloudAccountForKeycloakUser($keycloakUserId)`:
-   - Revoke stored app password (`DELETE /ocs/v2.php/core/apppassword`) if attributes exist
-   - Delete Nextcloud user(s) via `DELETE /ocs/v1.php/cloud/users/{userid}` when **Nextcloud admin credentials** are configured in SCS Manager settings (`/admin/config/soda-scs-manager/settings` → Nextcloud tab)
-   - Attempts both the expected account (`keycloak-{sub}`) and any previously stored username (orphaned account from an old `sub`)
-   - Clears `nextcloud_login_name` / `nextcloud_app_password` in Keycloak
-
-4. **Keycloak user delete**:
-   - Admin token: `POST {KC_URL}/realms/master/protocol/openid-connect/token` with `client_id=admin-cli` and admin username/password from module settings
-   - `DELETE {KC_URL}/admin/realms/{realm}/users/{userId}` with `Authorization: Bearer <token>`
-   - Entire Keycloak user record (including all attributes) is removed
-
-5. **MariaDB** — `SodaScsSqlServiceActions::cleanServiceUsers()` drops SQL service users owned by the display name.
-
-6. **OpenGDB / triplestore** — delete request via `SodaScsOpenGdbServiceActions::buildDeleteRequest()`.
-
-7. **SCS entities** — owned snapshots, components, stacks, projects, and service keys are deleted.
+2. **`hook_user_predelete`** — `SodaScsUserOffboarding::purge()`, inside the account delete transaction; a failing step is logged and the rest goes on:
+   - Leaves the projects the account only belongs to (`detachMember()`, which also revokes its access there) and deletes its invitations.
+   - Per owned project (demo projects under the demo lock): JupyterHub stack, the remaining applications (`removeApplications($project, FALSE)`), WebProtégé component, project mount, Team Folder, WebProtégé project (trash), Keycloak project group, the project.
+   - Leftovers: owned components and stacks that are not in another owner's project, snapshots, service keys.
+   - Personal accounts: Nextcloud (unmount the Drive, then `deleteNextcloudAccountForKeycloakUser()`), MariaDB user, OpenGDB user, WebProtégé user, Keycloak user (admin token, then `DELETE /admin/realms/{realm}/users/{userId}`; skipped without an `authmap` link).
+   - The user's conversations.
 
 ### API route configuration
 
