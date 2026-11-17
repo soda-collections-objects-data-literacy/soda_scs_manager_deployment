@@ -31,6 +31,10 @@ flowchart LR
 - [WebProtégé](apps/webprotege.md)
 - [WissKI Environment](apps/wisski.md)
 
+## Messages
+
+**Messages** in the menu lists project invitations and messages from the administration. A message from the administration opens as a conversation: your messages on the right, the administration's on the left, with the name of the person who wrote it. Reply in the field at the bottom. You can edit or delete your own messages; a deleted message shows "Message deleted". The number in the menu counts invitations and conversations with a new message.
+
 ## Need help?
 
 Contact your system administrator for access, sharing, or quota questions.

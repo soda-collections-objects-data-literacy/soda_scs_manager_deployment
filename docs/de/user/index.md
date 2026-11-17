@@ -31,6 +31,10 @@ flowchart LR
 - [WebProtégé](apps/webprotege.md)
 - [WissKI-Umgebung](apps/wisski.md)
 
+## Nachrichten
+
+**Nachrichten** im Menü zeigt Projekteinladungen und Nachrichten der Administration. Eine Nachricht der Administration öffnet sich als Konversation: deine Nachrichten rechts, die der Administration links, jeweils mit dem Namen der Person, die sie geschrieben hat. Antworte im Feld unten. Eigene Nachrichten kannst du bearbeiten oder löschen; eine gelöschte Nachricht erscheint als „Nachricht gelöscht“. Die Zahl im Menü zählt Einladungen und Konversationen mit einer neuen Nachricht.
+
 ## Hilfe benötigt?
 
 Bei Fragen zu Zugriff, Freigaben oder Speicherplatz wende dich an deine Systemadministration.
