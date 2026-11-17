@@ -18,6 +18,16 @@ Die Zusammenarbeit wird durch integrierte Diskussionsstränge, detaillierte Änd
 
 Die Plattform unterstützt mehrere Ontologieformate, darunter RDF/XML, Turtle, OWL/XML und OBO, und gewährleistet so die Interoperabilität mit bestehenden Tools und Arbeitsabläufen. Ihre Import-/Exportfunktionalität erleichtert die Integration mit Desktop-Ontologie-Editoren und anderen Semantic-Web-Tools und gewährleistet gleichzeitig die Formatkompatibilität zwischen verschiedenen Systemen.
 
+## Eine bestehende Ontologie importieren
+
+Um mit einer bestehenden Ontologie zu beginnen, öffnen Sie die WebProtégé-Anwendung im SCS Manager und wählen den Reiter **Ontologie importieren**. Laden Sie eine Datei in RDF/XML (`.owl`, `.rdf`), Turtle (`.ttl`) oder OWL Functional Syntax (`.ofn`) hoch, auf Wunsch mit einer Revisionsnachricht. Die Klassen, Properties und übrigen Axiome der Datei werden dem Projekt hinzugefügt; im Projekt wird nichts entfernt. Der Import erscheint als neue Revision in der Historie des Projekts. Importieren kann nur der Projekteigentümer.
+
+- **Importe:** Die Ontologien, die die Datei importiert (`owl:imports`), werden mitgeladen, und ihre Axiome kommen ebenfalls ins Projekt. Jeder Import muss eine öffentliche `http`- oder `https`-Adresse sein, die jeder herunterladen kann; eine Datei, die eine Adresse im SCS-Netz, eine lokale Datei oder einen relativen Pfad importiert, wird abgelehnt. Importe der importierten Ontologien lädt WebProtégé unverändert.
+- **OWL/XML:** Eine `.owl`-Datei muss RDF/XML sein. Hat Protégé Ihre Ontologie als OWL/XML gespeichert, speichern Sie sie erneut als RDF/XML oder Turtle (**File → Save as**) und laden diese Datei hoch.
+- **Größe:** Dateien bis 50 MB.
+
+Verwenden Sie dafür nicht **Apply external edits** in WebProtégé: Es übernimmt nur eine Datei, deren Ontologie-IRI der des Projekts entspricht. Bei einem vom SCS Manager angelegten Projekt importiert es deshalb nichts, meldet aber trotzdem Erfolg.
+
 ## Links
 
 - [Link zur Webprotégé Website](https://protegewiki.stanford.edu/wiki/WebProtege)

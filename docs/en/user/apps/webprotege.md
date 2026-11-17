@@ -18,6 +18,16 @@ Collaboration is facilitated through integrated discussion threads, detailed cha
 
 The platform supports multiple ontology formats, including RDF/XML, Turtle, OWL/XML, and OBO, ensuring interoperability with existing tools and workflows. Its import/export functionality facilitates integration with desktop ontology editors and other semantic web tools while maintaining format compatibility across different systems.
 
+## Import an existing ontology
+
+To start from an existing ontology, open the WebProtégé application in the SCS Manager and choose the **Import ontology** tab. Upload an RDF/XML (`.owl`, `.rdf`), Turtle (`.ttl`) or OWL functional syntax (`.ofn`) file and, if you like, a revision message. The classes, properties and other axioms of the file are added to the project; nothing in it is removed. The import shows up as a new revision in the project's history. Only the project owner can import.
+
+- **Imports:** the ontologies the file imports (`owl:imports`) are loaded too, and their axioms are added as well. Every import must be a public `http` or `https` address that anyone can download; a file that imports an address inside the SCS network, a local file or a relative path is refused. Imports of the imported ontologies are loaded by WebProtégé as they are.
+- **OWL/XML:** an `.owl` file must be RDF/XML. If Protégé saved your ontology as OWL/XML, save it again as RDF/XML or Turtle (**File → Save as**) and upload that file.
+- **Size:** files up to 50 MB.
+
+Do not use **Apply external edits** in WebProtégé for this: it only merges a file whose ontology IRI is the same as the project's, so for a project created by the SCS Manager it imports nothing, even though it reports success.
+
 ## Links
 
 - [Link to the Webprotégé website](https://protegewiki.stanford.edu/wiki/WebProtege)
