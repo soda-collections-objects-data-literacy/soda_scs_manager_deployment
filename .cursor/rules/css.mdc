@@ -1,15 +1,13 @@
 ---
 description: >-
-  General CSS/PostCSS/SCSS standards: semantic selectors, tokens over
+  General CSS/SCSS standards: semantic selectors, tokens over
   hardcoded values, low specificity, maintainable structure.
 globs:
   - "**/*.css"
-  - "**/*.pcss"
   - "**/*.scss"
 # Same patterns for Claude Code (.claude/rules links here).
 paths:
   - "**/*.css"
-  - "**/*.pcss"
   - "**/*.scss"
 alwaysApply: false
 ---

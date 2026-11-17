@@ -4,14 +4,12 @@ description: >-
   or styling; never invent colors, fonts, or spacing outside the token system.
 globs:
   - "**/*.css"
-  - "**/*.pcss"
   - "**/*.scss"
   - "**/*.tsx"
   - "**/*.jsx"
 # Same patterns for Claude Code (.claude/rules links here).
 paths:
   - "**/*.css"
-  - "**/*.pcss"
   - "**/*.scss"
   - "**/*.tsx"
   - "**/*.jsx"
@@ -28,7 +26,7 @@ SODa corporate design (Inter / Noto Sans, orange `#e68500`, menu-bar motif: oran
 | --- | --- | --- |
 | Public site + dashboard shell (`scs_custom_theme`) | `assets/scss/base/_vars.scss`, `_colors.scss`, `_typo.scss` | SCSS → `assets/css/styles.css` |
 | Base reset, body font, cookie banner (`scs_custom_theme`) | `assets/css/reset.css`, `assets/css/cookie-banner.css` | plain CSS, no build |
-| Manager UI (module `soda_scs_manager`, Tailwind v4) | `pcss/colors.pcss`, `@theme` blocks in `pcss/components/` | `npm run build` in the module → `css/soda-scs-manager.css` (no Node on the host: `node:22-alpine` container) |
+| Manager UI (module `soda_scs_manager`) | `scs_custom_theme`: `assets/scss/manager/` (one partial per component, `@layer components`), tokens from `base/_vars.scss` | `npm run build` in the theme → `assets/css/styles.css` (no Node on the host: `docker exec -u developer -w /opt/drupal/web/themes/custom/scs_custom_theme manager--drupal--app npm run build`). The module ships no CSS: it only sets semantic classes, no utilities, no `style=`. Gin admin pages keep Gin's defaults. |
 | Keycloak login | `keycloak/keycloak/themes/scs/login/resources/css/scs-login.css` | container rebuild |
 | SCS Health | `scs-health/app/globals.css` | container rebuild |
 

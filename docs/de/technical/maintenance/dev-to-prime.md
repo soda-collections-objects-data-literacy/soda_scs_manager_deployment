@@ -145,7 +145,7 @@ git push origin main
 
 ### 2. Theme pushen
 
-Der Image-Bau klont `scs_custom_theme` von Branch `main`. Commits, die nicht auf diesem Branch liegen, fehlen im Image. Das Styling der Manager-Oberfläche liegt im Modul (`css/soda-scs-manager.css`) und kommt mit dem Modul-Release. Schritt 1 hat `scs_custom_theme` schon gepusht, wenn sich nur die Seiten geändert haben.
+Der Image-Bau klont `scs_custom_theme` von Branch `main`. Commits, die nicht auf diesem Branch liegen, fehlen im Image. Das Styling der Manager-Oberfläche liegt in `scs_custom_theme` (`assets/scss/manager/`), nicht im Modul: Braucht ein Modul-Release neue Styles, muss das Theme vorher auf `main` sein. Schritt 1 hat `scs_custom_theme` schon gepusht, wenn sich nur die Seiten geändert haben.
 
 ```bash
 cd /var/www/deploy/soda_scs_manager_deployment/scs-manager-stack/volumes/drupal-root/web/themes/custom/scs_custom_theme

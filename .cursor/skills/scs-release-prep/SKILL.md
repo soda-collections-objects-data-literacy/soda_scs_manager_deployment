@@ -40,11 +40,12 @@ All paths relative to `/var/www/deploy/soda_scs_manager_deployment`.
 | Theme | `scs-manager-stack/volumes/drupal-root/web/themes/custom/scs_custom_theme` | `main` | `origin` | none (image clones `main`) | none |
 | Image | `repos/scs-manager-image` | `main` | `origin` (https, pushed over SSH) | **tag `3.x.y`** whenever module, theme, shipped content or the image changed. If the image raises its module constraint (`SODA_SCS_MANAGER_VERSION`), even its `main` push waits for that module release on drupal.org, or the `:main` build fails | GitHub Actions builds `:main` on push and `X.Y.Z`/`X.Y`/`X` on a tag; `gh-release` creates the GitHub Release object |
 
-The manager UI CSS is part of the module (`pcss/` → committed
-`css/soda-scs-manager.css`). If `pcss/` changed, rebuild it before committing
-(`npm run build` in the module; no Node on the host:
-`docker run --rm -u "$(id -u):$(getent group www-data | cut -d: -f3)" -v "$PWD":/m -w /m node:22-alpine sh -c 'npm install && npm run build'`)
-and commit the CSS with the change. The image needs a module release for it.
+The manager UI styles live in the theme (`assets/scss/manager/` → committed
+`assets/css/styles.css`); the module ships no CSS. If the SCSS changed, rebuild
+before committing (`docker exec -u developer -w /opt/drupal/web/themes/custom/scs_custom_theme manager--drupal--app npm run build`;
+no Node on the host) and commit the CSS with the source. A module release that
+relies on new theme classes needs the theme pushed to `main` first, then the
+image tag, so Prime never gets the module without its styles.
 
 Module and theme live in gitignored volume paths: separate repos, not
 submodules.
