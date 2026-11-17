@@ -116,7 +116,7 @@ phpMyAdmin SSO reads `preferred_username` and `mariadb_password` from the JWT. S
 
 | Resource | Created when | Deleted when |
 |----------|--------------|--------------|
-| OpenGDB / triplestore user | Triplestore component | User delete (account offboarding); a component delete removes only that repository's read and write grants |
+| OpenGDB / triplestore user | Triplestore component; when the account is gone (for example deleted by an administrator), the next triplestore creates it again with a new token and read and write grants on the owner's existing repositories | User delete (account offboarding); a component delete removes only that repository's read and write grants |
 | WissKI stack | WissKI component via Portainer | Component/stack delete |
 | Keycloak groups/clients | WissKI component setup | WissKI component delete |
 | WebProtégé ontology project | SCS project create (REST `POST /data/projects`) | SCS project delete (REST `DELETE /data/projects/{id}` → trash) |
