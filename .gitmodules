@@ -1,6 +1,7 @@
 [submodule "jupyterhub"]
 	path = jupyterhub
 	url = git@github.com:soda-collections-objects-data-literacy/jupyterhub.git
+	branch = main
 
 [submodule "keycloak"]
 	path = keycloak
@@ -31,3 +32,4 @@
 [submodule "scs-voyager"]
 	path = scs-voyager
 	url = git@github.com:soda-collections-objects-data-literacy/scs-voyager.git
+	branch = main
