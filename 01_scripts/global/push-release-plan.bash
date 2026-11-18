@@ -136,18 +136,22 @@ github_slug() {
 
 do_gh_release() {
   local path="$1" tag="$2"
-  local dir="${ROOT}/${path}" slug
+  local dir="${ROOT}/${path}" slug notes
   [[ "${path}" == "." ]] && dir="${ROOT}"
   [[ -d "${dir}" ]] && git -C "${dir}" rev-parse --git-dir >/dev/null 2>&1 \
     || { echo "Not a git repo: ${path}" >&2; return 1; }
   git -C "${dir}" show-ref --verify -q "refs/tags/${tag}" \
     || { echo "MISSING local tag ${tag} in ${path}" >&2; MISSING=$(( MISSING + 1 )); return 1; }
+  # Always take owner/repo from origin. gh alone follows upstream in forks
+  # (e.g. scs-voyager → Smithsonian/dpo-voyager) and then --verify-tag fails.
   slug="$(github_slug "${dir}")" \
     || { echo "${path}: origin is not a GitHub remote; cannot create a release" >&2; return 1; }
   echo "==> ${path}: GitHub Release ${tag} on ${slug}"
-  # Run gh inside the repo: --notes-from-tag cannot be combined with --repo.
+  # --notes-from-tag cannot be combined with --repo; read the annotated tag here.
+  notes="$(git -C "${dir}" tag -l --format='%(contents)' "${tag}")"
+  notes="${notes%$'\n'}"
   if (( DRY_RUN )); then
-    if command -v gh >/dev/null 2>&1 && (cd "${dir}" && gh release view "${tag}" >/dev/null 2>&1); then
+    if command -v gh >/dev/null 2>&1 && gh release view "${tag}" --repo "${slug}" >/dev/null 2>&1; then
       echo "    already exists"
     else
       echo "    would create (notes from annotated tag)"
@@ -155,11 +159,11 @@ do_gh_release() {
     return 0
   fi
   command -v gh >/dev/null 2>&1 || { echo "gh is required for gh-release" >&2; return 1; }
-  if (cd "${dir}" && gh release view "${tag}" >/dev/null 2>&1); then
+  if gh release view "${tag}" --repo "${slug}" >/dev/null 2>&1; then
     echo "    already exists, skipping"
     return 0
   fi
-  (cd "${dir}" && gh release create "${tag}" --title "${tag}" --notes-from-tag --verify-tag)
+  gh release create "${tag}" --repo "${slug}" --title "${tag}" --notes "${notes}" --verify-tag
 }
 
 (( DRY_RUN )) || ensure_agent
