@@ -45,7 +45,7 @@ Hast du mindestens eine Karte gewählt, kommt für jede ein Formular.
 
 ![WissKI benennen: Bezeichnung und Notizen](images/07-projekt-wizard-wisski.png)
 
-Bei **WissKI** und **JupyterHub** hat die **Bezeichnung** höchstens 25 Zeichen. Daraus entsteht die Adresse der Anwendung; sie erscheint unter dem Feld, sobald der Name geprüft ist. **Notizen** sind optional. **Skip** lässt diese eine Anwendung aus. **Weiter** merkt sie sich für die Prüfung am Ende.
+Bei **WissKI** und **JupyterHub** hat die **Bezeichnung** höchstens 25 Zeichen. Daraus entsteht die Adresse der Anwendung; sie erscheint unter dem Feld, sobald der Name geprüft ist. **Notizen** sind optional. **Skip** lässt diese eine Anwendung aus. **Weiter** lässt die Angaben zuerst vom Server prüfen: Ist der Name noch frei, ist dein Nextcloud-Konto verbunden (WissKI)? Stimmt etwas nicht, steht die Meldung über dem Formular und der Schritt bleibt offen. Das Projekt gibt es zu diesem Zeitpunkt noch nicht.
 
 SQL-Datenbank und Triplestore fragst du genauso nach Bezeichnung und Notizen. Eine WissKI-Umgebung bringt Datenbank und Triplestore schon mit. Die beiden Karten darunter sind zusätzliche, eigenständige Anwendungen.
 

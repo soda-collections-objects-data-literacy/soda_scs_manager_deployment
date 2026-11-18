@@ -45,7 +45,7 @@ If you selected at least one card, a form follows for each.
 
 ![Naming WissKI: label and notes](images/07-projekt-wizard-wisski.png)
 
-For **WissKI** and **JupyterHub** the **Bezeichnung** is at most 25 characters. The application address is built from it and appears under the field once the name has been checked. **Notizen** are optional. **Skip** drops this one application. **Weiter** keeps it for the check at the end.
+For **WissKI** and **JupyterHub** the **Bezeichnung** is at most 25 characters. The application address is built from it and appears under the field once the name has been checked. **Notizen** are optional. **Skip** drops this one application. **Weiter** has the server check the entries first: is the name still free, is your Nextcloud account connected (WissKI)? If something is wrong, the message appears above the form and the step stays open. The project does not exist yet at this point.
 
 SQL database and triplestore ask for a label and notes in the same way. A WissKI environment already includes a database and a triplestore. The two cards below those are extra, standalone applications.
 
