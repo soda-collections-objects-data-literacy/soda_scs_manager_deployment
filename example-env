@@ -263,7 +263,9 @@ SCS_MANAGER_DB_PORT=3306
 SCS_MANAGER_DB_ROOT_PASSWORD=scsmanagerrootpass
 SCS_MANAGER_DB_USER=scsmanager
 SCS_MANAGER_DRUPAL_PORT=8080
-SCS_MANAGER_IMAGE_VERSION=latest
+# Dev: rolling CI tag "main". Prime: major release float "3" (or a full pin to roll back).
+# "local" only after a self-built image (Dockerfile work before CI).
+SCS_MANAGER_IMAGE_VERSION=main
 # production on production servers. development additionally needs
 # :00_custom_configs/scs-manager-stack/docker/docker-compose.development.yml
 # in COMPOSE_FILE after scs-manager-stack/docker-compose.override.yml (custom
