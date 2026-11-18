@@ -10,7 +10,7 @@ Er prüft das Deployment, alle Submodule, das Modul `soda_scs_manager`, das Them
 
 1. Er committet die Änderungen in logischen Commits, das innerste Repo zuerst.
 2. Er trägt jede sichtbare Änderung unter `[Unreleased]` im `CHANGELOG.md` des Repos ein.
-3. Er released das Modul (`4.x.y`) und das Image (`3.x.y`), wenn Prime sie braucht. Tags haben kein `v` und sind annotiert.
+3. Er released das Modul (`4.x.y`) und das Image (`3.x.y`), wenn Prime sie braucht, und taggt JupyterHub und Voyager, wenn deren Changelog (oder ein Voyager-Upstream-Bump) es verlangt. Tags haben kein `v` und sind annotiert. Voyager bleibt auf rolling `main`, nicht detached an einem Upstream-`v*`-Tag.
 4. Er committet die neuen Submodule-Zeiger im Deployment.
 5. Er schreibt `plans/push-plan.txt`, prüft den Plan mit einem Dry Run und listet die Handgriffe.
 

@@ -10,7 +10,7 @@ It checks the deployment, all submodules, the `soda_scs_manager` module, the `sc
 
 1. It commits the changes in logical commits, innermost repo first.
 2. It adds every visible change under `[Unreleased]` in the repo's `CHANGELOG.md`.
-3. It releases the module (`4.x.y`) and the image (`3.x.y`) when Prime needs them. Tags have no `v` and are annotated.
+3. It releases the module (`4.x.y`) and the image (`3.x.y`) when Prime needs them, and tags JupyterHub and Voyager when their changelogs (or Voyager upstream bump) call for it. Tags have no `v` and are annotated. Voyager stays on rolling `main`, not detached at an upstream `v*` tag.
 4. It commits the new submodule pointers in the deployment.
 5. It writes `plans/push-plan.txt`, checks the plan with a dry run and lists the manual steps.
 
