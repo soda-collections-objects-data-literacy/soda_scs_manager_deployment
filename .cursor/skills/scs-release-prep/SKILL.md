@@ -204,23 +204,31 @@ each item names the exact URL or command. Check these cases:
 | Keycloak realm/theme changes | Realm imports only run on a fresh realm: apply realm changes in the admin console on Prime; theme changes need the container rebuild. |
 | Any **bold** admin instruction in a changelog entry shipped now | Copy it as its own step. |
 
-**Optional — local image builds on this host** (skip the GHCR wait; tag with the
-same `ghcr.io/…` names Compose/Portainer use). Add as `todo Optional (local): …`
-when an image tag (or rolling `:main`) is in the plan. Offer to run the builds
-during prep if the user wants to test before CI finishes; otherwise leave the
-commands in the plan. Use `--no-cache` when the baked package set or module must
-change; otherwise `--pull` is enough.
+**Dev host image channel** (see `docs/en/technical/maintenance/scs-manager-image-update.md`):
+the shared dev host runs `SCS_MANAGER_MODE=development` and
+`SCS_MANAGER_IMAGE_VERSION=main`. CI publishes `:main` on every push to the image
+repo `main`. Do **not** put a floating major (`3`) or a SemVer pin into the Dev
+`.env`. Module/theme stay on bind-mounted `4.x` / theme `main` — independent of
+the image tag. After the image CI is green, the plan's default Dev refresh is
+`pull` + `--force-recreate` of `manager--drupal--app` (not a local rebuild).
+
+**Optional — local image builds on this host** (Dockerfile/entrypoint work or skip
+the GHCR wait). Add as `todo Optional (local): …` only when the user wants that
+path. Tag with the same `ghcr.io/…` names Compose uses. `:local` is temporary:
+set `SCS_MANAGER_IMAGE_VERSION=local`, recreate, then switch back to `main`.
+Use `--no-cache` when the baked package set or module must change; otherwise
+`--pull` is enough.
 
 | Trigger | Local build (fill in the real `X.Y.Z`) |
 | --- | --- |
-| `scs-manager-image` tag `X.Y.Z` | From `repos/scs-manager-image`, build production and/or development and tag `ghcr.io/soda-collections-objects-data-literacy/scs-manager-image-{production,development}:X.Y.Z` plus `:X.Y`, `:X`, `:local`. Production needs the module release on drupal.org if `SODA_SCS_MANAGER_VERSION` was raised. |
-| `wisski-base-image` tag `X.Y.Z` | From `repos/wisski-base-image`, production: `--build-arg MODE=production` → `…/wisski-base-image-production:X.Y.Z` (+ `:X.Y`, `:local`). The Dockerfile curls `drupal_packages` from GitHub, so **push packages first** (or the build 404s). |
-| `wisski-base-image` rolling development | Same repo, `--build-arg MODE=development --build-arg WISSKI_PACKAGES_LINE=4.x` → `…/wisski-base-image-development:main` (+ `:local`). |
+| `scs-manager-image` tag `X.Y.Z` | From `repos/scs-manager-image`, build production and/or development and tag `…/scs-manager-image-{production,development}:X.Y.Z` plus `:X.Y`, `:X`. Optionally also `:local` for a temporary Dev switch. Production needs the module release on drupal.org if `SODA_SCS_MANAGER_VERSION` was raised. |
+| `wisski-base-image` tag `X.Y.Z` | From `repos/wisski-base-image`, production: `--build-arg MODE=production` → `…/wisski-base-image-production:X.Y.Z` (+ `:X.Y`, optional `:local`). The Dockerfile curls `drupal_packages` from GitHub, so **push packages first** (or the build 404s). |
+| `wisski-base-image` rolling development | Same repo, `--build-arg MODE=development --build-arg WISSKI_PACKAGES_LINE=4.x` → `…/wisski-base-image-development:main` (+ optional `:local`). |
 
 Example commands (adapt version and which variants you need):
 
 ```bash
-# SCS Manager (development example)
+# SCS Manager (optional local — Dev host default remains :main from CI)
 cd repos/scs-manager-image
 docker build --pull --build-arg MODE=development \
   -t ghcr.io/soda-collections-objects-data-literacy/scs-manager-image-development:X.Y.Z \
@@ -268,10 +276,11 @@ push repos/scs-manager-image origin main 3.4.0
 gh-release repos/scs-manager-image 3.4.0
 push . origin main
 todo Check the image build: https://github.com/soda-collections-objects-data-literacy/scs-manager-image/actions
-todo Optional (local): cd repos/scs-manager-image && docker build --pull --build-arg MODE=development -t ghcr.io/soda-collections-objects-data-literacy/scs-manager-image-development:3.4.0 -t ghcr.io/soda-collections-objects-data-literacy/scs-manager-image-development:local .
+todo Dev (SCS_MANAGER_IMAGE_VERSION=main): docker compose pull manager--drupal--app && docker compose up -d --force-recreate manager--drupal--app
+todo Optional (local Dockerfile work): cd repos/scs-manager-image && docker build --pull --build-arg MODE=development -t ghcr.io/soda-collections-objects-data-literacy/scs-manager-image-development:local . && temporarily set SCS_MANAGER_IMAGE_VERSION=local, recreate, then switch back to main
 todo Prime: cd /var/deploy/soda_scs_manager_deployment && git pull && git submodule update --init --recursive
 todo Prime: docker compose up -d --build jupyterhub--jupyterhub--app
-todo Prime: docker compose pull manager--drupal--app && docker compose up -d manager--drupal--app (log: Package set changed / Shipped content changed)
+todo Prime: docker compose pull manager--drupal--app && docker compose up -d manager--drupal--app (log: Package set changed / Shipped content changed; IMAGE_VERSION stays 3)
 todo Prime: re-copy 01_scripts/global/*.timer and *.service to /etc/systemd/system/, systemctl daemon-reload
 ```
 

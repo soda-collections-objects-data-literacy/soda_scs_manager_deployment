@@ -67,10 +67,15 @@ Then list what CI does not do:
   publishes `X.Y.Z`, `X.Y` and `X`. After the image `push`, add
   `gh-release <path> <tag>` so the script creates the GitHub Release from the
   annotated tag (same for other GitHub-hosted tags such as wisski-base-*).
-- **Optional (local):** add a `todo Optional (local): …` with the `docker build`
-  that tags `ghcr.io/soda-collections-objects-data-literacy/<image>:X.Y.Z` (and
-  `:local` / `:main` as needed) so this host can test without waiting for CI.
-  Exact commands: `/scs-release-prep` → *Optional — local image builds*.
+- **Dev host** uses `SCS_MANAGER_IMAGE_VERSION=main` (CI rolling tag). After the
+  image Actions run is green, add
+  `todo Dev: docker compose pull manager--drupal--app && docker compose up -d --force-recreate manager--drupal--app`.
+  Do not steer the push plan toward `:local` as the default.
+- **Optional (local):** only for Dockerfile work or skipping the GHCR wait — add a
+  `todo Optional (local): …` with `docker build` tagging `:X.Y.Z` and optionally
+  `:local`, then switch `.env` back to `main`. Exact commands: `/scs-release-prep`
+  → *Optional — local image builds* and
+  `docs/en/technical/maintenance/scs-manager-image-update.md`.
 
 The user runs `01_scripts/global/push-release-plan.bash`.
 

@@ -14,6 +14,8 @@ All mechanics live in `01_scripts/global/update-stack.bash`. Do not hand-roll `g
 
 **Which host?** If `SCS_MANAGER_MODE=production` in `.env` (Prime, `/var/deploy/soda_scs_manager_deployment`), use **[Prime](#prime-production)** below. Everything else (dev) uses the workflow right after this.
 
+**Dev manager image:** expect `SCS_MANAGER_IMAGE_VERSION=main` (CI rolling tag). A value of `3` or a SemVer on the shared Dev host is wrong — see `docs/en/technical/maintenance/scs-manager-image-update.md`. `pull` in `--apply` refreshes `:main`; a running container still needs recreate when the digest changed (Compose does that when the image ID differs).
+
 ## Workflow (dev)
 
 ```
