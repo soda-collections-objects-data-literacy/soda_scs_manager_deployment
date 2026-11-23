@@ -71,6 +71,89 @@ log()  { printf '%s\n' "$*"; }
 warn() { printf 'WARN: %s\n' "$*" >&2; }
 hr()   { printf '%s\n' "------------------------------------------------------------"; }
 
+# Compose-style status line: yellow braille spinner while a command runs, then
+# green ✔ / red ✖. Falls back to plain log lines when stdout is not a TTY
+# (pipes, cron, Cursor agent shells).
+THROBBER_FRAMES=(⠋ ⠙ ⠹ ⠸ ⠼ ⠴ ⠦ ⠧ ⠇ ⠏)
+if [[ -t 1 ]]; then
+  C_YELLOW=$'\033[33m' C_GREEN=$'\033[32m' C_RED=$'\033[31m' C_RESET=$'\033[0m'
+  USE_THROBBER=1
+else
+  C_YELLOW= C_GREEN= C_RED= C_RESET=
+  USE_THROBBER=0
+fi
+_THROBBER_ACTIVE=0
+
+_throbber_show_cursor() {
+  [[ $_THROBBER_ACTIVE -eq 1 ]] || return 0
+  printf '\033[?25h' >/dev/tty 2>/dev/null || printf '\033[?25h'
+  _THROBBER_ACTIVE=0
+}
+
+# Runs "$@" with a throbber labelled $1. Returns the command's exit status.
+# By default captures stdout/stderr and prints them only on failure, so the
+# status line stays clean. Pass --keep-output as $2 for tools that draw their
+# own progress (docker compose pull/build/up): the label is printed, the
+# command runs in the foreground, then a ✔/✖ summary line follows.
+run_with_throbber() {
+  local label="$1"; shift
+  local keep_output=0
+  if [[ "${1:-}" == --keep-output ]]; then keep_output=1; shift; fi
+
+  local status=0
+
+  # Commands with their own TUI: no animation over the top, just ✔/✖ after.
+  if [[ $keep_output -eq 1 ]]; then
+    if [[ $USE_THROBBER -eq 1 ]]; then
+      printf '%s%s%s %s\n' "$C_YELLOW" "${THROBBER_FRAMES[0]}" "$C_RESET" "$label"
+    else
+      log "$label"
+    fi
+    "$@" || status=$?
+    if [[ $USE_THROBBER -eq 1 ]]; then
+      if [[ $status -eq 0 ]]; then
+        printf '%s✔%s %s\n' "$C_GREEN" "$C_RESET" "$label"
+      else
+        printf '%s✖%s %s\n' "$C_RED" "$C_RESET" "$label"
+      fi
+    fi
+    return "$status"
+  fi
+
+  if [[ $USE_THROBBER -eq 0 ]]; then
+    log "$label"
+    "$@"
+    return $?
+  fi
+
+  local pid frame=0 out
+  out="$(mktemp)"
+  printf '\033[?25l'
+  _THROBBER_ACTIVE=1
+  "$@" >"$out" 2>&1 &
+  pid=$!
+
+  while kill -0 "$pid" 2>/dev/null; do
+    printf '\r%s%s%s %s\033[K' "$C_YELLOW" "${THROBBER_FRAMES[frame]}" "$C_RESET" "$label"
+    frame=$(( (frame + 1) % ${#THROBBER_FRAMES[@]} ))
+    sleep 0.08
+  done
+  wait "$pid" || status=$?
+
+  printf '\r'
+  if [[ $status -eq 0 ]]; then
+    printf '%s✔%s %s\033[K\n' "$C_GREEN" "$C_RESET" "$label"
+  else
+    printf '%s✖%s %s\033[K\n' "$C_RED" "$C_RESET" "$label"
+    if [[ -s "$out" ]]; then
+      sed 's/^/    /' "$out" >&2
+    fi
+  fi
+  _throbber_show_cursor
+  rm -f "$out"
+  return "$status"
+}
+
 # Prints the newest SemVer tag of the repo in $1.
 newest_semver_tag() {
   git -C "$1" tag --list | grep -E "$SEMVER_RE" | sort -V | tail -1 || true
@@ -89,7 +172,7 @@ follow_branch() {
 # Collected plan entries: "repo|path|mode|from|to|target_ref|state"
 declare -a PLAN=()
 CHANGED_FILES="$(mktemp)"
-trap 'rm -f "$CHANGED_FILES"' EXIT
+trap '_throbber_show_cursor; rm -f "$CHANGED_FILES"' EXIT
 
 record_changes() { # repo_path from to
   local path="$1" from="$2" to="$3" prefix=""
@@ -332,14 +415,16 @@ prime_pull_wisski_image() {
     log "WissKI image pull skipped (--offline): ${WISSKI_IMG_REF}"
     return 0
   fi
+  local pull_label
   if [[ -n "$WISSKI_IMG_LOCAL" && "$WISSKI_IMG_LOCAL" == "$WISSKI_IMG_TAG" ]]; then
-    log "Pulling WissKI image ${WISSKI_IMG_REF} (refresh local ${WISSKI_IMG_LOCAL})"
+    pull_label="Pulling WissKI image ${WISSKI_IMG_REF} (refresh local ${WISSKI_IMG_LOCAL})"
   elif [[ -n "$WISSKI_IMG_LOCAL" ]]; then
-    log "Pulling WissKI image ${WISSKI_IMG_REF} (local was ${WISSKI_IMG_LOCAL})"
+    pull_label="Pulling WissKI image ${WISSKI_IMG_REF} (local was ${WISSKI_IMG_LOCAL})"
   else
-    log "Pulling WissKI image ${WISSKI_IMG_REF}"
+    pull_label="Pulling WissKI image ${WISSKI_IMG_REF}"
   fi
-  if ! docker pull "$WISSKI_IMG_REF"; then
+  # docker pull draws its own progress; only mark the step with ✔/✖ around it.
+  if ! run_with_throbber "$pull_label" --keep-output docker pull "$WISSKI_IMG_REF"; then
     warn "pull of ${WISSKI_IMG_REF} failed"
     return 1
   fi
@@ -506,7 +591,7 @@ prime_wisski_settings_values() {
 
 prime_run() {
   local work; work="$(mktemp -d)"
-  trap 'rm -rf "$CHANGED_FILES" "'"$work"'"' EXIT
+  trap '_throbber_show_cursor; rm -rf "$CHANGED_FILES" "'"$work"'"' EXIT
 
   [[ -f .env ]] || { echo "No .env in ${REPO_ROOT}." >&2; exit 1; }
   local mgr_mode mgr_version
@@ -768,17 +853,16 @@ prime_run() {
   local failed=0
 
   if [[ "$dep_from" != "$dep_to" ]]; then
-    log "Fast-forwarding the deployment repo to ${dep_to:0:8}"
-    git merge --ff-only --quiet "$dep_to"
+    run_with_throbber "Fast-forwarding the deployment repo to ${dep_to:0:8}" \
+      git merge --ff-only --quiet "$dep_to"
   fi
-  log "Checking out the recorded submodule commits"
-  git submodule sync --quiet --recursive
-  "${GIT_NET[@]}" submodule update --init --recursive
+  run_with_throbber "Checking out the recorded submodule commits" \
+    bash -c 'git submodule sync --quiet --recursive && "$@"' \
+    _ "${GIT_NET[@]}" submodule update --init --recursive
 
   for pair in "${COPY_NOW[@]}"; do
     src="${pair%%|*}"; dst="${pair##*|}"
-    log "Copying $src -> $dst"
-    cp "$src" "$dst"
+    run_with_throbber "Copying $src -> $dst" cp "$src" "$dst"
   done
 
   if [[ ${#UNIT_CMDS[@]} -gt 0 ]]; then
@@ -795,15 +879,16 @@ prime_run() {
   shadow="$(manager_shadow_binds)"
   mapfile -t recreate < <(printf '%s\n' "${REBUILD[@]}" "${RESTART[@]}" | grep -v '^$' | sort -u)
   if [[ ${#REBUILD[@]} -gt 0 ]]; then
-    log "Building: ${REBUILD[*]}"
-    docker compose build "${REBUILD[@]}"
+    run_with_throbber "Building: ${REBUILD[*]}" --keep-output \
+      docker compose build "${REBUILD[@]}"
   fi
 
   local mgr_image_before mgr_image_after=""
   mgr_image_before="$(docker inspect "$MANAGER_SVC" --format '{{.Image}}' 2>/dev/null || true)"
   if [[ -z "$shadow" ]]; then
-    log "Pulling the SCS Manager image"
-    docker compose pull --quiet "$MANAGER_SVC" || { warn "pull of $MANAGER_SVC failed"; failed=1; }
+    # Compose draws its own per-image throbbers (yellow spinner → green ✔).
+    run_with_throbber "Pulling the SCS Manager image" --keep-output \
+      docker compose pull "$MANAGER_SVC" || { warn "pull of $MANAGER_SVC failed"; failed=1; }
     mgr_image_after="$(docker image inspect "$(jq -r --arg s "$MANAGER_SVC" '.services[$s].image' <<<"$COMPOSE_JSON")" --format '{{.Id}}' 2>/dev/null || true)"
   fi
   prime_pull_wisski_image || {
@@ -822,17 +907,18 @@ prime_run() {
     local snap_dir snap
     snap_dir="${PRIME_BACKUP_ROOT}/$(date +%Y%m%d_%H%M%S)"; snap="${snap_dir}/all-databases.sql.gz"
     mkdir -p "$snap_dir"
-    log "Snapshot of all databases -> $snap"
-    if ! docker exec -e MYSQL_PWD="$db_pw" "$db_container" \
-         mariadb-dump -uroot --all-databases --single-transaction --quick --routines --events | gzip >"$snap" \
+    if ! run_with_throbber "Snapshot of all databases -> $snap" \
+         env MYSQL_PWD="$db_pw" DB_CONTAINER="$db_container" SNAP="$snap" \
+         bash -c 'docker exec -e MYSQL_PWD="$MYSQL_PWD" "$DB_CONTAINER" mariadb-dump -uroot --all-databases --single-transaction --quick --routines --events | gzip >"$SNAP"' \
        || [[ "$(stat -c %s "$snap")" -lt 1024 ]]; then
       echo "Database snapshot failed, stopping before any container is touched." >&2
       exit 1
     fi
     log "  $(du -h "$snap" | cut -f1) written"
     if [[ -n "$nc_change" ]]; then
-      log "Nextcloud changes version (${nc_change}): running backup-nextcloud.bash"
-      bash 01_scripts/scs-nextcloud-stack/backup-nextcloud.bash || { echo "Nextcloud backup failed, stopping before any container is touched." >&2; exit 1; }
+      run_with_throbber "Nextcloud changes version (${nc_change}): running backup-nextcloud.bash" --keep-output \
+        bash 01_scripts/scs-nextcloud-stack/backup-nextcloud.bash \
+        || { echo "Nextcloud backup failed, stopping before any container is touched." >&2; exit 1; }
     fi
   elif [[ $touches -eq 0 ]]; then
     log "No container needs to be recreated, snapshot skipped."
@@ -844,12 +930,13 @@ prime_run() {
     < <(docker compose ps -a --format '{{.Service}}\t{{.ID}}' 2>/dev/null)
 
   if [[ ${#others[@]} -gt 0 ]]; then
-    log "Recreating changed services"
-    docker compose up -d --no-build "${others[@]}" || failed=1
+    run_with_throbber "Recreating changed services" --keep-output \
+      docker compose up -d --no-build "${others[@]}" || failed=1
   fi
   for svc in "${recreate[@]}"; do
     [[ "$svc" != "$MANAGER_SVC" && " ${running[*]} " == *" $svc "* ]] || continue
-    docker compose up -d --no-build --no-deps --force-recreate "$svc" || failed=1
+    run_with_throbber "Force-recreating $svc" --keep-output \
+      docker compose up -d --no-build --no-deps --force-recreate "$svc" || failed=1
   done
 
   # ------------------------------------------------------------ SCS Manager
@@ -941,12 +1028,14 @@ if [[ $PRIME -eq 1 ]]; then
 fi
 
 # ---------------------------------------------------------------- planning
-log "Fetching remotes..."
 hr
 
 if [[ $SKIP_DEPLOYMENT -eq 0 ]]; then
   dep_state=ok
-  [[ $OFFLINE -eq 1 ]] || git fetch --quiet --tags --prune 2>/dev/null || dep_state=fetch-failed
+  if [[ $OFFLINE -eq 0 ]]; then
+    run_with_throbber "Fetching remotes: deployment" \
+      git fetch --quiet --tags --prune || dep_state=fetch-failed
+  fi
   [[ -z "$(git status --porcelain --ignore-submodules=all --untracked-files=no)" ]] || dep_state=dirty
   dep_from="$(git rev-parse HEAD)"
   if [[ "$dep_state" == fetch-failed ]]; then
@@ -972,7 +1061,8 @@ for path in "${SUBMODULES[@]}"; do
     PLAN+=("$name|$path|-|-|-|-|uninitialized"); continue
   fi
 
-  if [[ $OFFLINE -eq 0 ]] && ! git -C "$path" fetch --quiet --all --tags --prune 2>/dev/null; then
+  if [[ $OFFLINE -eq 0 ]] && ! run_with_throbber "Fetching remotes: $name" \
+       git -C "$path" fetch --quiet --all --tags --prune; then
     PLAN+=("$name|$path|-|-|-|-|fetch-failed"); continue
   fi
 
@@ -1063,24 +1153,26 @@ fi
 for entry in "${PLAN[@]}"; do
   IFS='|' read -r name path track from to ref state <<<"$entry"
   [[ "$state" == ok && "$from" != "$to" ]] || continue
-  log "Updating $name -> ${ref} (${to:0:8})"
-  if [[ "$path" == "." ]]; then
-    git merge --ff-only --quiet '@{u}'
-    # initialise submodules newly added upstream, leave existing ones alone
-    git submodule sync --quiet
-    while read -r sm_path; do
-      git submodule update --init --recursive -- "$sm_path"
-    done < <(git submodule status | awk '/^-/{print $2}')
-  elif [[ "$track" == release ]]; then
-    git -C "$path" -c advice.detachedHead=false checkout --quiet "$ref"
-  else
-    b="${ref#*/}"
-    if [[ -z "$(git -C "$path" branch --show-current)" ]]; then
-      git -C "$path" checkout --quiet -B "$b" --track "$ref" 2>/dev/null || git -C "$path" checkout --quiet "$b"
+  run_with_throbber "Updating $name -> ${ref} (${to:0:8})" bash -c '
+    path=$1 track=$2 ref=$3
+    if [[ "$path" == "." ]]; then
+      git merge --ff-only --quiet "@{u}"
+      # initialise submodules newly added upstream, leave existing ones alone
+      git submodule sync --quiet
+      while read -r sm_path; do
+        git submodule update --init --recursive -- "$sm_path"
+      done < <(git submodule status | awk "/^-/{print \$2}")
+    elif [[ "$track" == release ]]; then
+      git -C "$path" -c advice.detachedHead=false checkout --quiet "$ref"
+    else
+      b="${ref#*/}"
+      if [[ -z "$(git -C "$path" branch --show-current)" ]]; then
+        git -C "$path" checkout --quiet -B "$b" --track "$ref" 2>/dev/null || git -C "$path" checkout --quiet "$b"
+      fi
+      git -C "$path" merge --ff-only --quiet "$ref"
     fi
-    git -C "$path" merge --ff-only --quiet "$ref"
-  fi
-  [[ "$path" == "." ]] || git -C "$path" submodule update --init --recursive --quiet
+    [[ "$path" == "." ]] || git -C "$path" submodule update --init --recursive --quiet
+  ' _ "$path" "$track" "$ref"
 done
 
 declare -A BEFORE=()
@@ -1089,24 +1181,27 @@ while IFS=$'\t' read -r svc id; do BEFORE["$svc"]="$id"; done \
 mapfile -t RUNNING < <(docker compose ps --services --status running 2>/dev/null)
 
 if [[ $PULL_IMAGES -eq 1 ]]; then
-  log "Pulling images..."
-  docker compose pull --ignore-buildable --ignore-pull-failures --quiet "${RUNNING[@]}" || warn "image pull had errors"
+  # Without --quiet Compose shows its own per-image yellow throbbers → green ✔.
+  run_with_throbber "Pulling images" --keep-output \
+    docker compose pull --ignore-buildable --ignore-pull-failures "${RUNNING[@]}" \
+    || warn "image pull had errors"
 fi
 
 if [[ ${#REBUILD[@]} -gt 0 ]]; then
-  log "Building: ${REBUILD[*]}"
-  docker compose build "${REBUILD[@]}"
+  run_with_throbber "Building: ${REBUILD[*]}" --keep-output \
+    docker compose build "${REBUILD[@]}"
 fi
 
 # Recreate everything that is running; compose only touches services whose
 # config hash or image changed. Explicitly force rebuilt services.
 if [[ ${#RUNNING[@]} -gt 0 ]]; then
-  log "Recreating changed services..."
-  docker compose up -d --no-build "${RUNNING[@]}"
+  run_with_throbber "Recreating changed services" --keep-output \
+    docker compose up -d --no-build "${RUNNING[@]}"
 fi
 for svc in "${REBUILD[@]}"; do
   if [[ " ${RUNNING[*]} " == *" $svc "* ]]; then
-    docker compose up -d --no-build --no-deps --force-recreate "$svc"
+    run_with_throbber "Force-recreating $svc" --keep-output \
+      docker compose up -d --no-build --no-deps --force-recreate "$svc"
   fi
 done
 
@@ -1118,8 +1213,8 @@ done < <(docker compose ps -a --format '{{.Service}}\t{{.ID}}' 2>/dev/null)
 for svc in "${RESTART[@]}"; do
   [[ " ${RECREATED[*]} " == *" $svc "* ]] && continue
   [[ " ${RUNNING[*]} " == *" $svc "* ]] || continue
-  log "Restarting $svc (bind-mounted config changed)"
-  docker compose restart "$svc"
+  run_with_throbber "Restarting $svc (bind-mounted config changed)" --keep-output \
+    docker compose restart "$svc"
 done
 
 hr
