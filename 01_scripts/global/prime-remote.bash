@@ -22,6 +22,9 @@ set -f # no globbing of client input
 DEPLOY="/var/deploy/soda_scs_manager_deployment"
 UPDATE="${DEPLOY}/01_scripts/global/update-stack.bash"
 MANAGER="manager--drupal--app"
+# Demo version archives are read only from here (path in the manager
+# container; on the host: /srv/backups/scs-manager/snapshots/_demo-templates/_incoming).
+DEMO_INCOMING="/var/scs-manager/snapshots/_demo-templates/_incoming"
 STATE="${XDG_STATE_HOME:-$HOME/.local/state}/scs-prime-remote"
 LOCK="${STATE}/apply.lock"
 
@@ -49,6 +52,12 @@ WissKI component versions (SCS Manager):
   wisski-versions                          list entities and the current default
   wisski-version-add <version> <stack> <image> <packages> <default-data-model-recipe> <starter-recipe>
   wisski-set-default <id>                  set wisski.instances.versions.defaultVersion
+
+Demo projects (SCS Manager):
+  demo-versions                            list demo versions (status, origin, active, demos)
+  demo-import <demo-vX.Y.Z.tar.gz> [--activate]
+                                           import an archive from _demo-templates/_incoming
+  demo-account                             create/update the service account scs_demo
 
   help                                     this text
 EOF
@@ -79,6 +88,7 @@ is_int()       { [[ "$1" =~ ^[1-9][0-9]{0,4}$ ]]; }
 is_container() { [[ "$1" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}$ ]] && docker container inspect "$1" >/dev/null 2>&1; }
 is_value()     { [[ "$1" =~ ^[0-9A-Za-z][0-9A-Za-z.+_-]{0,63}$ ]]; }
 is_entity_id() { [[ "$1" =~ ^[a-z0-9_]{1,64}$ ]]; }
+is_demo_archive() { [[ "$1" =~ ^demo-v[0-9]{1,4}\.[0-9]{1,4}\.[0-9]{1,4}\.tar\.gz$ ]]; }
 
 # Parses update-stack options. Allowed flags per mode come in $1.
 UPDATE_OPTS=()
@@ -152,6 +162,10 @@ start_apply() {
 # --- drush helpers ---------------------------------------------------------------
 
 manager_up() { docker exec "$MANAGER" true 2>/dev/null || die "${MANAGER} is not running"; }
+
+drush_www() { # drush as www-data, like the site itself
+  docker exec -u www-data "$MANAGER" drush "$@"
+}
 
 drush_ev() { # $1 = PHP code, values come in as environment variables
   local code="$1"; shift
@@ -288,6 +302,30 @@ case "$CMD" in
       $c->set("wisski.instances.versions.defaultVersion", $id)->save();
       echo "defaultVersion: $old -> $id\n";
     ' -e "SCS_ID=${ARGS[0]}" ;;
+
+  demo-versions)
+    no_args
+    manager_up
+    drush_www soda_scs_manager:demo-versions ;;
+
+  demo-import)
+    # Only a bare file name from the fixed _incoming directory; the module
+    # checks the .sha256 file, the entries and the manifest.
+    [[ ${#ARGS[@]} -ge 1 && ${#ARGS[@]} -le 2 ]] && is_demo_archive "${ARGS[0]}" \
+      || die "usage: demo-import <demo-vX.Y.Z.tar.gz> [--activate]"
+    IMPORT_OPTS=()
+    if [[ ${#ARGS[@]} -eq 2 ]]; then
+      [[ "${ARGS[1]}" == "--activate" ]] || die "unknown option: ${ARGS[1]}"
+      IMPORT_OPTS+=(--activate)
+    fi
+    manager_up
+    drush_www soda_scs_manager:demo-import "${DEMO_INCOMING}/${ARGS[0]}" "${IMPORT_OPTS[@]}" ;;
+
+  demo-account)
+    no_args
+    manager_up
+    # Reads SCS_DEMO_ACCOUNT_PASSWORD (and _EMAIL) from the container environment.
+    drush_www soda_scs_manager:demo-account ;;
 
   *)
     echo "scs-prime-remote: unknown command: ${CMD}" >&2

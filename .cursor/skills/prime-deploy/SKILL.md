@@ -4,7 +4,8 @@ description: >-
   Update Prime (production) from the dev host over the restricted SSH key:
   plan with update-stack --prime --check, apply after the user's yes, follow
   the logs, run the Drupal checks and add or switch the WissKI component
-  version. Use when the user asks to deploy to, update or check Prime from dev.
+  version, move a demo version to Prime and bootstrap the demo service
+  account. Use when the user asks to deploy to, update or check Prime from dev.
 disable-model-invocation: true
 ---
 # Deploy to Prime from dev
@@ -25,7 +26,8 @@ What the update does, and how to read its output, is the Prime part of the
 - [ ] 3. ssh prime apply
 - [ ] 4. Verify
 - [ ] 5. WissKI component version (ask before each write)
-- [ ] 6. Manual steps and issues
+- [ ] 6. Demo version and scs_demo (only when asked)
+- [ ] 7. Manual steps and issues
 ```
 
 **0. Access.** `ssh -o BatchMode=yes prime help`.
@@ -73,7 +75,38 @@ version for Manager settings"). `ssh prime wisski-versions` shows what exists.
    the wrapper prints it).
 3. `ssh prime wisski-versions` again to confirm.
 
-**6. Manual steps and issues.** Pass the remaining checklist on verbatim. `sudo`
+**6. Demo version übertragen (move a demo version), only on request.** Needs
+module 4.8+ on Prime and a wrapper with `demo-versions` / `demo-import`
+(`ssh prime help`).
+
+1. Dev: `docker exec -u www-data manager--drupal--app drush soda_scs_manager:demo-export <version>`
+   writes `demo-v<version>.tar.gz` and `.sha256` under
+   `/srv/backups/scs-manager/snapshots/_demo-templates/_exports/` (host path).
+2. The user copies both files **on their workstation** (the normal key is
+   refused from the dev host), into the fixed incoming directory on Prime:
+
+    ```bash
+    scp -3 dev:/srv/backups/scs-manager/snapshots/_demo-templates/_exports/demo-v<version>.tar.gz{,.sha256} \
+      prime-admin:/srv/backups/scs-manager/snapshots/_demo-templates/_incoming/
+    ```
+
+   (`dev` / `prime-admin`: the user's normal SSH hosts, not the restricted
+   `prime`.) Once on Prime, the deploy user needs write access there:
+   `sudo install -d -o <deploy user> -g www-data -m 2775 /srv/backups/scs-manager/snapshots/_demo-templates/_incoming`.
+3. `ssh prime demo-versions`, then ask: activate right away? Then
+   `ssh prime demo-import demo-v<version>.tar.gz [--activate]`. The module
+   refuses a version that is not higher than Prime's, a wrong checksum and
+   unsafe entries; relay the reason verbatim.
+4. `ssh prime demo-versions` to confirm (origin `imported`).
+
+**scs_demo on Prime**, once after the release that brings it: the user sets
+`SCS_DEMO_ACCOUNT_PASSWORD` (and optionally `SCS_DEMO_ACCOUNT_EMAIL`) in the
+deployment `.env` on Prime and recreates the manager container (manual, or
+with the next apply); then `ssh prime demo-account`. Afterwards the user
+chooses the demo project again on the demo page of Prime, so the source moves
+to `scs_demo`.
+
+**7. Manual steps and issues.** Pass the remaining checklist on verbatim. `sudo`
 commands (systemd units), Nextcloud repair, Keycloak console work and settings
 pages stay with the user on Prime. Issues: as in `update-stack`, Prime step 6,
 but `gh` runs here on dev; the checks behind each comment use the read-only

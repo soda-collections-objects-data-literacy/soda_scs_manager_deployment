@@ -105,6 +105,8 @@ Instead of logging in to Prime, the `/prime-deploy` skill runs the same update f
 
 **Each session.** On the workstation `ssh-add -t 2h ~/.ssh/scs-prime`, then `/prime-deploy` on dev. `ssh prime help` lists the commands. `apply` runs detached on Prime and keeps going when the connection drops; `ssh prime apply-log --follow` reattaches.
 
+**Demo versions.** A demo version built on dev moves to Prime as one archive. On dev, `docker exec -u www-data manager--drupal--app drush soda_scs_manager:demo-export <version>` writes `demo-v<version>.tar.gz` and its `.sha256` file to `/srv/backups/scs-manager/snapshots/_demo-templates/_exports/`. Copy both from your workstation with your normal key (it is refused from the dev host) into `/srv/backups/scs-manager/snapshots/_demo-templates/_incoming/` on Prime, e.g. `scp -3 dev:…/_exports/demo-v<version>.tar.gz{,.sha256} prime-admin:…/_incoming/`; the deploy user needs write access there once (`sudo install -d -o <deploy user> -g www-data -m 2775 …/_incoming`). Then `ssh prime demo-import demo-v<version>.tar.gz [--activate]`; the wrapper reads only bare `demo-v*.tar.gz` names from that directory, and the module checks the checksum, the entries and the version. `ssh prime demo-versions` lists the versions; `ssh prime demo-account` sets up the service account `scs_demo` after `SCS_DEMO_ACCOUNT_PASSWORD` is in Prime's `.env` and the manager container was recreated.
+
 **Limits.** Git on Prime has no agent through this key, so it reads public repos over HTTPS; a private repo needs credentials on Prime. `sudo` steps (systemd units) and anything outside the wrapper stay manual on Prime.
 
 ## Path A: deployment and submodules
