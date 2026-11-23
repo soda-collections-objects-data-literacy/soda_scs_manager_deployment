@@ -10,7 +10,8 @@ link in `.claude/rules/` for every new rule.
 
 The skills live in `.cursor/skills/`; `.claude/skills/` only links to them.
 
-Skills (the user starts them): `/update-stack`, `/git-commit`, `/release` (one
+Skills (the user starts them): `/update-stack`, `/prime-deploy` (Prime from
+dev over the restricted `ssh prime` key), `/git-commit`, `/release` (one
 repo), `/scs-release-prep` (all SCS repos, push plan and manual steps),
 `/issue-flow` (a GitHub issue from draft to Prime and close, always in the
 repo whose code changes: rule `issue-tracking`). The SCS Manager module and the

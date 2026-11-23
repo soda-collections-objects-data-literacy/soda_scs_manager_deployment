@@ -16,6 +16,8 @@ cd /var/deploy/soda_scs_manager_deployment
 ./01_scripts/global/update-stack.bash --prime --apply   # nachdem du den Plan gelesen hast
 ```
 
+Oder Schritt 3 von Dev aus, ohne Login auf Prime: `/prime-deploy` ([Prime von Dev aus steuern](#prime-von-dev-aus-steuern)).
+
 Die Wege A und B unten bleiben die Referenz dafür, was hinter den Schritten steckt.
 
 ## Was `--prime` auf Prime macht
@@ -55,6 +57,55 @@ gh auth status
 ```
 
 Nimm ein Fine-grained Personal Access Token für die Organisation `soda-collections-objects-data-literacy`, beschränkt auf die Repos aus der Issue-Tracking-Regel, mit **Issues: read and write** (Metadata: read kommt automatisch dazu). Code-Zugriff braucht es nicht. Ohne `gh` zeigt der Skill die Kommentare zum Selbst-Posten an.
+
+## Prime von Dev aus steuern
+
+Statt sich auf Prime einzuloggen, führt der Skill `/prime-deploy` dasselbe Update vom Dev-Host aus: `ssh prime check`, `ssh prime apply`, Logs, Drupal-Checks und die WissKI-Komponentenversion. Er nutzt einen eigenen SSH-Schlüssel, der auf Prime nichts kann außer einen festen Wrapper aufzurufen.
+
+**Sicherheitsmodell.**
+
+- Der private Schlüssel `scs-prime` liegt nur auf deinem Arbeitsrechner und hat eine Passphrase. Auf den Dev-Host kommt er über das Agent-Forwarding der Remote-Sitzung deines Editors. Zugriff gibt es also nur, solange du verbunden bist und den Schlüssel geladen hast (`ssh-add -t 2h`). Andere User auf dem Dev-Host kommen nicht an deinen Agent-Socket; root auf dem Dev-Host schon, solange du verbunden bist. Das verhindert nur ein FIDO2-Schlüssel (`ed25519-sk`, eine Berührung pro Verbindung).
+- Auf Prime ist der Schlüssel eingeschränkt durch `from=` (nur der Dev-Host), `restrict` (kein Forwarding, kein Terminal) und `command=` (nur `/usr/local/bin/scs-prime-remote`). Der Wrapper erlaubt eine feste Liste von Unterbefehlen und prüft jedes Argument; es gibt keine Shell, kein `sudo`, keinen freien `docker`-Aufruf.
+- Der Wrapper ist eine root-eigene Kopie. Ein `git pull` auf Prime ändert nicht, was der Schlüssel darf; dafür musst du ihn neu installieren.
+- Jeder Aufruf landet im Syslog mit dem Tag `scs-prime-remote` (`journalctl -t scs-prime-remote`).
+
+**Einrichtung, einmalig.**
+
+1. Arbeitsrechner: `ssh-keygen -t ed25519 -f ~/.ssh/scs-prime` (mit Passphrase; mit Hardware-Schlüssel `-t ed25519-sk`).
+2. Dev-Host, dein User: `scs-prime.pub` nach `~/.ssh/scs-prime.pub` kopieren (`chmod 600`) und in `~/.ssh/config` eintragen:
+
+    ```
+    Host prime
+      HostName <Prime-IP>
+      User <Deploy-User auf Prime>
+      IdentityFile ~/.ssh/scs-prime.pub
+      IdentitiesOnly yes
+      ControlMaster auto
+      ControlPath ~/.ssh/cm-%C
+      ControlPersist 20m
+    ```
+
+    `IdentityFile` zeigt auf die öffentliche Hälfte: Dann bietet ssh aus dem Agent nur diesen Schlüssel an.
+
+3. Prime: den Wrapper installieren und den Schlüssel für den Deploy-User freigeben (Mitglied der Gruppe `docker`):
+
+    ```bash
+    sudo install -o root -g root -m 755 \
+      /var/deploy/soda_scs_manager_deployment/01_scripts/global/prime-remote.bash \
+      /usr/local/bin/scs-prime-remote
+    ```
+
+    In `~/.ssh/authorized_keys`:
+
+    ```
+    from="<Dev-Host-IP>",restrict,command="/usr/local/bin/scs-prime-remote" ssh-ed25519 AAAA… scs-prime-remote
+    ```
+
+4. Prime: deinen normalen Schlüssel, den der Agent ebenfalls auf den Dev-Host weiterreicht, von dort aus sperren: `from="!<Dev-Host-IP>,*"` vor seine Zeile in `authorized_keys` setzen.
+
+**Jede Sitzung.** Auf dem Arbeitsrechner `ssh-add -t 2h ~/.ssh/scs-prime`, dann auf Dev `/prime-deploy`. `ssh prime help` listet die Befehle. `apply` läuft auf Prime losgelöst weiter, auch wenn die Verbindung abbricht; `ssh prime apply-log --follow` hängt sich wieder an.
+
+**Grenzen.** Git auf Prime hat über diesen Schlüssel keinen Agent und liest öffentliche Repos daher über HTTPS; ein privates Repo braucht Zugangsdaten auf Prime. `sudo`-Schritte (systemd-Units) und alles außerhalb des Wrappers bleiben manuell auf Prime.
 
 ## Weg A: Deployment und Submodule
 
