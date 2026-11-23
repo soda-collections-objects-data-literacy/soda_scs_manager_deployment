@@ -234,6 +234,12 @@ NEXTCLOUD_MOUNTER_RC_URL=http://${SCS_CONTAINER_NEXTCLOUD_MOUNTER}:5572
 NEXTCLOUD_PROJECT_MOUNT_USER=scs-jupyter
 NEXTCLOUD_PROJECT_MOUNT_APP_PASSWORD=
 NEXTCLOUD_PROJECT_MOUNT_GROUP=scs-project-mounts
+# Service account scs_demo that owns the demo source project. After setting
+# the password, recreate the manager container and run
+#   docker exec manager--drupal--app drush soda_scs_manager:demo-account
+# The e-mail address is optional; SSO sign-in to the manager needs one.
+SCS_DEMO_ACCOUNT_PASSWORD=
+SCS_DEMO_ACCOUNT_EMAIL=
 
 # Portainer
 SCS_PORTAINER_DOMAIN=deployments.scs.localhost

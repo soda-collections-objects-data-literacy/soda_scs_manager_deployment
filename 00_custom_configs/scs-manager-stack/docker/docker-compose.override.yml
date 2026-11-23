@@ -29,6 +29,10 @@ services:
       NEXTCLOUD_PROJECT_MOUNT_USER: "${NEXTCLOUD_PROJECT_MOUNT_USER:-scs-jupyter}"
       NEXTCLOUD_PROJECT_MOUNT_APP_PASSWORD: "${NEXTCLOUD_PROJECT_MOUNT_APP_PASSWORD:-}"
       NEXTCLOUD_PROJECT_MOUNT_GROUP: "${NEXTCLOUD_PROJECT_MOUNT_GROUP:-scs-project-mounts}"
+      # Service account scs_demo that owns the demo source project
+      # (drush soda_scs_manager:demo-account).
+      SCS_DEMO_ACCOUNT_PASSWORD: "${SCS_DEMO_ACCOUNT_PASSWORD:-}"
+      SCS_DEMO_ACCOUNT_EMAIL: "${SCS_DEMO_ACCOUNT_EMAIL:-}"
       # JupyterHub REST API (service "scs-manager"): project users and servers.
       JUPYTERHUB_API_URL: "${JUPYTERHUB_API_URL:-http://${SCS_CONTAINER_JUPYTERHUB:-jupyterhub--jupyterhub--app}:8081/hub/api}"
       JUPYTERHUB_SCS_MANAGER_API_TOKEN: "${JUPYTERHUB_SCS_MANAGER_API_TOKEN:-}"
