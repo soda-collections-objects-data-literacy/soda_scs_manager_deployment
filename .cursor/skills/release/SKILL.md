@@ -77,7 +77,13 @@ Then list what CI does not do:
   → *Optional — local image builds* and
   `docs/en/technical/maintenance/scs-manager-image-update.md`.
 
-The user runs `01_scripts/global/push-release-plan.bash`.
+- **Prime**: no `git pull`/`docker compose` lines. Add one
+  `todo Prime: /prime-deploy (<what it rolls out>)`; `/prime-deploy` pulls,
+  recreates, starts the image and adds the WissKI version. Only what the
+  wrapper cannot do (sudo, consoles, secrets, free `drush`/`occ`) gets a
+  `todo Prime (manual): …` line (list: `/scs-release-prep`, step 6).
+
+The user runs `01_scripts/global/push-release-plan.bash`, then `/prime-deploy`.
 
 ## Hard rules
 

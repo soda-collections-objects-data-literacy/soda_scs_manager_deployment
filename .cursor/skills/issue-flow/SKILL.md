@@ -7,7 +7,7 @@ description: >-
   user: pick the right repo → draft → user approves, Claude opens it with gh →
   solve on dev with a report first → comment (what was done, how to test) →
   user tests on dev, loop until "getestet" → checks and review → commit with
-  "Refs #n" → push plan → Prime rollout via /update-stack --prime → close.
+  "Refs #n" → push plan → Prime rollout via /prime-deploy (from dev) → close.
   Use when the user says issue-flow, or asks to file, solve or finish such an
   issue. The SCS Manager module and other Drupal.org projects are out of
   scope. Resumes from plans/issues and git state.
@@ -31,7 +31,7 @@ is English Markdown. Templates, commands, layout: [reference.md](reference.md).
 - [ ] Phase 4: Checks + review                              → PAUSE: pick findings
 - [ ] Phase 5: Fix findings; behavior changed → follow-up comment → Phase 3
 - [ ] Phase 6: Commit (Refs) + push plan                    → PAUSE: push
-- [ ] Phase 7: Prime rollout (user) + verify                → PAUSE: Prime result
+- [ ] Phase 7: Prime rollout (/prime-deploy) + verify       → PAUSE: apply
 - [ ] Phase 8: Close with a short comment
 ```
 
@@ -49,8 +49,9 @@ is English Markdown. Templates, commands, layout: [reference.md](reference.md).
   like "a project member"). Visibility per repo: `issue-tracking` rule.
 - Containers follow the `stack-operations` rule. **Dev:** recreating the
   containers the patch touches is part of Phase 2; name them first, ask when
-  it is more than the affected services. **Prime:** you change nothing; the
-  user runs `/update-stack --prime` there.
+  it is more than the affected services. **Prime:** only through
+  `/prime-deploy` (`ssh prime …`), `apply` only after the user's yes; sudo and
+  console work stay with the user on Prime.
 - Never create, update or delete real applications, projects or users to try
   something out (the Manager does that for real, on dev too).
 - **Dev test: run it yourself.** The "how to test on dev" steps of the comment
@@ -194,7 +195,8 @@ everywhere else (the pointer bump too). No `Fixes`/`Closes`: issues close
 after Prime.
 
 Append the push lines to `plans/push-plan.txt` (innermost first, the
-deployment root last) and the Prime steps as `todo` lines; run
+deployment root last), one `todo Prime: /prime-deploy …` line and only the
+Prime steps the wrapper cannot do as `todo Prime (manual): …` lines; run
 `01_scripts/global/push-release-plan.bash --dry-run` and show its tail.
 **PAUSE:** "Führ den Push-Plan aus und sag Bescheid."
 
@@ -203,18 +205,21 @@ deployment root last) and the Prime steps as `todo` lines; run
 Check each pushed repo: `git ls-remote <remote> refs/heads/<branch>` against
 `git rev-parse HEAD` (no fetch). Missing → name the push line, PAUSE again.
 
-All pushed → give the Prime steps: `/update-stack --prime --check`, then
-`--apply`, plus the manual steps from the comment (sudo, systemd, a test
-call). On Prime, `/update-stack` step 6 lists every issue the applied commits
-reference, checks the "Prime" part of its comments and, on the user's go,
-posts the result and closes the issue; Phase 8 then only confirms that here. An image repo → the image build/tag first (`/release` or
-`/scs-release-prep`). **PAUSE:** "Wie sieht es auf Prime aus?" Something off
-→ Phase 2 (Prime-only: compare `.env`, overrides, unit files; ask for the
-output, you cannot read Prime).
+All pushed → follow `/prime-deploy`: `ssh prime check`, summarise.
+**PAUSE:** "Auf Prime anwenden?" On a yes `ssh prime apply`, then verify with
+the read-only commands (`status`, `logs`, `follow`, `drush-checks`) and do the
+test calls from the comment that need no shell; the rest (sudo, systemd,
+consoles) goes to the user as a checklist. `/prime-deploy` step 7 lists every
+issue the applied commits reference, checks the "Prime" part of its comments
+and, on the user's go, posts the result and closes the issue (`gh` runs here);
+Phase 8 then only confirms that. An image repo → the image build/tag first
+(`/release` or `/scs-release-prep`). Something off → Phase 2 (Prime-only:
+compare overrides and unit files via `ssh prime git-status`/`logs`; ask the
+user for `.env` and anything the wrapper cannot show).
 
 ## Phase 8: Close
 
-Closed on Prime by `/update-stack` step 6 → check with `gh issue view`, say
+Closed during `/prime-deploy` step 7 → check with `gh issue view`, say
 so, done. Otherwise draft the closing comment (reference.md: one or two
 lines, what Prime shows now; no SHAs) for each issue of the change. **PAUSE:** "Kommentar posten und
 Issue(s) schließen?" On a go: `gh issue close {n} -R $R --comment "…"` (or

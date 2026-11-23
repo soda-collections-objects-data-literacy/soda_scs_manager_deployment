@@ -14,7 +14,7 @@ Er prüft das Deployment, alle Submodule, das Modul `soda_scs_manager`, das Them
 4. Er committet die neuen Submodule-Zeiger im Deployment.
 5. Er schreibt `plans/push-plan.txt`, prüft den Plan mit einem Dry Run und listet die Handgriffe.
 
-Der Skill pusht nie.
+Der Skill pusht nie. Prime gehört nicht zum Plan: Nach dem Push spielt `/prime-deploy` das Update vom Dev-Host aus ein ([Prime von Dev aus steuern](dev-to-prime.md#prime-von-dev-aus-steuern)).
 
 ## Pushen
 
@@ -26,7 +26,7 @@ cd /var/www/deploy/soda_scs_manager_deployment
 
 Der Dry Run arbeitet offline mit dem zuletzt geholten Stand der Remotes und fragt nicht nach der Passphrase. Der echte Lauf lädt den SSH-Key einmal in einen `ssh-agent` und pusht danach alle Zeilen des Plans der Reihe nach. GitHub-Remotes mit `https://` werden ebenfalls über SSH gepusht.
 
-Ein zweiter Lauf ist ungefährlich, schon gepushte Refs sind aktuell. Nach dem Lauf liegt der Plan als `plans/push-plan.done-<Zeitstempel>.txt` daneben.
+Ein zweiter Lauf ist ungefährlich, schon gepushte Refs sind aktuell. Nach dem Lauf liegt der Plan als `plans/push-plan.done-<Zeitstempel>.txt` daneben. Hat der Plan das Deployment gepusht, erinnert das Skript am Ende an `/prime-deploy`.
 
 ## Was nicht automatisch passiert
 
@@ -37,8 +37,8 @@ Der Skill schreibt diese Schritte in den Plan. Für jedes Modul-Release legt er 
 | Während des Pushs, Modul-Tag | Auf [drupal.org](https://www.drupal.org/project/soda_scs_manager) mit *Add new release* das Release-Node für den Tag anlegen und den Changelog-Abschnitt als Release Notes einfügen. Ohne das Node packt drupal.org nichts, und das Image baut weiter das alte Modul. Das Skript wartet, bis die Version gelistet ist, und pusht erst dann den Image-Tag. Nach 60 Minuten bricht es ab (`WAIT_TIMEOUT` in Sekunden ändert das). |
 | Nach dem Push, Image-Tag | Prüfen, ob [Publish SCS Manager Docker Images](https://github.com/soda-collections-objects-data-literacy/scs-manager-image/actions) grün ist. |
 | Nach dem Push, Tag in einem GitHub-Repo | Die Planzeile `gh-release <pfad> <tag>` legt das GitHub-Release aus der annotierten Tag-Message an (überspringt, wenn es schon existiert). |
-| Auf Prime | `./01_scripts/global/update-stack.bash --prime --check`, dann `--apply`. Siehe [Kurzablauf](dev-to-prime.md#kurzablauf). |
-| Auf Prime, Drupal | Der Entrypoint führt `drush updatedb` aus, aber nie `config:import`. Neue Config aus dem Modul braucht ein Update-Hook. Neue Einstellungen und API-Keys unter `/admin/config/soda-scs-manager/settings` setzen. Drush-Befehle aus dem Changelog von Hand ausführen. |
+| Auf Prime (`todo Prime: /prime-deploy …`) | Von Dev aus, sobald die Image-Builds grün sind: `/prime-deploy`. `ssh prime apply` zieht das Deployment, kopiert die Overrides, erzeugt Geändertes neu und startet das neue Manager-Image. Danach trägt der Skill die WissKI-Komponentenversion ein und setzt den Default. Der Plan hat für diese Schritte keine eigenen Zeilen. Siehe [Kurzablauf](dev-to-prime.md#kurzablauf). |
+| Auf Prime, von Hand (`todo Prime (manual): …`) | Was der Wrapper nicht kann: geänderte systemd-Units mit `sudo` installieren (`apply` gibt die Befehle aus), Nextcloud-Repair und `occ` nach einem Versionswechsel, Keycloak-Realm-Änderungen in der Admin-Konsole, neue `.env`-Werte (vor `/prime-deploy`), neue Einstellungen und API-Keys unter `/admin/config/soda-scs-manager/settings`, drush-Befehle aus dem Changelog. Der Entrypoint führt `drush updatedb` aus, aber nie `config:import`, neue Config aus dem Modul braucht deshalb ein Update-Hook. |
 
 ## Planformat
 

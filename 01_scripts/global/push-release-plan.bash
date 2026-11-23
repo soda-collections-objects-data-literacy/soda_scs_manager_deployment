@@ -23,6 +23,9 @@
 # --dry-run works offline from the last fetched remote state, no passphrase.
 # Re-running is safe: refs that are already on the remote are up to date;
 # gh-release skips a tag that already has a GitHub Release.
+#
+# Prime is not part of the plan: once everything is pushed (and CI is green),
+# roll it out from the dev host with the /prime-deploy skill (ssh prime check/apply).
 
 set -euo pipefail
 
@@ -31,6 +34,7 @@ PLAN="${ROOT}/plans/push-plan.txt"
 DRY_RUN=0
 MISSING=0
 TODOS=()
+DEPLOYMENT_IN_PLAN=0
 WAIT_TIMEOUT="${WAIT_TIMEOUT:-3600}"
 WAIT_INTERVAL=30
 
@@ -177,6 +181,7 @@ while IFS= read -r line || [[ -n "${line}" ]]; do
   case "${words[0]}" in
     push)
       (( ${#words[@]} >= 4 )) || { echo "Line ${lineno}: push <path> <remote> <refspec>..." >&2; exit 1; }
+      [[ "${words[1]}" == "." ]] && DEPLOYMENT_IN_PLAN=1
       do_push "${words[@]:1}" ;;
     gh-release)
       (( ${#words[@]} == 3 )) || { echo "Line ${lineno}: gh-release <path> <tag>" >&2; exit 1; }
@@ -207,6 +212,11 @@ if (( ${#TODOS[@]} )); then
   echo
   echo "Still to do by hand:"
   printf '  [ ] %s\n' "${TODOS[@]}"
+  echo
+fi
+
+if (( DEPLOYMENT_IN_PLAN )); then
+  echo "Prime: once the CI builds are green, run /prime-deploy here (ssh-add -t 2h ~/.ssh/scs-prime on your workstation first)."
   echo
 fi
 

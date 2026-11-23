@@ -14,7 +14,7 @@ It checks the deployment, all submodules, the `soda_scs_manager` module, the `sc
 4. It commits the new submodule pointers in the deployment.
 5. It writes `plans/push-plan.txt`, checks the plan with a dry run and lists the manual steps.
 
-The skill never pushes.
+The skill never pushes. Prime is not part of the plan: after the push, `/prime-deploy` rolls it out from the dev host ([Steer Prime from dev](dev-to-prime.md#steer-prime-from-dev)).
 
 ## Pushing
 
@@ -26,7 +26,7 @@ cd /var/www/deploy/soda_scs_manager_deployment
 
 The dry run works offline from the last fetched remote state and does not ask for the passphrase. The real run loads the SSH key into an `ssh-agent` once and then pushes every plan line in order. GitHub remotes with `https://` are pushed over SSH as well.
 
-Running it again is safe, refs that are already pushed are up to date. After the run the plan is kept as `plans/push-plan.done-<timestamp>.txt`.
+Running it again is safe, refs that are already pushed are up to date. After the run the plan is kept as `plans/push-plan.done-<timestamp>.txt`. When the plan pushed the deployment, the script ends with a reminder to run `/prime-deploy`.
 
 ## What does not happen automatically
 
@@ -37,8 +37,8 @@ The skill writes these steps into the plan. For every module release it writes `
 | During the push, module tag | On [drupal.org](https://www.drupal.org/project/soda_scs_manager), use *Add new release* to create the release node for the tag and paste the changelog section as release notes. Without the node drupal.org packages nothing, and the image keeps building the old module. The script waits until the version is listed and only then pushes the image tag. It gives up after 60 minutes (set `WAIT_TIMEOUT` in seconds to change that). |
 | After the push, image tag | Check that [Publish SCS Manager Docker Images](https://github.com/soda-collections-objects-data-literacy/scs-manager-image/actions) is green. |
 | After the push, tag in a GitHub repo | The plan line `gh-release <path> <tag>` creates the GitHub Release from the annotated tag (skipped if it already exists). |
-| On Prime | `./01_scripts/global/update-stack.bash --prime --check`, then `--apply`. See [Short recipe](dev-to-prime.md#short-recipe). |
-| On Prime, Drupal | The entrypoint runs `drush updatedb` but never `config:import`. New config from the module needs an update hook. Set new settings and API keys at `/admin/config/soda-scs-manager/settings`. Run drush commands from the changelog by hand. |
+| On Prime (`todo Prime: /prime-deploy …`) | From dev, once the image builds are green: `/prime-deploy`. `ssh prime apply` pulls the deployment, copies the overrides, recreates what changed and starts the new manager image. The skill then adds the WissKI component version and sets the default. The plan has no separate lines for these steps. See [Short recipe](dev-to-prime.md#short-recipe). |
+| On Prime, by hand (`todo Prime (manual): …`) | What the wrapper cannot do: install changed systemd units with `sudo` (`apply` prints the commands), Nextcloud repair and `occ` after a version change, Keycloak realm changes in the admin console, new `.env` values (before `/prime-deploy`), new settings and API keys at `/admin/config/soda-scs-manager/settings`, drush commands from the changelog. The entrypoint runs `drush updatedb` but never `config:import`, so new config from the module needs an update hook. |
 
 ## Plan format
 

@@ -7,16 +7,17 @@ There are two paths. Take the one that matches the change. When both changed, pu
 ## Short recipe
 
 1. **On dev:** `/scs-release-prep` (skill) — commits, changelogs, tags, `plans/push-plan.txt`. Details: [Release prep](release-prep.md).
-2. **On dev:** `01_scripts/global/push-release-plan.bash` (try `--dry-run` first). Finish any manual steps from the prep (for example the drupal.org release node).
-3. **On Prime:**
+2. **On dev:** `01_scripts/global/push-release-plan.bash` (try `--dry-run` first). Finish the manual steps during the push (for example the drupal.org release node) and wait until the image builds are green.
+3. **On dev:** `/prime-deploy` ([Steer Prime from dev](#steer-prime-from-dev)). It runs `ssh prime check`, shows the plan and, after your yes, `ssh prime apply`. It then checks the result and adds the WissKI component version.
+4. **On Prime, by hand:** only what the wrapper cannot do. The push plan lists these steps as `todo Prime (manual)`: systemd units (`sudo`), Nextcloud repair, Keycloak console, new `.env` values and settings, drush commands from the changelog.
+
+Step 3 without the dev host, logged in on Prime:
 
 ```bash
 cd /var/deploy/soda_scs_manager_deployment
 ./01_scripts/global/update-stack.bash --prime --check   # plan only, changes nothing
 ./01_scripts/global/update-stack.bash --prime --apply   # after reading the plan
 ```
-
-Or step 3 from dev, without logging in to Prime: `/prime-deploy` ([Steer Prime from dev](#steer-prime-from-dev)).
 
 Paths A and B below remain the reference for what those steps do.
 
@@ -61,6 +62,8 @@ Use a fine-grained personal access token for the organization `soda-collections-
 ## Steer Prime from dev
 
 Instead of logging in to Prime, the `/prime-deploy` skill runs the same update from the dev host: `ssh prime check`, `ssh prime apply`, logs, Drupal checks and the WissKI component version. It uses its own SSH key that can do nothing on Prime except call a fixed wrapper.
+
+`apply` covers paths A and B on Prime: it checks out the deployment and submodules, copies the overrides, takes a snapshot, rebuilds or recreates the changed services, starts the new manager image and pulls the newest WissKI image. That is why the push plan has no `git pull` or `docker compose` lines for Prime, only `todo Prime: /prime-deploy`. It needs everything pushed first: Prime follows `origin/main` of the deployment.
 
 **Security model.**
 

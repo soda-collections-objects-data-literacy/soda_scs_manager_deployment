@@ -6,8 +6,9 @@ description: >-
   scs-manager-image repo and the WissKI base image and stack; find what was committed since each repo's last
   release; write changelog entries, commit cleanly, cut
   releases/tags where needed, write a push plan the user runs with one script
-  (SSH key has a passphrase), and list every manual step (drupal.org release
-  node, CI checks, Prime) needed before the releases show up. Use when the user
+  (SSH key has a passphrase), hand the Prime rollout to /prime-deploy and list
+  every manual step left (drupal.org release node, CI checks, sudo/console work
+  on Prime) before the releases show up. Use when the user
   asks to "prepare a release", "get everything ready to push", "Release
   vorbereiten", or wants dev changes ready for Prime.
 disable-model-invocation: true
@@ -22,6 +23,11 @@ every manual step that CI does not do. **You never push.** The user runs:
 01_scripts/global/push-release-plan.bash --dry-run   # offline preview
 01_scripts/global/push-release-plan.bash             # one passphrase, all pushes
 ```
+
+Prime is rolled out from here afterwards with `/prime-deploy` (`ssh prime
+check` / `apply`, WissKI version, checks). It needs everything pushed, so it
+always comes after the push plan, never inside it. The plan names only what
+`/prime-deploy` cannot do (sudo, consoles, secrets, free `drush`/`occ`).
 
 Background: `docs/de/technical/maintenance/dev-to-prime.md` (Weg A = deployment
 + submodules, Weg B = module, theme, pages, image). Read it first; it wins over
@@ -59,9 +65,10 @@ The WissKI base image and stack are in scope as well:
 | WissKI base image | `repos/wisski-base-image` | `main` | `origin` GitHub (SSH) | **tag `X.Y.Z`** when it changed since the last tag (plain; ignore the old `vX.Y.Z` tags when finding the latest) | GitHub Actions builds `wisski-base-image-{production,development}`: `:main` on push, `X.Y.Z`/`X.Y`/`X` on a tag |
 | WissKI base stack | `repos/wisski-base-stack` | `main` | `origin` GitHub (HTTPS) | **tag `X.Y.Z`** when it changed since the last tag | no CI; Portainer clones it by git ref |
 
-Order: image and stack tags first, then the manual step on Prime: a WissKI
-version entry (image and stack tag) and `defaultVersion` in the SCS Manager
-settings (`/admin/config/soda-scs-manager/settings`).
+Order: image and stack tags first, then on Prime the WissKI version entry
+(image and stack tag) and `defaultVersion`. `/prime-deploy` step 5 does both
+(`ssh prime wisski-version-add` / `wisski-set-default`) with the values that
+`apply` prints; no separate `todo` needed.
 
 Out of scope: the WissKI Drupal module (drupal.org/project/wisski) and its
 issues, `wisski_default_data_model`, `drupal_packages`, `scs-varnish-image`,
@@ -194,17 +201,37 @@ each item names the exact URL or command. Check these cases:
 | --- | --- |
 | Image tag | Check that *Publish SCS Manager Docker Images* is green: https://github.com/soda-collections-objects-data-literacy/scs-manager-image/actions. |
 | WissKI base image tag | Check that *Publish WissKI Base Docker Images* is green: https://github.com/soda-collections-objects-data-literacy/wisski-base-image/actions. |
-| Deployment or submodule pointer changed | Prime: `cd /var/deploy/soda_scs_manager_deployment && git pull && git submodule update --init --recursive` (not `start.sh`, it pulls `--remote`). |
-| `00_custom_configs/scs-manager-stack/…` or `…/scs-project-website-stack/…` override changed | Prime: copy the override into the stack (`dev-to-prime.md`, Weg A step 2). |
-| Unit files in `01_scripts/global/*.service|*.timer` changed | Prime: copy them to `/etc/systemd/system/`, `systemctl daemon-reload`, restart the timers. |
-| A service changed | Prime: the exact recreate command from the table in `dev-to-prime.md`, Weg A step 3. |
-| Image tag | Prime: check for bind mounts, `docker compose pull manager--drupal--app && docker compose up -d manager--drupal--app`, watch the log for `Package set changed`, `Shipped content changed`, `ERROR:` (Weg B step 5). |
-| Module changed `config/install` or `config/optional` without a new `hook_update_N`/`hook_post_update_NAME` | Prime: the entrypoint runs `drush updatedb` but **never `config:import`**, so that config does not reach existing sites. Prefer writing an update hook now (ask the user); otherwise list the exact config names to import by hand. |
-| New settings, API keys, permissions or roles in the changelog | Prime: set them in the UI (e.g. `/admin/config/soda-scs-manager/settings`) or by `drush`; secrets are never in git. |
-| Drush commands or "run once" steps in the changelog (e.g. backfills) | Prime: `docker exec manager--drupal--app drush <command>` with the exact arguments. |
-| Nextcloud app version bump in `appinfo/info.xml` | Prime: recreate `nextcloud--nextcloud--app`, then `occ upgrade` if Nextcloud reports the app as outdated. |
-| Keycloak realm/theme changes | Realm imports only run on a fresh realm: apply realm changes in the admin console on Prime; theme changes need the container rebuild. |
-| Any **bold** admin instruction in a changelog entry shipped now | Copy it as its own step. |
+
+**Prime, through `/prime-deploy`** (one `todo Prime: /prime-deploy …` line, after the CI checks).
+`ssh prime apply` runs `update-stack.bash --prime --apply`, which covers all of
+these, so they get **no** lines of their own:
+
+- deployment pull and submodule checkout to the pointers;
+- copying the changed overrides from `00_custom_configs/` into the stacks;
+- snapshot, rebuild and recreate of every changed service (Weg A step 3);
+- pulling and starting the new SCS Manager image, with the bind-mount check
+  and the Drupal checks (Weg B step 5);
+- Nextcloud backup before a version change; pulling the newest WissKI image;
+- WissKI component version and default (`/prime-deploy` step 5).
+
+Name in that line what the rollout carries, e.g.
+`todo Prime: /prime-deploy (image 3.5.0, JupyterHub rebuild, WissKI 5.9.0 as default)`.
+When the image CI must be green first, say so in the line.
+
+**Prime, manual** (`todo Prime (manual): …`, after the `/prime-deploy` line): the
+wrapper has no shell, no `sudo` and no free `drush`/`occ`, so these stay with
+the user on Prime:
+
+| Trigger | Manual step |
+| --- | --- |
+| Unit files in `01_scripts/global/*.service|*.timer` changed | `apply` only prints the commands: `sudo cp` to `/etc/systemd/system/`, `sudo systemctl daemon-reload`, restart the timers. |
+| Module changed `config/install` or `config/optional` without a new `hook_update_N`/`hook_post_update_NAME` | The entrypoint runs `drush updatedb` but **never `config:import`**, so that config does not reach existing sites. Prefer writing an update hook now (ask the user); otherwise list the exact config names to import by hand. |
+| New settings, API keys, permissions or roles in the changelog | Set them in the UI (e.g. `/admin/config/soda-scs-manager/settings`) or by `drush`; secrets are never in git. New `.env` variables go into Prime's `.env` **before** `/prime-deploy`, so `apply` recreates with them. |
+| Drush commands or "run once" steps in the changelog (e.g. backfills) | `docker exec manager--drupal--app drush <command>` with the exact arguments. |
+| Nextcloud version or app version bump (`appinfo/info.xml`) | After `apply`: `01_scripts/scs-nextcloud-stack/run-nextcloud-repair.bash`, then `occ app:update --all` / `occ upgrade` if Nextcloud reports the app as outdated. |
+| Keycloak realm/theme changes | Realm imports only run on a fresh realm: apply realm changes in the admin console; the theme rebuild is part of `apply`. |
+| Demo version to move | Only on request: `/prime-deploy` step 6 (the `scp -3` runs on the user's workstation). |
+| Any **bold** admin instruction in a changelog entry shipped now | Copy it as its own step (as `/prime-deploy` if the wrapper covers it, otherwise manual). |
 
 **Dev host image channel** (see `docs/en/technical/maintenance/scs-manager-image-update.md`):
 the shared dev host runs `SCS_MANAGER_MODE=development` and
@@ -280,15 +307,14 @@ push . origin main
 todo Check the image build: https://github.com/soda-collections-objects-data-literacy/scs-manager-image/actions
 todo Dev (SCS_MANAGER_IMAGE_VERSION=main): docker compose pull manager--drupal--app && docker compose up -d --force-recreate manager--drupal--app
 todo Optional (local Dockerfile work): cd repos/scs-manager-image && docker build --pull --build-arg MODE=development -t ghcr.io/soda-collections-objects-data-literacy/scs-manager-image-development:local . && temporarily set SCS_MANAGER_IMAGE_VERSION=local, recreate, then switch back to main
-todo Prime: cd /var/deploy/soda_scs_manager_deployment && git pull && git submodule update --init --recursive
-todo Prime: docker compose up -d --build jupyterhub--jupyterhub--app
-todo Prime: docker compose pull manager--drupal--app && docker compose up -d manager--drupal--app (log: Package set changed / Shipped content changed; IMAGE_VERSION stays 3)
-todo Prime: re-copy 01_scripts/global/*.timer and *.service to /etc/systemd/system/, systemctl daemon-reload
+todo Prime: /prime-deploy once the image build is green (image 3.4.0, JupyterHub rebuild)
+todo Prime (manual): sudo cp the changed 01_scripts/global/*.timer and *.service to /etc/systemd/system/, sudo systemctl daemon-reload (apply prints the exact commands)
 ```
 
 Rules: only repos with unpushed commits or new tags; branch names as refspec, not
 `HEAD`; `pause` + `wait-drupal` before the image line whenever a module tag is in
-the plan; `gh-release` right after each GitHub tag push.
+the plan; `gh-release` right after each GitHub tag push; no `git pull`,
+`docker compose` or WissKI-settings lines for Prime (that is `/prime-deploy`).
 
 Run `01_scripts/global/push-release-plan.bash --dry-run`; every line must resolve
 (no `MISSING`, exit 0). Then report:
@@ -297,6 +323,9 @@ Run `01_scripts/global/push-release-plan.bash --dry-run`; every line must resolv
 2. Skipped items and why (uncommitted files left alone, repos without changelog).
 3. The command to run.
 4. **Manual steps**, as a numbered checklist in order: during the push (drupal.org),
-   after the push (CI checks, GitHub Releases), optional local image builds, on
-   Prime (pull, copies, recreate, Drupal settings/drush). Same items as the
+   after the push (CI checks, GitHub Releases), optional local image builds, then
+   `/prime-deploy` (what it will roll out), then what stays manual on Prime
+   (sudo, consoles, settings/secrets, drush/occ). Same items as the
    `pause`/`todo` lines, so nothing is only in one place.
+5. Next step: once the push ran and CI is green, `/prime-deploy` from here
+   (the user loads `ssh-add -t 2h ~/.ssh/scs-prime` on the workstation first).

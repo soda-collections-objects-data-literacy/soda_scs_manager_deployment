@@ -7,16 +7,17 @@ Es gibt zwei Wege. Nimm den, der zur Änderung passt. Haben sich beide geändert
 ## Kurzablauf
 
 1. **Auf Dev:** `/scs-release-prep` (Skill) — Commits, Changelogs, Tags, `plans/push-plan.txt`. Details: [Release vorbereiten](release-prep.md).
-2. **Auf Dev:** `01_scripts/global/push-release-plan.bash` (vorher `--dry-run`). Offene Handgriffe aus dem Prep erledigen (z. B. Release-Node auf drupal.org).
-3. **Auf Prime:**
+2. **Auf Dev:** `01_scripts/global/push-release-plan.bash` (vorher `--dry-run`). Die Handgriffe während des Pushs erledigen (z. B. Release-Node auf drupal.org) und warten, bis die Image-Builds grün sind.
+3. **Auf Dev:** `/prime-deploy` ([Prime von Dev aus steuern](#prime-von-dev-aus-steuern)). Der Skill führt `ssh prime check` aus, zeigt den Plan und startet nach deinem Ja `ssh prime apply`. Danach prüft er das Ergebnis und trägt die WissKI-Komponentenversion ein.
+4. **Auf Prime, von Hand:** nur, was der Wrapper nicht kann. Der Push-Plan führt diese Schritte als `todo Prime (manual)`: systemd-Units (`sudo`), Nextcloud-Repair, Keycloak-Konsole, neue `.env`-Werte und Einstellungen, drush-Befehle aus dem Changelog.
+
+Schritt 3 ohne Dev-Host, eingeloggt auf Prime:
 
 ```bash
 cd /var/deploy/soda_scs_manager_deployment
 ./01_scripts/global/update-stack.bash --prime --check   # nur der Plan, ändert nichts
 ./01_scripts/global/update-stack.bash --prime --apply   # nachdem du den Plan gelesen hast
 ```
-
-Oder Schritt 3 von Dev aus, ohne Login auf Prime: `/prime-deploy` ([Prime von Dev aus steuern](#prime-von-dev-aus-steuern)).
 
 Die Wege A und B unten bleiben die Referenz dafür, was hinter den Schritten steckt.
 
@@ -61,6 +62,8 @@ Nimm ein Fine-grained Personal Access Token für die Organisation `soda-collecti
 ## Prime von Dev aus steuern
 
 Statt sich auf Prime einzuloggen, führt der Skill `/prime-deploy` dasselbe Update vom Dev-Host aus: `ssh prime check`, `ssh prime apply`, Logs, Drupal-Checks und die WissKI-Komponentenversion. Er nutzt einen eigenen SSH-Schlüssel, der auf Prime nichts kann außer einen festen Wrapper aufzurufen.
+
+`apply` deckt die Wege A und B auf Prime ab: Es checkt Deployment und Submodule aus, kopiert die Overrides, legt einen Snapshot an, baut oder erzeugt die geänderten Dienste neu, startet das neue Manager-Image und holt das neueste WissKI-Image. Deshalb enthält der Push-Plan für Prime keine Zeilen mit `git pull` oder `docker compose`, nur `todo Prime: /prime-deploy`. Vorher muss alles gepusht sein: Prime folgt `origin/main` des Deployments.
 
 **Sicherheitsmodell.**
 

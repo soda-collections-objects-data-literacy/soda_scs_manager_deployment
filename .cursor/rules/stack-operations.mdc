@@ -16,7 +16,7 @@ Always run `docker compose` from the repo root. Two hosts share this repo and th
 
 Which host this is: the working directory, or `CLAUDE.local.md` if present. Shipping dev → Prime: `docs/en/technical/maintenance/dev-to-prime.md`.
 
-**On Prime, real users depend on every container** (including the `wisski-*` instances that Portainer manages). Reading (`ps`, `logs`, `inspect`) is free; ask before anything that recreates, restarts, stops or rebuilds a container, changes Drupal/Nextcloud/Keycloak state (`drush`, `occ`, config) or touches `.env`. Development, releases and tags happen on dev; Prime receives them with `git pull` and `/update-stack`.
+**On Prime, real users depend on every container** (including the `wisski-*` instances that Portainer manages). Reading (`ps`, `logs`, `inspect`) is free; ask before anything that recreates, restarts, stops or rebuilds a container, changes Drupal/Nextcloud/Keycloak state (`drush`, `occ`, config) or touches `.env`. Development, releases and tags happen on dev; Prime receives them through `/prime-deploy` from dev (`ssh prime check`/`apply`, the restricted wrapper), or `/update-stack --prime` on Prime itself.
 
 ## How Multi-Stack Compose Works
 
@@ -104,5 +104,5 @@ Nextcloud hooks run **once** on first container start via `/docker-entrypoint-ho
 ## Git, releases, pushing
 
 - Commit innermost repo first, then the submodule pointer in the parent (`scs_manager_integration` → `scs-nextcloud-stack` → deployment).
-- Don't push: the SSH key has a passphrase. `/scs-release-prep` (or `/git-commit`, `/release`) writes `plans/push-plan.txt`, the user runs `01_scripts/global/push-release-plan.bash`.
+- Don't push: the SSH key has a passphrase. `/scs-release-prep` (or `/git-commit`, `/release`) writes `plans/push-plan.txt`, the user runs `01_scripts/global/push-release-plan.bash`. Prime comes after the push, with `/prime-deploy`; the plan lists only the Prime steps the wrapper cannot do.
 - Not everything is CI: a module tag needs a release node on drupal.org before it is packaged, and the production image installs the module from drupal.org. Docs: `docs/en/technical/maintenance/release-prep.md`.
