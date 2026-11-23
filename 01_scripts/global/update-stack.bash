@@ -909,7 +909,7 @@ prime_run() {
     mkdir -p "$snap_dir"
     if ! run_with_throbber "Snapshot of all databases -> $snap" \
          env MYSQL_PWD="$db_pw" DB_CONTAINER="$db_container" SNAP="$snap" \
-         bash -c 'docker exec -e MYSQL_PWD="$MYSQL_PWD" "$DB_CONTAINER" mariadb-dump -uroot --all-databases --single-transaction --quick --routines --events | gzip >"$SNAP"' \
+         bash -c 'set -o pipefail; docker exec -e MYSQL_PWD "$DB_CONTAINER" mariadb-dump -uroot --all-databases --single-transaction --quick --routines --events | gzip >"$SNAP"' \
        || [[ "$(stat -c %s "$snap")" -lt 1024 ]]; then
       echo "Database snapshot failed, stopping before any container is touched." >&2
       exit 1
@@ -1154,6 +1154,7 @@ for entry in "${PLAN[@]}"; do
   IFS='|' read -r name path track from to ref state <<<"$entry"
   [[ "$state" == ok && "$from" != "$to" ]] || continue
   run_with_throbber "Updating $name -> ${ref} (${to:0:8})" bash -c '
+    set -euo pipefail
     path=$1 track=$2 ref=$3
     if [[ "$path" == "." ]]; then
       git merge --ff-only --quiet "@{u}"
