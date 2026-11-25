@@ -45,6 +45,8 @@ services:
     image: nginx:${NGINX_VERSION:-1.30}
     volumes:
       - ./scs-nextcloud-stack/reverse-proxy/nginx.conf:/etc/nginx/nginx.conf
+      # nginx serves the app's static JS/CSS, so it needs the same bind mount as the app container.
+      - ${SCS_ROOT_PATH}/scs-nextcloud-stack/apps/scs_manager_integration:/var/www/html/custom_apps/scs_manager_integration:ro
     networks:
       nextcloud:
         aliases:
