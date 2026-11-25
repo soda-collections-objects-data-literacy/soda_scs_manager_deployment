@@ -1030,6 +1030,16 @@ fi
 # ---------------------------------------------------------------- planning
 hr
 
+# The throbber redraws its line every 80 ms and would wipe an SSH passphrase
+# prompt, leaving ssh waiting unseen. If the key is not usable without asking
+# (no agent), run every step in the foreground so the prompts stay visible.
+if [[ $OFFLINE -eq 0 && $USE_THROBBER -eq 1 ]] \
+   && ! GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh} -o BatchMode=yes" \
+        git ls-remote --exit-code origin HEAD </dev/null >/dev/null 2>&1; then
+  USE_THROBBER=0
+  log "SSH asks for a passphrase here; showing prompts instead of the throbber (ssh-add once to avoid them)."
+fi
+
 if [[ $SKIP_DEPLOYMENT -eq 0 ]]; then
   dep_state=ok
   if [[ $OFFLINE -eq 0 ]]; then
