@@ -21,6 +21,7 @@ flowchart LR
 4. [Applications](applications.md) — WissKI, JupyterHub, WebProtégé, SQL database, and triplestore.
 5. [Project members](members.md) — invite people, accept, remove.
 6. [Project files](project-files.md) — the shared folder in Drive, JupyterHub, and WissKI.
+7. [Basic tasks](guides/index.md) — first steps in each application, with the demo project.
 
 ## Available applications
 

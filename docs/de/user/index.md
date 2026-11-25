@@ -21,6 +21,7 @@ flowchart LR
 4. [Anwendungen](anwendungen.md) — WissKI, JupyterHub, WebProtégé, SQL-Datenbank und Triplestore.
 5. [Projektmitglieder](mitglieder.md) — Personen einladen, annehmen, entfernen.
 6. [Projektdateien](projektdateien.md) — der gemeinsame Ordner in Drive, JupyterHub und WissKI.
+7. [Grundlegende Aufgaben](anleitungen/index.md) — erste Schritte in jeder Anwendung, am Demoprojekt.
 
 ## Verfügbare Anwendungen
 
