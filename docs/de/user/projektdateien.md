@@ -18,8 +18,6 @@ Der Ordner trägt den Namen des Projekts. Alle Projektmitglieder sehen ihn in ih
 
 ![Projektordner robert Demo im SCS Drive](images/14-drive-projektordner.png)
 
-Der Ordner **`SCS-Share`** ist ein anderer Ordner: er gilt für die ganze Plattform, nicht für ein einzelnes Projekt. Dateien, die Jupyter oder WissKI nutzen sollen, gehören in den Projektordner.
-
 ## In JupyterHub
 
 Du öffnest das Lab über die Karte **JupyterHub** auf der Projektseite. Im Dateibrowser liegt der Projektordner unter `nextcloud/<Projektname>`.

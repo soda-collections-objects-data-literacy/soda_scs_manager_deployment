@@ -48,7 +48,7 @@ flowchart LR
 | Start, stop or restart the project notebook (card health icon) | ✓ | |
 | Fix duplicate legacy `keycloak-{sub}` Drive accounts | | ✓ |
 | Set `oidcUsernamePrefix` (`{empty}` vs `keycloak-`) | | ✓ |
-| `occ files:scan`, `occ user:delete`, migrate SCS-Share | | ✓ |
+| `occ files:scan`, `occ user:delete` | | ✓ |
 | Fix Keycloak audience mapper / `user_oidc` provider | | ✓ |
 | Mount or set up a project notebook (Drush) | | ✓ |
 | Rebuild the Jupyter spawner image | | ✓ |
@@ -133,7 +133,7 @@ docker inspect jupyter-project-{gid} --format '{{range .Mounts}}{{.Source}} -> {
 
 See [Nextcloud Drive connection — duplicate accounts](nextcloud-drive-connect.md#duplicate-nextcloud-accounts-legacy-mismatch). Summary:
 
-1. Copy `SCS-Share` from `keycloak-{sub}` to `{sub}` if needed.
+1. Copy personal files from `keycloak-{sub}` to `{sub}` if needed.
 2. `occ files:scan` on the target user.
 3. `occ user:delete keycloak-{sub}`.
 4. User reconnects Drive.
@@ -151,7 +151,7 @@ docker compose exec -T scs-manager--drupal drush config:set \
 
 ```bash
 docker exec --user www-data nextcloud--nextcloud--app php occ files:scan \
-  {sub} --path=/{sub}/files/SCS-Share
+  {sub} --path=/{sub}/files
 ```
 
 ## What to restart (and what not to)

@@ -142,7 +142,7 @@ The `.po` path must be absolute. Drush resolves a relative path from the Drupal 
 ### Nextcloud
 
 - Nextcloud FPM, reverse proxy (nginx), Redis, OnlyOffice. Database and user created in pre-install.
-- Post-installation hooks in `scs-nextcloud-stack/hooks/post-installation/` install and configure apps (`user_oidc`, OnlyOffice, Draw.io, Team Folders `groupfolders`, `scs_manager_integration`) and trusted domains. Hooks run only on the first container start. On an instance that was installed before Team Folders were part of the hook, run `install-scs-manager-integration.sh --apps-only` once inside `nextcloud--nextcloud--app` (see [Post-configuration](../post-configuration/checklist.md)). Project folders for Drupal projects that already exist are created afterwards with `soda_scs_manager:backfill-project-team-folders`.
+- Post-installation hooks in `scs-nextcloud-stack/hooks/post-installation/` install and configure apps (`user_oidc`, OnlyOffice, Draw.io, Team Folders `groupfolders`, `scs_manager_integration`) and trusted domains. Hooks run only on the first container start; after a Nextcloud version upgrade, `hooks/post-upgrade/` enables Team Folders, `scs_manager_integration` and Draw.io again. On an instance that was installed before Team Folders were part of the hook, run `install-scs-manager-integration.sh` once inside `nextcloud--nextcloud--app` (see [Post-configuration](../post-configuration/checklist.md)). Project folders for Drupal projects that already exist are created afterwards with `soda_scs_manager:backfill-project-team-folders`.
 
 ### JupyterHub
 

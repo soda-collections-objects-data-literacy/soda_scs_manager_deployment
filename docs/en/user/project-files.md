@@ -18,8 +18,6 @@ The folder has the project's name. Every project member sees it in their drive a
 
 ![Project folder robert Demo in SCS Drive](images/14-drive-projektordner.png)
 
-The **`SCS-Share`** folder is a different folder: it is for the whole platform, not for one project. Files that Jupyter or WissKI should use belong in the project folder.
-
 ## In JupyterHub
 
 Open the lab from the project's **JupyterHub** card. In the file browser the project folder is under `nextcloud/<project name>`.

@@ -85,10 +85,8 @@ Use this checklist after the whole environment has started (`docker compose up -
 
   ```bash
   docker exec -u www-data nextcloud--nextcloud--app \
-    bash /docker-entrypoint-hooks.d/post-installation/install-scs-manager-integration.sh --apps-only
+    bash /docker-entrypoint-hooks.d/post-installation/install-scs-manager-integration.sh
   ```
-
-  `--apps-only` does not create the platform Team Folder `SCS-Share`. On an existing Drive that folder name is still the private skeleton directory. Create the platform folder only after the private-folder migration (`occ scs_manager_integration:migrate-private-scs-share`), by running the same script without `--apps-only`.
 
   Then register folders for projects that already exist:
 

@@ -12,6 +12,7 @@ services:
       - MYSQL_HOST=${SCS_CONTAINER_DATABASE:-scs--database}
     volumes: !override
       - ${SCS_ROOT_PATH}/scs-nextcloud-stack/hooks/post-installation:/docker-entrypoint-hooks.d/post-installation
+      - ${SCS_ROOT_PATH}/scs-nextcloud-stack/hooks/post-upgrade:/docker-entrypoint-hooks.d/post-upgrade
       - ${SCS_ROOT_PATH}/scs-nextcloud-stack/skeleton:/scs-skeleton:ro
       - nextcloud-data:/var/www/html
       - ${SCS_ROOT_PATH}/scs-nextcloud-stack/apps/scs_manager_integration:/var/www/html/custom_apps/scs_manager_integration

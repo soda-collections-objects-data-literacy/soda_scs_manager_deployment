@@ -44,7 +44,7 @@ If the prefix in SCS Manager does not match the real Drive account id, status ch
 
 `user_oidc` provisions **one account per Keycloak `sub`** (raw UUID). Legacy installs may **also** have a **`keycloak-{sub}`** account from the old **sociallogin** stack for the same person.
 
-**Symptom:** The Drive web UI and Keycloak `nextcloud_login_name` point at different accounts; SCS-Share contents differ.
+**Symptom:** The Drive web UI and Keycloak `nextcloud_login_name` point at different accounts; their personal files differ.
 
 **Cleanup** (keep the raw `sub` / `user_oidc` account, remove the legacy prefixed one when it is unused):
 
@@ -52,11 +52,11 @@ If the prefix in SCS Manager does not match the real Drive account id, status ch
 # List both forms for a Keycloak sub fragment
 docker exec --user www-data nextcloud--nextcloud--app php /var/www/html/occ user:list | grep {sub-fragment}
 
-# Optional: copy SCS-Share from legacy account first
+# Optional: copy personal files from the legacy account first
 docker exec nextcloud--nextcloud--app bash -c '
-  SRC=/var/www/html/data/keycloak-{sub}/files/SCS-Share
-  DST=/var/www/html/data/{sub}/files/SCS-Share
-  mkdir -p "$DST" && cp -n "$SRC"/* "$DST/" 2>/dev/null || true
+  SRC=/var/www/html/data/keycloak-{sub}/files
+  DST=/var/www/html/data/{sub}/files
+  cp -rn "$SRC"/. "$DST/" 2>/dev/null || true
 '
 
 # Delete legacy prefixed account
@@ -79,7 +79,7 @@ See also the full [SCS Drive connection runbook](scs-drive-jupyter-connection.md
 Files copied on the Nextcloud host (e.g. migration between accounts) may not appear over WebDAV until indexed:
 
 ```bash
-docker exec --user www-data nextcloud--nextcloud--app php occ files:scan {nextcloud-user-id} --path=/{nextcloud-user-id}/files/SCS-Share
+docker exec --user www-data nextcloud--nextcloud--app php occ files:scan {nextcloud-user-id} --path=/{nextcloud-user-id}/files
 ```
 
 ## Verify

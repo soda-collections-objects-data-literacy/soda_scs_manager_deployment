@@ -64,7 +64,7 @@ Nextcloud accounts are **not** created by the Keycloak approval step. They appea
 | SCS Manager Connect popup (manual fallback) | Login Flow v2 → poll | `loginName` from the Drive account logged into in the popup |
 | Bearer / API | `user_oidc` with `--bearer-provisioning=1` | Same raw `sub` |
 
-The skeleton directory (`SCS-Share`, `Welcome.md`, …) is applied on **first** Nextcloud user creation via Nextcloud’s `skeletondirectory` config (see post-install hook).
+The skeleton directory (`Documents`, `Welcome.md`) is applied on **first** Nextcloud user creation via Nextcloud’s `skeletondirectory` config (see post-install hook).
 
 ### 4. Nextcloud credentials in Keycloak
 
