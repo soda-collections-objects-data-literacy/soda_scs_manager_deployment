@@ -16,15 +16,14 @@ mkdir -p "${DE_BUILD_DIR}"
 rsync -a "${ROOT_DIR}/docs/en/" "${DE_BUILD_DIR}/"
 rsync -a "${ROOT_DIR}/docs/de/" "${DE_BUILD_DIR}/"
 
+# Empty site/ but keep the directory: core--docs--app bind-mounts it, and a
+# deleted and recreated directory leaves the container serving the old one.
 echo "Cleaning ${SITE_DIR} …"
-if [[ -d "${SITE_DIR}" ]]; then
-  if rm -rf "${SITE_DIR}" 2>/dev/null; then
-    :
-  else
-    docker run --rm -v "${ROOT_DIR}:/docs" alpine:3.20 rm -rf /docs/site
-  fi
-fi
 mkdir -p "${SITE_DIR}"
+if ! find "${SITE_DIR}" -mindepth 1 -delete 2>/dev/null; then
+  docker run --rm -v "${ROOT_DIR}:/docs" alpine:3.20 \
+    find /docs/site -mindepth 1 -delete
+fi
 
 echo "Building English → site/en …"
 docker run --rm -v "${ROOT_DIR}:/docs" zensical/zensical build -f zensical.en.toml
@@ -70,8 +69,7 @@ if [[ ! -f "${SITE_DIR}/en/index.html" || ! -f "${SITE_DIR}/de/index.html" ]]; t
   exit 1
 fi
 
-echo "Done. Recreate the docs container to pick up changes:"
-echo "  docker compose up -d --force-recreate core--docs--app"
+echo "Done. core--docs--app serves the new site right away."
 
 # Zensical runs as root in Docker; fix ownership for the next local clean.
 if [[ -d "${SITE_DIR}" ]]; then
