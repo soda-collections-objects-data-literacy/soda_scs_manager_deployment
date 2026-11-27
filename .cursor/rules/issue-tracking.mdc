@@ -19,7 +19,7 @@ submodule pointer bumps. Work flow: `/issue-flow`.
 | `jupyterhub` | `soda-collections-objects-data-literacy/jupyterhub` | private |
 | `keycloak` | `soda-collections-objects-data-literacy/keycloak` | private |
 | `scs-manager-stack` | `soda-collections-objects-data-literacy/scs-manager-stack` | public |
-| `scs-nextcloud-stack` | `soda-collections-objects-data-literacy/scs-nextcloud-stack` | private |
+| `scs-nextcloud-stack` | `soda-collections-objects-data-literacy/scs-nextcloud-stack` | public |
 | `scs-nextcloud-stack/apps/scs_manager_integration` | `soda-collections-objects-data-literacy/scs_manager_integration` | public |
 | `scs-project-website-stack` | `soda-collections-objects-data-literacy/scs-project-website-stack` | private |
 | `scs-voyager` | `soda-collections-objects-data-literacy/scs-voyager` | public |
