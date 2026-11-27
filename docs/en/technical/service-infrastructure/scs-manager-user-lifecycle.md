@@ -119,6 +119,7 @@ phpMyAdmin SSO reads `preferred_username` and `mariadb_password` from the JWT. S
 | OpenGDB / triplestore user | Triplestore component; when the account is gone (for example deleted by an administrator), the next triplestore creates it again with a new token and read and write grants on the owner's existing repositories | User delete (account offboarding); a component delete removes only that repository's read and write grants |
 | WissKI stack | WissKI component via Portainer | Component/stack delete |
 | Keycloak groups/clients | WissKI component setup | WissKI component delete |
+| Nextcloud groups | Project group `G` (gid) with the Team Folder; application `-admin`/`-user` groups copied by `user_oidc` at the Drive login | With the Keycloak group: project delete (`deleteProjectGroup()`), WissKI, SQL or triplestore delete (`deleteComponentAccessGroups()`); leftovers of older deletes with `drush soda_scs_manager:delete-orphaned-nextcloud-groups --apply` |
 | WebProtégé ontology project | SCS project create (REST `POST /data/projects`) | SCS project delete (REST `DELETE /data/projects/{id}` → trash) |
 
 The WebProtégé **application** remains a single shared instance (`soda_scs_webprotege_component` per user). Only the ontology project UUID is stored on the SCS project (`webprotegeProjectId`). Members receive `EDIT` when a membership request is approved; leave/remove revokes that access (the owner is never revoked). Failures are logged and shown in the messenger; they do not block SCS project create.
@@ -181,9 +182,9 @@ sequenceDiagram
 
 2. **`hook_user_predelete`** — `SodaScsUserOffboarding::purge()`, inside the account delete transaction; a failing step is logged and the rest goes on:
    - Leaves the projects the account only belongs to (`detachMember()`, which also revokes its access there) and deletes its invitations.
-   - Per owned project (demo projects under the demo lock): JupyterHub stack, the remaining applications (`removeApplications($project, FALSE)`), WebProtégé component, project mount, Team Folder, WebProtégé project (trash), Keycloak project group, the project.
+   - Per owned project (demo projects under the demo lock): JupyterHub stack, the remaining applications (`removeApplications($project, FALSE)`), WebProtégé component, project mount, Team Folder, WebProtégé project (trash), Keycloak project group and its Nextcloud group, the project.
    - Leftovers: owned components and stacks that are not in another owner's project, snapshots, service keys.
-   - Personal accounts: Nextcloud (unmount the Drive, then `deleteNextcloudAccountForKeycloakUser()`), MariaDB user, OpenGDB user, WebProtégé user, Keycloak user (admin token, then `DELETE /admin/realms/{realm}/users/{userId}`; skipped without an `authmap` link).
+   - Personal accounts: Nextcloud (unmount the Drive, then `deleteNextcloudAccountForKeycloakUser()`), MariaDB user, OpenGDB user, WebProtégé user (a user who never opened WebProtégé gives a 404, logged as a notice), Keycloak user (admin token, then `DELETE /admin/realms/{realm}/users/{userId}`; skipped without an `authmap` link).
    - The user's conversations.
 
 ### API route configuration
