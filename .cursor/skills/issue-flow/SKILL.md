@@ -60,6 +60,12 @@ is English Markdown. Templates, commands, layout: [reference.md](reference.md).
   comment; only steps that need a browser go to the user.
 - Commits follow `/git-commit`: innermost repo first, explicit paths, no push;
   push lines go into `plans/push-plan.txt`.
+- **Links in every message.** Each issue, comment draft and file you name is a
+  clickable link (rule `user-links`): the full GitHub issue URL (and its
+  `/issues/{n}#issuecomment-new` for commenting, `…/issues/{n}` plus "Edit" for
+  the body), and local drafts as Markdown links relative to the workspace root,
+  e.g. [01.md](plans/issues/soda_scs_manager_deployment/9/comments/01.md).
+  Never a bare `#9` or path.
 - `/compact` is the user's command. At pauses marked *compact hint*, end with
   one line like `/compact issue-flow jupyterhub#12, Phase 3, open: …`. The
   flow resumes from `plans/issues/` and git.
