@@ -1,0 +1,25 @@
+---
+description: Every to-do, file or issue named to the user is a clickable link that opens exactly where the action happens.
+alwaysApply: true
+---
+# Links for the user
+
+Whenever you tell the user to do something, or name an issue, file or page,
+give a link they can click that lands **exactly where the action happens** or
+the document opens. A bare `#3638568`, `issue.md` or `TO-POST.md` is not enough.
+
+| What | Link |
+|---|---|
+| Drupal.org issue: read | `https://www.drupal.org/project/soda_scs_manager/issues/{nid}` |
+| Drupal.org: edit the summary or title | `https://www.drupal.org/node/{nid}/edit` |
+| Drupal.org: change status, comment | `https://www.drupal.org/project/soda_scs_manager/issues/{nid}#comment-form` |
+| Drupal.org: new issue | `https://www.drupal.org/node/add/project-issue/soda_scs_manager` |
+| GitHub issue | full `https://github.com/{owner}/{repo}/issues/{n}` URL, never `#n` alone |
+| GitHub project board | `https://github.com/orgs/soda-collections-objects-data-literacy/projects/1` |
+| Local file (VS Code) | Markdown link, path relative to the workspace root, e.g. `[issue.md](plans/issues/keycloak/1/issue.md)`; outside the workspace an absolute path |
+| Site page (dev/Prime) | the full URL of the page, e.g. the dblog event or settings form |
+| Shell command | the exact command in a code block |
+
+To-do lists for the user: one line per action, in this order: **link → what
+to do there → which file holds the text to paste (link)**. Group by place
+(Drupal.org, GitHub, Prime, terminal), not by topic.
