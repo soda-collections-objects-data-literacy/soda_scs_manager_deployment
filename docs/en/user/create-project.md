@@ -73,7 +73,7 @@ The result looks like this:
 
 At the top right are the status **Demo**, the version, and **Demo zurücksetzen**.
 
-While the demo is being set up or reset, the panel shows what is happening: since when it is queued, the current step, or that it waits for the WissKI installation and when it tries again. If setup fails, the panel shows the step it failed at; then reset the demo. If it says the WissKI of the demo is incomplete, delete that WissKI in the project first, then reset the demo. On the dashboard, hover over the demo badge to see the same line.
+While the demo is being set up or reset, the panel shows what is happening: since when it is queued, the current step, or that it waits for the WissKI installation and when it tries again. Until the demo is ready, the application cards and **Go to file system** cannot be clicked yet; the page reloads by itself when it is done. If setup fails, the panel shows the step it failed at; then reset the demo. If it says the WissKI of the demo is incomplete, delete that WissKI in the project first, then reset the demo. On the dashboard, hover over the demo badge to see the same line.
 
 !!! warning "Reset the demo"
     Reset overwrites every change in the WissKI, the databases, the triplestores, the Jupyter home directory, the team folder, and the WebProtégé ontology of this project with the demo data. Applications you added yourself stay. This cannot be undone.
