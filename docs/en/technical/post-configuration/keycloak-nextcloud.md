@@ -157,6 +157,7 @@ docker exec nextcloud--nextcloud php /var/www/html/occ user_oidc:provider "SCS S
   --check-bearer=1 \
   --bearer-provisioning=1 \
   --mapping-display-name=preferred_username \
+  --mapping-avatar=picture \
   --unique-uid=0 \
   --no-warnings -n
 docker exec nextcloud--nextcloud php /var/www/html/occ app:disable sociallogin -n
@@ -168,6 +169,7 @@ Important flags:
 - `--bearer-provisioning=1`: Auto-provision users when Bearer token is valid
 - `--postlogouturi`: Where Keycloak redirects after federated logout (Drive home URL)
 - `--send-id-token-hint=1`: Pass the stored ID token to Keycloak's `end_session_endpoint` (recommended for RP-initiated logout)
+- `--mapping-avatar=picture`: Take the Drive profile picture from the Keycloak claim `picture` (an image URL the Nextcloud container can reach; PNG or JPEG, exactly square, otherwise Nextcloud logs `Image is not square` and keeps the placeholder). Users without the attribute keep the generated placeholder.
 
 **Do not** add a second provider with identifier `Keycloak` — that creates a duplicate login button.
 
@@ -313,7 +315,7 @@ docker exec nextcloud--nextcloud php /var/www/html/occ user_oidc:provider "SCS S
   --postlogouturi "https://drive.example.com/" \
   --send-id-token-hint=1 \
   --check-bearer=1 --bearer-provisioning=1 \
-  --mapping-display-name=preferred_username --unique-uid=0 -n
+  --mapping-display-name=preferred_username --mapping-avatar=picture --unique-uid=0 -n
 ```
 
 Keycloak Drive client: `post.logout.redirect.uris` must include `https://drive.example.com/*` (wildcard is fine in the realm template).
