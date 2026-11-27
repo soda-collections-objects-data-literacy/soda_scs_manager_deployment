@@ -12,6 +12,8 @@ MariaDB is an open-source relational database management system that serves assi
 
 MariaDB databases are created and managed as individual applications and can be managed through the phpMyAdmin database management software. This is the place to import and export, and query your data.
 
+On the details page of the database application, the "Database access" card shows the database user and the password. The password stays hidden until you click it; a click shows and copies it. Only the owner of the application sees this card.
+
 ## Additional Ressources
 
 - [phpMyAdmin Documentation (englisch)](https://www.phpmyadmin.net/docs/)

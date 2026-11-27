@@ -18,6 +18,8 @@ Security is a core focus, with the system blocking SPARQL SERVICE queries from a
 
 API access follows industry standards, providing GraphDB-compatible REST endpoints at /rest/security/users and /rest/repositories/ while maintaining full support for standard RDF4J protocols. Authentication can be handled through either basic authentication or token-based methods depending on performance requirements.
 
+On the details page of a triplestore application, the "Endpoint access" card shows the read URL, the write URL, whether the repository is publicly readable, the user, the password and the token. Password and token stay hidden until you click them; a click shows and copies the value. Only the owner of the application sees this card.
+
 ## Links
 
 - [Repository of the OpenGDB](https://github.com/FAU-CDI/open_gdb)

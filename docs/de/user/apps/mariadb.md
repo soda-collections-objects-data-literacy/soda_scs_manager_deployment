@@ -12,6 +12,8 @@ MariaDB ist ein Open-Source-Datenbankverwaltungssystem für relationale Datenban
 
 MariaDB-Datenbanken werden als einzelne Anwendungen erstellt und verwaltet und können über die Datenbankverwaltungssoftware phpMyAdmin verwaltet werden. Dies ist der Ort, um Ihre Daten zu importieren, zu exportieren und abzufragen.
 
+Auf der Detailseite der Datenbank-Anwendung zeigt die Karte „Datenbank-Zugriff“ den Datenbank-Nutzer und das Passwort. Das Passwort bleibt verborgen, bis du darauf klickst; ein Klick zeigt und kopiert es. Nur der Besitzer der Anwendung sieht diese Karte.
+
 ## Zusätzliche Ressourcen
 
 - [phpMyAdmin Dokumentation (englisch)](https://www.phpmyadmin.net/docs/)
